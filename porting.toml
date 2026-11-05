@@ -1,10 +1,10 @@
 schema_version = 1
 
 [device]
-name = "pong"
+name = "diting"
 soc = "SM8475"
 os_profile = "ipados-18.7.10-22H374"
-summary = "Nothing Phone (2), iPadOS18 Darwin24 local format2 migration and board adaptation"
+summary = "Redmi K50 Ultra (diting/SM8475), iPadOS 18.7.10 / Darwin 24 bring-up from the Pong baseline. The areas below are inherited Pong records; they are not evidence for this device until the matching hardware result is observed and recorded here."
 
 [[area]]
 id = "configuration"
