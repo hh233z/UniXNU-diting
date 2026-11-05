@@ -30,15 +30,19 @@ def late_init(obj, filename, symbol):
  dest=obj.with_suffix('.late.o');dest.write_bytes(raw);return dest
 
 def main():
- p=argparse.ArgumentParser(description=__doc__);p.add_argument('--tree',type=Path,required=True);a=p.parse_args()
+ p=argparse.ArgumentParser(description=__doc__);p.add_argument('--tree',type=Path,required=True)
+ p.add_argument('--resources-only',action='store_true',help='compile only PongPlatformResources.cpp: the shared SMMU/power locks the UFS transport takes, without the audio firmware input')
+ a=p.parse_args()
  out=a.tree/'build/pong-power';out.mkdir(parents=True,exist_ok=True)
  framework=a.tree/'.cache/fakeroot/System/Library/Frameworks/Kernel.framework/Versions/A'
  env=dict(os.environ,DEVELOPER_DIR=str(pong_paths.developer_dir()))
  sdk=subprocess.check_output(['xcrun','--sdk','iphoneos','--show-sdk-path'],env=env,text=True).strip()
  flags=['-target','arm64-apple-ios18.0','-isysroot',sdk,'-mkernel','-ffreestanding','-fno-builtin','-fno-stack-protector','-mgeneral-regs-only','-fblocks','-O2','-DKERNEL=1','-DKERNEL_PRIVATE=1','-DXNU_KERNEL_PRIVATE=1','-DARM64_BOARD_CONFIG_PONG=1','-I'+str(framework/'PrivateHeaders'),'-I'+str(framework/'Headers'),'-I'+str(ROOT/'drivers/PongPower'),'-I'+str(out),'-I'+str(pong_paths.sheng_root()/'package'),'-Wno-deprecated-declarations']
- subprocess.run([os.sys.executable,str(ROOT/'scripts/prepare-pong-audio.py'),'--container',str(pong_paths.audio_inputs()/'tfa98xx.cnt'),'--output',str(out/'PongAmpProfiles.h')],check=True)
+ if not a.resources_only:
+  subprocess.run([os.sys.executable,str(ROOT/'scripts/prepare-pong-audio.py'),'--container',str(pong_paths.audio_inputs()/'tfa98xx.cnt'),'--output',str(out/'PongAmpProfiles.h')],check=True)
  objects=[]
- for name in ('QcomSmem.c','QcomSmp2p.c','QcomGlink.c','QcomMdt.c','QcomQmp.c','ShengBattmgr.c','ShengGpr.c','ShengAudioReach.c','GeniI2c.c','PongFirmware.c','PongAdsp.cpp','PongBattery.cpp','PongAudio.cpp','PongAudioService.cpp','PongPower.cpp','PongBacklight.cpp'):
+ NAMES=('PongPlatformResources.cpp',) if a.resources_only else ('QcomSmem.c','QcomSmp2p.c','QcomGlink.c','QcomMdt.c','QcomQmp.c','ShengBattmgr.c','ShengGpr.c','ShengAudioReach.c','GeniI2c.c','PongFirmware.c','PongAdsp.cpp','PongBattery.cpp','PongAudio.cpp','PongAudioService.cpp','PongPower.cpp','PongBacklight.cpp')
+ for name in NAMES:
   source=ROOT/'drivers/PongPower'/name;obj=out/(source.stem+'.o');cpp=source.suffix=='.cpp'
   cmd=['xcrun','clang++' if cpp else 'clang',*flags,*(['-std=gnu++17','-fno-exceptions','-fno-rtti'] if cpp else []),'-c',str(source),'-o',str(obj)]
   r=subprocess.run(cmd,env=env,capture_output=True,text=True);(out/(source.stem+'.log')).write_text(r.stdout+r.stderr)
