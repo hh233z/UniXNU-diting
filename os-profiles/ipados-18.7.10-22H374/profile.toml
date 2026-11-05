@@ -53,11 +53,11 @@ sleep-disabled = 1
 windows = [{ name = "OS", component = "OS" }, { name = "SystemOS", component = "Cryptex1,SystemOS", optional = true }]
 
 [root]
-# Volume UUIDs of the 22H374 restore this profile is pinned to. Both are recorded by the Thor
-# port for the same restore image (UniXNU-thor/migration/ipados18/services.md, "准备脚本中的 OS
-# 副本和目标设备分别符合实际挂载合同"): the OS and SystemOS disk images are used unmodified, so
-# their APFS volume UUIDs are properties of the image, not of the device. Re-read them from the
-# IPSW (os dmg / Cryptex1,SystemOS) when it is fetched, and from the installed image before a
-# boot test that mounts them.
+# Volume UUIDs of the 22H374 images this profile is pinned to. The OS UUID matches the one the
+# Thor port recorded for the same restore, and both values were confirmed by the CI run that
+# built the images from this IPSW (artifact volume-layout/ci-volume-layout.json: os
+# B07DF049-7AD9-47B5-9F8F-9EE728056398, systemos D44F8E57-4171-4C6B-B21A-1808F6EF2E20, data
+# 337CF716-F62B-446B-B959-4A5F12A7701C). The Data volume UUID belongs to the installed image,
+# not to the restore, so it is not recorded here.
 os_volume_uuid = "B07DF049-7AD9-47B5-9F8F-9EE728056398"
-systemos_volume_uuid = "D96FCEC3-6DE9-474F-8F38-E40FA084948B"
+systemos_volume_uuid = "D44F8E57-4171-4C6B-B21A-1808F6EF2E20"
