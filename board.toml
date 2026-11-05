@@ -163,9 +163,14 @@ chip_id = "0x8010"
 [userdata]
 # The userdata partition this board installs into, in 4 KiB sectors: the geometry
 # scripts/install-pong-ufs-data.py and scripts/prepare-ipados18-ufs-layout.py check
-# against, and the same pair those scripts read from the device's own GPT.
-first_lba = 0x413248
-last_lba = 0x75A40EA
+# against. Measured on this unit over adb on 2026-11-06:
+#   /dev/block/by-name/userdata -> /dev/block/sda37
+#   /sys/class/block/sda37/start = 24924160 (512-byte sectors) = 3115520 4K
+#   /sys/class/block/sda37/size  = 468930520 (512-byte sectors) = 58616315 4K
+#   240,092,426,240 bytes = 223.6 GiB; sda queue logical_block_size = 4096
+# The values this table carried before were inherited from the Pong baseline.
+first_lba = 0x2F8A00
+last_lba = 0x3ADF3FA
 lba_bytes = 4096
 # The windows of the userdata image are the OS and SystemOS disk images of the IPSW, in
 # that order; the OS profile lists them ([userdata] windows of
