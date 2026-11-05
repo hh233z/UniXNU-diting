@@ -103,22 +103,14 @@ while IFS= read -r LATE_PATCH; do
   fi
 done < <(python3 - <<'PY_LATE_PATCHES'
 from pathlib import Path
-patches = [p.resolve() for d in ('patches/xnu', 'patches/xnu-ipados18') for p in Path(d).glob('zz*pong*.patch')]
+patches = [p.resolve() for p in Path('patches/xnu').glob('zz*pong*.patch')]
 patches += [Path('patches/xnu/zzz-boot-progress.patch').resolve(),
             Path('patches/xnu/zzy-native-gpu-addon-mount.patch').resolve()]
 for patch in sorted(set(patches), reverse=True):
     print(patch)
 PY_LATE_PATCHES
 )
-# The board patches of a format 2 repository live in patches/xnu-ipados18; the SoC
-# series can be empty (SM8475 carries its patches in the board aggregate).
-shopt -s nullglob
-PATCHES=("$ROOT"/patches/xnu/*.patch "$ROOT"/patches/xnu-ipados18/*.patch)
-shopt -u nullglob
-if [ ${#PATCHES[@]} -eq 0 ]; then
-  echo 'no XNU patches found under patches/xnu or patches/xnu-ipados18' >&2
-  exit 1
-fi
+PATCHES=("$ROOT"/patches/xnu/*.patch)
 if [ "$XNU_VERSION" = "10063.141.1" ]; then
   PATCHES+=("$ROOT"/kits/NativePrelink/patches/*.patch)
 fi

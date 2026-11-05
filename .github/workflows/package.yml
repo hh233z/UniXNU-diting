@@ -441,7 +441,7 @@ jobs:
           developer = subprocess.check_output(['xcode-select', '-p'], text=True).strip()
           lines = ['# Written on the runner; not a developer machine path.',
                    '[pong_build]',
-                   'tree = ' + json.dumps(str(Path('UniXNU/out/diting', os.environ['OS_PROFILE'], 'diting_ipados18_ci', 'tree').resolve())),
+                   'tree = ' + json.dumps(str(Path('tree').resolve())),
                    'developer_dir = ' + json.dumps(developer),
                    'volume_layout = ' + json.dumps(str(Path('ci-volume-layout.json').resolve())),
                    '']
