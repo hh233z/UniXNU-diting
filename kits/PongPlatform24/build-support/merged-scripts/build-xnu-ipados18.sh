@@ -275,6 +275,10 @@ if [ "${XNU_PONG_WIFI:-0}" = 1 ]; then
 fi
 if [ "${XNU_PONG_POWER:-0}" = 1 ]; then
   python3 "$PONG_NATIVE_DRIVER_SOURCE/scripts/build-pong-power-native.py" --tree "$ROOT"
+elif [ "${XNU_NATIVE_UFS:-0}" = 1 ]; then
+  # The UFS transport takes the shared SMMU lease from PongPlatformResources; build that
+  # one object when the full power/audio archive is not selected.
+  python3 "$PONG_NATIVE_DRIVER_SOURCE/scripts/build-pong-power-native.py" --tree "$ROOT" --resources-only
 fi
 if [ "${XNU_PONG_POWER:-0}" = 1 ] || [ "${XNU_PONG_ADRENO_PLATFORM:-0}" = 1 ] || [ "${XNU_PONG_WIFI:-0}" = 1 ]; then
   python3 "$PONG_NATIVE_DRIVER_SOURCE/scripts/build-pong-smmu4k.py" --tree "$ROOT"
@@ -1009,7 +1013,7 @@ PY_RAM_BLOCK_BINDINGS
     PLATFORM_ARCHIVES="$PLATFORM_ARCHIVES -Wl,-force_load,$ROOT/build/pong-adreno/libPongAdrenoPlatform.a"
     PLATFORM_DEPENDENCIES="$PLATFORM_DEPENDENCIES $ROOT/build/pong-adreno/libPongAdrenoPlatform.a"
   fi
-  if [ "${XNU_PONG_POWER:-0}" = 1 ]; then
+  if [ "${XNU_PONG_POWER:-0}" = 1 ] || [ "${XNU_NATIVE_UFS:-0}" = 1 ]; then
     POWER_ARCHIVE=$ROOT/build/pong-power/libPongPower.a
     test -f "$POWER_ARCHIVE"
     PLATFORM_ARCHIVES="$PLATFORM_ARCHIVES -Wl,-force_load,$POWER_ARCHIVE"
