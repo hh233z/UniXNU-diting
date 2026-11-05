@@ -144,14 +144,15 @@ def main():
     produced = tree / KERNEL_RELATIVE
     if not produced.is_file():
         raise SystemExit(f'{produced} missing: the device builder did not leave its aggregate there')
-    if shared:
+    if shared and produced.resolve() != (shared / KERNEL_RELATIVE).resolve():
         target = shared / KERNEL_RELATIVE
         target.parent.mkdir(parents=True, exist_ok=True)
         shutil.copy2(produced, target)
-        print(json.dumps({'aggregate': str(produced), 'staged': str(target),
-                          'bytes': target.stat().st_size}, indent=2))
+        staged = target
     else:
-        print(json.dumps({'aggregate': str(produced), 'bytes': produced.stat().st_size}, indent=2))
+        staged = produced
+    print(json.dumps({'aggregate': str(produced), 'staged': str(staged),
+                      'bytes': produced.stat().st_size}, indent=2))
 
 
 if __name__ == '__main__':

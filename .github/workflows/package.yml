@@ -436,12 +436,12 @@ jobs:
           # recipe reads it to find the build tree, the Xcode developer directory
           # and the volume layout; [kernel.prelink] kernel is a path inside the tree.
           python3 - <<'PY'
-          import json, subprocess
+          import json, os, subprocess
           from pathlib import Path
           developer = subprocess.check_output(['xcode-select', '-p'], text=True).strip()
           lines = ['# Written on the runner; not a developer machine path.',
                    '[pong_build]',
-                   'tree = ' + json.dumps(str(Path('tree').resolve())),
+                   'tree = ' + json.dumps(str(Path('UniXNU/out/diting', os.environ['OS_PROFILE'], 'diting_ipados18_ci', 'tree').resolve())),
                    'developer_dir = ' + json.dumps(developer),
                    'volume_layout = ' + json.dumps(str(Path('ci-volume-layout.json').resolve())),
                    '']
@@ -555,6 +555,25 @@ jobs:
           if report.get('hardware_tested') is not True:
               print('note: no device has run this boot image')
           PY
+      - name: keep the build logs
+        if: always()
+        run: |
+          set -euo pipefail
+          mkdir -p products/logs
+          # The device build writes build-<stamp>.log beside its tree and the
+          # resolver keeps one log per step; both are needed to read a failure.
+          for f in build-*.log PONG_BUILD_RESULT.json; do
+            [ -f "$f" ] && cp -f "$f" products/logs/ || true
+          done
+          if [ -d UniXNU/out/diting ]; then
+            find UniXNU/out/diting -type f -path '*/logs/*' 2>/dev/null | while read -r f; do
+              cp -f "$f" "products/logs/$(printf '%s' "$f" | tr '/' '_')"
+            done
+            find UniXNU/out/diting -maxdepth 5 -name 'build-*.log' -type f 2>/dev/null | while read -r f; do
+              cp -f "$f" "products/logs/$(printf '%s' "$f" | tr '/' '_')"
+            done
+          fi
+          ls -la products/logs || true
       - name: collect the products
         if: always()
         run: |
