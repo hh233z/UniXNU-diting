@@ -188,6 +188,15 @@ def extra_path():
     return os.environ.get('PONG_EXTRA_PATH', '')
 
 
+def kernelcache(explicit=None):
+    """Decompressed 22H374 kernelcache the storage imports are read from."""
+    if explicit:
+        return Path(explicit).expanduser()
+    found = _env('PONG_KERNELCACHE')
+    if found:
+        return Path(found)
+    return DEVICE / 'apple/ipados18-22H374/components/kernelcache.release.ipad7c.decompressed/kernelcache.release.ipad7c.decompressed'
+
 def storage_headers(explicit=None):
     """Apple IOStorageFamily checkout that supplies the storage ABI headers."""
     if explicit:

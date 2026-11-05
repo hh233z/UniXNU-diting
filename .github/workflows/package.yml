@@ -462,6 +462,9 @@ jobs:
           PONG_LLVM: ${{ env.LLVM_KEG }}/bin
           OS_PROFILE: ${{ env.OS_PROFILE }}
           PONG_CONFIG_NAME: diting_ipados18_ci_defconfig
+          # The UFS imports are read from the decompressed 22H374 kernelcache; on the runner it
+          # lands in the UniXNU IPSW output during the deps step.
+          PONG_KERNELCACHE: ${{ github.workspace }}/UniXNU/out/ipsw/22H374/kernelcache.decompressed
         run: |
           set -euo pipefail
           # `unixnu release` hard-codes the shared kernel step

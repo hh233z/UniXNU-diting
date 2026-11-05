@@ -9,7 +9,7 @@ import pong_paths
 import native_prelink as np
 p=argparse.ArgumentParser(description=__doc__)
 p.add_argument('--tree',type=Path,required=True)
-p.add_argument('--kernel',type=Path,default=DEVICE/'apple/ipados18-22H374/components/kernelcache.release.ipad7c.decompressed/kernelcache.release.ipad7c.decompressed')
+p.add_argument('--kernel',type=Path,default=pong_paths.kernelcache())
 a=p.parse_args();out=DEVICE/'mac-build/storage-abi18';out.mkdir(parents=True,exist_ok=True)
 source=pong_paths.storage_headers()
 IOSTORAGE_323='1b96f8f04b9dff4dc0277ac43625bf694e62c5aa'
