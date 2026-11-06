@@ -2,6 +2,7 @@
 """Build Pong Darwin 24 from this branch's scripts and pinned source feeds."""
 import argparse, datetime, json, os, shutil, subprocess, sys, tomllib
 from pathlib import Path
+import tomllib
 DEVICE=Path(__file__).resolve().parents[1]
 sys.path.insert(0,str(DEVICE/'scripts'))
 import pong_paths
@@ -65,7 +66,6 @@ def main():
     else:
         # The board names its defconfig in [kernel] defconfig; do not assume the
         # shipping one (the CI runs the reduced configuration).
-        import tomllib
         board=tomllib.loads((DEVICE/'board.toml').read_text())
         config_path=DEVICE/'configs'/(board.get('kernel',{}).get('defconfig') or 'pong_ipados18_defconfig')
     for line in config_path.read_text().splitlines():
