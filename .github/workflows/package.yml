@@ -202,6 +202,10 @@ jobs:
           cp -r ../device/platform-firmware/ditingPkg Platforms/Xiaomi/ditingPkg
           cp ../device/platform-firmware/diting.toml Resources/Configs/diting.toml
           git apply ../device/platform-firmware/darwin-boot-diting.patch
+          # macOS Python is externally managed (PEP 668); keep the tooling in a venv.
+          python3 -m venv "$RUNNER_TEMP/uefi-venv"
+          . "$RUNNER_TEMP/uefi-venv/bin/activate"
+          python3 -m pip install --quiet --upgrade pip
           python3 -m pip install --quiet -r pip-requirements.txt
           python3 build_uefi.py -d diting
           FD="Build/ditingPkg/DEBUG_CLANGPDB/FV/SILICIUM_UEFI.fd"
