@@ -159,6 +159,24 @@ jobs:
           # deps step extracts; the device script's default is a workstation path.
           PONG_KERNELCACHE: ${{ github.workspace }}/UniXNU/out/ipsw/22H374/kernelcache.decompressed
         run: scripts/package.sh --os "${{ inputs.os }}" --uefi ../uefi-pong
+      - name: v4 container
+        # docs/porting/packaging.md stops at boot/boot.img (header v0). The flashable image the
+        # firmware accepts is the PONGFAT1 envelope finalize-pong-adt.py writes.
+        working-directory: device
+        env:
+          UNIXNU_UNIQUE_CHIP_ID: ${{ secrets.UNIXNU_UNIQUE_CHIP_ID }}
+        run: |
+          set -euo pipefail
+          WORK="$GITHUB_WORKSPACE/UniXNU/out/diting/${{ inputs.os }}/diting_ipados18_ci"
+          DTB="$WORK/device-tree/build/pong/hardware.dtb"
+          [ -f "$DTB" ] || { echo "missing hardware DTB: $DTB" >&2; exit 1; }
+          python3 scripts/finalize-pong-adt.py \
+            --work-dir "$WORK" \
+            --uefi "$GITHUB_WORKSPACE/uefi-pong" \
+            --unique-chip-id "$UNIXNU_UNIQUE_CHIP_ID" \
+            --volume-layout "$RUNNER_TEMP/volume-layout.json" \
+            --hardware-dtb "$DTB"
+          ls -l "$WORK/boot"
       - name: keep the logs
         if: always()
         run: |
@@ -184,6 +202,7 @@ jobs:
           if-no-files-found: warn
           path: |
             UniXNU/out/diting/*/*/boot/boot.img
+            UniXNU/out/diting/*/*/boot/pong-xnu-initial.img
             UniXNU/out/diting/*/*/payload/payload.img
             UniXNU/out/diting/*/*/kernel/kernel.macho
             UniXNU/out/diting/*/*/package.manifest.json
