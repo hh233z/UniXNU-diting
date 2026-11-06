@@ -131,7 +131,11 @@ jobs:
         if: always()
         run: |
           mkdir -p products/logs
-          find UniXNU/out/diting -type f -path '*/logs/*' -exec cp -f {} products/logs/ \; 2>/dev/null || true
+          # Every log the run produced, not only logs/: the component recipe writes
+          # build-<stamp>.log beside the configuration directory.
+          find UniXNU/out/diting -type f -name '*.log' 2>/dev/null | while read -r f; do
+            cp -f "$f" "products/logs/$(printf '%s' "$f" | tr '/' '_')"
+          done
       - name: logs
         if: always()
         uses: actions/upload-artifact@v4
