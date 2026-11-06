@@ -46,6 +46,8 @@ jobs:
           git clone --filter=blob:none https://github.com/Emilelu/uefi-mondrian.git uefi-mondrian
           cd uefi-mondrian
           git checkout e06211de59325bbd086c312324bdbf40e21d1045
+          # build_uefi.py only updates submodules with -u; the packages the DSC lists must exist.
+          git submodule update --init --depth 1 Binaries Common/Mu Common/Mu_OEM_Sample Mu_Basecore Silicium-ACPI
           cp -r ../device/platform-firmware/ditingPkg Platforms/Xiaomi/ditingPkg
           cp ../device/platform-firmware/diting.toml Resources/Configs/diting.toml
           git apply ../device/platform-firmware/darwin-boot-diting.patch
