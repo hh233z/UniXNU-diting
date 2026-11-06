@@ -31,10 +31,13 @@ jobs:
           submodules: recursive
       - uses: actions/checkout@v4
         with:
-          repository: UniXNU/UniXNU
-          # Pinned: main HEAD e2fdae43 points drivers/ArmCpu at 2e11cda, which the
-          # submodule remote does not serve. c96b299 carries ArmCpu 93a5030c (its main).
-          ref: c96b29975645b711dc06bc435c3ad27321ce817c
+          # Fork of UniXNU at c96b299 with one added commit: the shared kernel step takes
+          # MACHINE_CONFIGS from board.toml [kernel] machine_config instead of hardcoding
+          # BCM2837, which this board cannot build (its patches add MASTER.arm64.pong).
+          # c96b299 is used rather than main because main HEAD points drivers/ArmCpu at
+          # 2e11cda, which the submodule remote does not serve.
+          repository: nagatoquin33/UniXNU
+          ref: d1c9647
           path: UniXNU
           submodules: recursive
       - uses: actions/checkout@v4
