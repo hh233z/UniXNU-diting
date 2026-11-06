@@ -44,6 +44,8 @@ jobs:
           submodules: recursive
       - name: tools
         run: |
+          # Homebrew refuses formulae from an untrusted tap; trust it before installing ipsw.
+          brew trust blacktop/tap || true
           brew install dtc llvm lld cmake mtools blacktop/tap/ipsw
           ok=1
           for t in clang xcodebuild make git ninja cmake dtc fdtget fdtput aea compression_tool \
