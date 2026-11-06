@@ -37,7 +37,7 @@ jobs:
           # c96b299 is used rather than main because main HEAD points drivers/ArmCpu at
           # 2e11cda, which the submodule remote does not serve.
           repository: nagatoquin33/UniXNU
-          ref: 2bed58bd038f0977b62da3cd68cf0f344913fb5d
+          ref: 3e2e0101712ea4c49343092ad51bc28c3008be91
           path: UniXNU
           submodules: recursive
       - uses: actions/checkout@v4

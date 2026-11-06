@@ -489,6 +489,11 @@ if [ "$SHENG_PMGR" = 1 ] && [ "${XNU_SOURCE_CORECRYPTO14:-0}" != 1 ]; then
   echo 'The sheng PMGR instrument requires the original-component kernel configuration' >&2
   exit 1
 fi
+# The stamps below live in the object directory the build creates later; make sure it
+# exists before the first write on a clean tree.
+PONG_OBJ_DIR=$ROOT/build/xnu/ios-obj/DEVELOPMENT_ARM64_PONG
+mkdir -p "$PONG_OBJ_DIR"
+
 SHENG_PMGR_STAMP=$ROOT/build/xnu/ios-obj/DEVELOPMENT_ARM64_PONG/.sheng-pmgr-mode
 if [ "$(cat "$SHENG_PMGR_STAMP" 2>/dev/null || echo 0)" != "$SHENG_PMGR" ]; then
   rm -f "$ROOT/build/xnu/ios-obj/DEVELOPMENT_ARM64_PONG/bsd/DEVELOPMENT/bsd_init.o"
