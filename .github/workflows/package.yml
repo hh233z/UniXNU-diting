@@ -104,6 +104,14 @@ jobs:
         run: |
           mkdir -p products/logs
           find UniXNU/out/diting -type f -path '*/logs/*' -exec cp -f {} products/logs/ \; 2>/dev/null || true
+      - name: logs
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: logs-${{ inputs.os }}
+          retention-days: 1
+          if-no-files-found: warn
+          path: products/logs/*
       - name: images
         uses: actions/upload-artifact@v4
         with:
