@@ -47,9 +47,14 @@ jobs:
           submodules: recursive
       - name: tools
         run: |
-          # Homebrew refuses formulae from an untrusted tap; trust it before installing ipsw.
-          brew trust blacktop/tap || true
-          brew install dtc llvm lld cmake mtools blacktop/tap/ipsw
+          brew install dtc llvm lld cmake mtools
+          # blacktop/tap's ipsw cask does not load with current Homebrew:
+          #   Cask 'ipsw' definition is invalid: invalid 'zap' stanza: wrong number of arguments
+          # so take the CLI from the release tarball instead.
+          ver=$(curl -fsSL https://api.github.com/repos/blacktop/ipsw/releases/latest | python3 -c 'import json,sys;print(json.load(sys.stdin)["tag_name"].lstrip("v"))')
+          curl -fsSL "https://github.com/blacktop/ipsw/releases/download/v${ver}/ipsw_${ver}_macOS_x86_64.tar.gz" \
+            | sudo tar -xz -C /usr/local/bin ipsw
+          ipsw version
           ok=1
           for t in clang xcodebuild make git ninja cmake dtc fdtget fdtput aea compression_tool \
                    mformat mcopy ipsw; do
