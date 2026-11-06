@@ -105,13 +105,20 @@ jobs:
           from pathlib import Path
           p = Path('device/board.toml')
           text = p.read_text()
-          old = 'defconfig = "diting_ipados18_defconfig"'
-          new = 'defconfig = "diting_ipados18_ci_defconfig"'
-          if old in text:
-              p.write_text(text.replace(old, new, 1))
-              print('kernel defconfig ->', new)
-          else:
-              print('kernel defconfig already selected')
+          pairs = [
+              ('defconfig = "diting_ipados18_defconfig"',
+               'defconfig = "diting_ipados18_ci_defconfig"'),
+              (# [package.defconfig] is what the preflight writes .config from,
+               '"ipados-18.7.10-22H374" = "diting_ipados18_defconfig"',
+               '"ipados-18.7.10-22H374" = "diting_ipados18_ci_defconfig"'),
+          ]
+          for before, after in pairs:
+              if before in text:
+                  text = text.replace(before, after, 1)
+                  print('selected', after)
+              else:
+                  print('already selected:', after)
+          p.write_text(text)
           PY
       - name: install device profile and components
         # The board carries its own OS profile and kit; unixnu resolves both from its own
