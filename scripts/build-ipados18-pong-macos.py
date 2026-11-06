@@ -68,7 +68,12 @@ def main():
         # shipping one (the CI runs the reduced configuration).
         board=tomllib.loads((DEVICE/'board.toml').read_text())
         config_path=DEVICE/'configs'/(board.get('kernel',{}).get('defconfig') or 'pong_ipados18_defconfig')
-    for line in config_path.read_text().splitlines():
+    resolved=config_path.read_text()
+    print(f"recipe config: {config_path}", flush=True)
+    for probe in ('CONFIG_XNU_PONG_WIFI=', 'CONFIG_XNU_PONG_BACKLIGHT=', 'CONFIG_XNU_PONG_ADRENO_PLATFORM='):
+        hit=[l for l in resolved.splitlines() if l.startswith(probe)]
+        print(f"  {probe}{hit[0].split(String:=chr(61),1)[1] if hit else '<absent>'}".replace('String:',''), flush=True)
+    for line in resolved.splitlines():
         if line.startswith('CONFIG_XNU_'):
             key,value=line.removeprefix('CONFIG_').split('=',1);env[key]={'y':'1','n':'0'}.get(value,value.strip('"'))
     # Only the board-specific archive has a matching 22H374 binding profile.
