@@ -91,6 +91,23 @@ jobs:
           Path(sys.argv[1]).write_text(json.dumps(layout, indent=2))
           print(json.dumps(layout))
           PY
+      - name: select the CI defconfig
+        # [package.defconfig] only selects the release configuration; the kernel component
+        # reads [kernel] defconfig, which is the shipping one (Wi-Fi, backlight, Adreno on).
+        # The CI configuration is the reduced one, so point the kernel at it for this run.
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          p = Path('device/board.toml')
+          text = p.read_text()
+          old = 'defconfig = "diting_ipados18_defconfig"'
+          new = 'defconfig = "diting_ipados18_ci_defconfig"'
+          if old in text:
+              p.write_text(text.replace(old, new, 1))
+              print('kernel defconfig ->', new)
+          else:
+              print('kernel defconfig already selected')
+          PY
       - name: install device profile and components
         # The board carries its own OS profile and kit; unixnu resolves both from its own
         # checkout, so install them before release resolves board.os_profile.
