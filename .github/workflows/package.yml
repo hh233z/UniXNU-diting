@@ -44,7 +44,10 @@ jobs:
         with:
           repository: Chengdong-Yu/uefi-pong
           path: uefi-pong
-          submodules: recursive
+          # Not recursive: the checkout pulled openssl's gost-engine/libprov and krb5 and
+          # failed on github.com twice. [firmware] submodules in board.toml lists the ones
+          # the firmware build actually needs, and the core initializes exactly those.
+          submodules: false
       - name: tools
         run: |
           brew install dtc llvm lld cmake mtools
