@@ -202,11 +202,25 @@ jobs:
           DTB="$WORK/device-tree/build/pong/hardware.dtb"
           [ -f "$FD" ] || { echo "missing firmware volume: $FD" >&2; exit 1; }
           [ -f "$DTB" ] || { echo "missing hardware DTB: $DTB" >&2; exit 1; }
+          # PongBootMemoryDxe validates the PONGFAT1 envelope, not a bare FAT volume, so
+          # take the envelope the v4 container already carries instead of payload.img.
+          python3 - "$WORK/boot/pong-xnu-initial.img" "$RUNNER_TEMP/payload-envelope.img" <<'PY'
+          import struct, sys
+          from pathlib import Path
+          img = Path(sys.argv[1]).read_bytes()
+          ks, rs = struct.unpack_from("<2I", img, 8)
+          hdr, = struct.unpack_from("<I", img, 20)
+          off = ((hdr + 4095)//4096)*4096 + ((ks + 4095)//4096)*4096
+          data = img[off:off+rs]
+          assert data[:8] == b"PONGFAT1", "the v4 ramdisk is not a PONGFAT1 envelope"
+          Path(sys.argv[2]).write_bytes(data)
+          print("envelope", len(data))
+          PY
           python3 scripts/build-bootimg.py \
             --uefi "$GITHUB_WORKSPACE/uefi-pong" \
             --fd "$FD" \
             --dtb "$DTB" \
-            --ramdisk "$WORK/payload/payload.img" \
+            --ramdisk "$RUNNER_TEMP/payload-envelope.img" \
             --output-dir "$WORK/boot"
           ls -l "$WORK/boot"
       - name: keep the logs
