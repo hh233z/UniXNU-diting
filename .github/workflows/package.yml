@@ -34,7 +34,15 @@ jobs:
         run: |
           set -euo pipefail
           sudo apt-get update -qq
-          sudo apt-get install -y -qq build-essential uuid-dev iasl nasm python3-venv mono-complete
+          sudo apt-get install -y -qq build-essential uuid-dev iasl nasm python3-venv mono-complete llvm lld
+          # Ubuntu ships versioned llvm tools; BootShim's Makefile calls the bare names.
+          for t in llvm-objcopy llvm-objdump llvm-readelf clang clang++; do
+            if ! command -v "$t" >/dev/null 2>&1; then
+              src=$(ls /usr/bin/$t-* 2>/dev/null | sort -V | tail -1)
+              [ -n "$src" ] && sudo ln -sf "$src" "/usr/local/bin/$t"
+            fi
+          done
+          llvm-objcopy --version | head -1
           git clone --filter=blob:none https://github.com/Emilelu/uefi-mondrian.git uefi-mondrian
           cd uefi-mondrian
           git checkout e06211de59325bbd086c312324bdbf40e21d1045
