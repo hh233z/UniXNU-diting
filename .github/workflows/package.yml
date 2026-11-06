@@ -91,9 +91,22 @@ jobs:
               'lba_bytes': 4096,
               'os': {'uuid': root['os_volume_uuid']},
               'systemos': {'uuid': root['systemos_volume_uuid']},
-              'data': {'uuid': 'bf5d77f3-f4d3-58c4-af55-e40389b96131'},
+              # The Data UUID recorded from the generated userdata layout; the placeholder
+              # bf5d77f3-... is gone, so the kernel, the payload and this file agree.
+              'data': {'uuid': '337CF716-F62B-446B-B959-4A5F12A7701C'},
           }
           Path(sys.argv[1]).write_text(json.dumps(layout, indent=2))
+          # The UUIDs are compiled into the kernel (kern_exec selects the volumes by them), so
+          # write the same values into the CI defconfig before the build reads it.
+          conf = Path('device/configs/diting_ipados18_ci_defconfig')
+          text = conf.read_text()
+          for key, value in (('CONFIG_XNU_OWNER_ROOT_VOLUME_UUID', root['os_volume_uuid']),
+                             ('CONFIG_XNU_OWNER_CACHE_VOLUME_UUID', root['systemos_volume_uuid']),
+                             ('CONFIG_XNU_OWNER_DATA_VOLUME_UUID', layout['data']['uuid'])):
+              import re as _re
+              text = _re.sub(key + r'=".*"', key + '="' + value + '"', text)
+          conf.write_text(text)
+          print([l for l in text.splitlines() if 'VOLUME_UUID' in l])
           print(json.dumps(layout))
           PY
       - name: select the CI defconfig
