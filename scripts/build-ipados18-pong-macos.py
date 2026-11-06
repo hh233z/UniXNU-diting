@@ -60,7 +60,14 @@ def main():
         env['UNIXNU_'+prefix+'_TAG']=ref['ref'];env['UNIXNU_'+prefix+'_COMMIT']=ref['commit']
         if ref['name']=='xnu':
             for key in ('darwin','version','driverkit_tag','trustcache_tag'):env['UNIXNU_'+('XNU_'+key if key in ('darwin','version') else key).upper()]=ref[key]
-    config_path=a.config_path or DEVICE/'configs/pong_ipados18_defconfig'
+    if a.config_path:
+        config_path=a.config_path
+    else:
+        # The board names its defconfig in [kernel] defconfig; do not assume the
+        # shipping one (the CI runs the reduced configuration).
+        import tomllib
+        board=tomllib.loads((DEVICE/'board.toml').read_text())
+        config_path=DEVICE/'configs'/(board.get('kernel',{}).get('defconfig') or 'pong_ipados18_defconfig')
     for line in config_path.read_text().splitlines():
         if line.startswith('CONFIG_XNU_'):
             key,value=line.removeprefix('CONFIG_').split('=',1);env[key]={'y':'1','n':'0'}.get(value,value.strip('"'))
