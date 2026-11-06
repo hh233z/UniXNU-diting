@@ -64,6 +64,10 @@ jobs:
             echo 'Set the repository secret UNIXNU_UNIQUE_CHIP_ID: the platform seed of the device, 8 hex digits.' >&2
             exit 1
           fi
+      - name: install device profile and components
+        # The board carries its own OS profile and kit; unixnu resolves both from its own
+        # checkout, so install them before release resolves board.os_profile.
+        run: python3 device/scripts/install-unixnu-inputs.py --unixnu UniXNU
       - name: gpu firmware
         env:
           A1: ${{ secrets.ADRENO_FW_1 }}
