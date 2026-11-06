@@ -72,6 +72,25 @@ jobs:
             echo 'Set the repository secret UNIXNU_UNIQUE_CHIP_ID: the platform seed of the device, 8 hex digits.' >&2
             exit 1
           fi
+      - name: volume layout
+        run: |
+          set -euo pipefail
+          python3 - "$RUNNER_TEMP/volume-layout.json" <<'PY'
+          import json, sys, tomllib
+          from pathlib import Path
+          profile = tomllib.loads(Path('device/os-profiles/ipados-18.7.10-22H374/profile.toml').read_text())
+          root = profile['root']
+          layout = {
+              'ci_placeholder': True,
+              'build': '22H374',
+              'lba_bytes': 4096,
+              'os': {'uuid': root['os_volume_uuid']},
+              'systemos': {'uuid': root['systemos_volume_uuid']},
+              'data': {'uuid': 'bf5d77f3-f4d3-58c4-af55-e40389b96131'},
+          }
+          Path(sys.argv[1]).write_text(json.dumps(layout, indent=2))
+          print(json.dumps(layout))
+          PY
       - name: install device profile and components
         # The board carries its own OS profile and kit; unixnu resolves both from its own
         # checkout, so install them before release resolves board.os_profile.
@@ -106,6 +125,7 @@ jobs:
           UNIXNU_UNIQUE_CHIP_ID: ${{ secrets.UNIXNU_UNIQUE_CHIP_ID }}
           GITHUB_TOKEN: ${{ github.token }}
           PONG_ADRENO_FIRMWARE: ${{ runner.temp }}/adreno730
+          PONG_VOLUME_LAYOUT: ${{ runner.temp }}/volume-layout.json
         run: scripts/package.sh --os "${{ inputs.os }}" --uefi ../uefi-pong
       - name: keep the logs
         if: always()
