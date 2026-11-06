@@ -1,0 +1,79 @@
+diff --git a/Platforms/Xiaomi/DarwinBootPkg/Driver/BootArgs.h b/Platforms/Xiaomi/DarwinBootPkg/Driver/BootArgs.h
+index cf960e5..16c8c72 100644
+--- a/Platforms/Xiaomi/DarwinBootPkg/Driver/BootArgs.h
++++ b/Platforms/Xiaomi/DarwinBootPkg/Driver/BootArgs.h
+@@ -4,24 +4,8 @@
+ 
+ #include <Base.h>
+ 
+-//
+-// K60 port delta: pong's vendored copy of this package carries the Darwin 24
+-// ABI (XNU 11417.140.69, 0x480-byte boot_args).  The K60 payload is
+-// ipados-16.6.1-20G81, i.e. XNU 8796.141.3 / Darwin 22, whose boot_args is
+-// 0x2e0 bytes with a 608-byte command line.  Handing a Darwin 22 kernel a
+-// Darwin 24 layout puts BootFlags and MemorySizeActual 0x1a0 bytes past where
+-// the kernel reads them, which is an immediate fault on handoff.
+-//
+-// Everything else in this package is pong's copy unchanged.  To build for a
+-// Darwin 24 payload, restore the four values this block replaces:
+-//   DARWIN_BOOT_LINE_LENGTH 1024
+-//   BootFlags        0x470
+-//   MemorySizeActual 0x478
+-//   sizeof           0x480
+-//
+-// XNU 8796.141.3 / Darwin 22 pexpert/pexpert/arm64/boot.h ABI.
+-//
+-#define DARWIN_BOOT_LINE_LENGTH 608
++// 使用 XNU 11417.140.69 / Darwin 24 的 boot_args 布局。
++#define DARWIN_BOOT_LINE_LENGTH 1024
+ typedef struct {
+   UINT16  Revision;
+   UINT16  Version;
+@@ -44,8 +28,8 @@ typedef struct {
+ STATIC_ASSERT (OFFSET_OF (DARWIN_BOOT_ARGS, DeviceTree) == 0x60, "DT ABI");
+ STATIC_ASSERT (OFFSET_OF (DARWIN_BOOT_ARGS, Video) == 0x28, "video ABI");
+ STATIC_ASSERT (OFFSET_OF (DARWIN_BOOT_ARGS, CommandLine) == 0x6c, "command line ABI");
+-STATIC_ASSERT (OFFSET_OF (DARWIN_BOOT_ARGS, BootFlags) == 0x2d0, "flags ABI");
+-STATIC_ASSERT (OFFSET_OF (DARWIN_BOOT_ARGS, MemorySizeActual) == 0x2d8, "memory ABI");
+-STATIC_ASSERT (sizeof (DARWIN_BOOT_ARGS) == 0x2e0, "Darwin 22 boot_args ABI");
++STATIC_ASSERT (OFFSET_OF (DARWIN_BOOT_ARGS, BootFlags) == 0x470, "flags ABI");
++STATIC_ASSERT (OFFSET_OF (DARWIN_BOOT_ARGS, MemorySizeActual) == 0x478, "memory ABI");
++STATIC_ASSERT (sizeof (DARWIN_BOOT_ARGS) == 0x480, "Darwin 24 boot_args ABI");
+ 
+ #endif
+diff --git a/Platforms/Xiaomi/DarwinBootPkg/Driver/DarwinBoot.c b/Platforms/Xiaomi/DarwinBootPkg/Driver/DarwinBoot.c
+index 7add2ff..4c32614 100644
+--- a/Platforms/Xiaomi/DarwinBootPkg/Driver/DarwinBoot.c
++++ b/Platforms/Xiaomi/DarwinBootPkg/Driver/DarwinBoot.c
+@@ -953,7 +953,7 @@ DarwinBootEntry (EFI_HANDLE ImageHandle, EFI_SYSTEM_TABLE *SystemTable)
+       mReplacedLoader = Existing;
+       mImage = ImageHandle;
+       Loaded->Unload = Unload;
+-      Print (L"DARWINBOOT: replaced loader in RAM; Darwin 22 ABI, EL%u\n", (UINT32)(DarwinCurrentEl () >> 2));
++      Print (L"DARWINBOOT: replaced loader in RAM; Darwin 24 ABI, EL%u\n", (UINT32)(DarwinCurrentEl () >> 2));
+     }
+     FreePool (Handles);
+     return Status;
+@@ -963,7 +963,7 @@ DarwinBootEntry (EFI_HANDLE ImageHandle, EFI_SYSTEM_TABLE *SystemTable)
+   Status = gBS->InstallMultipleProtocolInterfaces (&ImageHandle, &gUniXNULoaderProtocolGuid, &mLoader, NULL);
+   if (!EFI_ERROR (Status)) {
+     Loaded->Unload = Unload;
+-    Print (L"DARWINBOOT: Darwin 22 loader installed EL%u\n", (UINT32)(DarwinCurrentEl () >> 2));
++    Print (L"DARWINBOOT: Darwin 24 loader installed EL%u\n", (UINT32)(DarwinCurrentEl () >> 2));
+   }
+   return Status;
+ }
+diff --git a/Platforms/Xiaomi/DarwinBootPkg/VENDORED.md b/Platforms/Xiaomi/DarwinBootPkg/VENDORED.md
+index 84a866b..82caac8 100644
+--- a/Platforms/Xiaomi/DarwinBootPkg/VENDORED.md
++++ b/Platforms/Xiaomi/DarwinBootPkg/VENDORED.md
+@@ -1,5 +1,9 @@
+ # Vendored DarwinBootPkg (K60 / mondrian)
+ 
++> Diting 工作树说明：下文保留 K60 母本的历史说明。本工作树已将
++> `BootArgs.h` 和加载器状态信息恢复为 Darwin 24 ABI，尚未完成 Diting
++> 板级配置或实机验证。
++
+ Base copy: `Platforms/Nothing/DarwinBootPkg` from **Chengdong-Yu/uefi-pong @
+ 87c10fd**, which is itself a copy of `drivers/DarwinBoot24/DarwinBootPkg` from
+ the UniXNU-pong device repository at commit

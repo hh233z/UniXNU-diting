@@ -1,0 +1,27 @@
+#
+# Boot Shim Configs
+#
+[boot_shim]
+requires_kernel_header = true
+
+#
+# UEFI FD Configs
+# 开发候选沿用 K60 的地址；只确认避开当前设备树的固定保留区，尚未真机验证。
+#
+[uefi_fd]
+base = 0xA7400000
+size = 0x300000
+
+#
+# Android Boot Image Kernel Configs
+#
+[boot_image_kernel]
+kernel_compression = "gzip"
+append_dtb         = true
+
+#
+# Android Boot Image Configs
+# 本机原厂 boot.img 使用 header v4。
+#
+[boot_image]
+header_version = 4

@@ -199,9 +199,9 @@ jobs:
           git clone --filter=blob:none https://github.com/Emilelu/uefi-mondrian.git uefi-mondrian
           cd uefi-mondrian
           git checkout e06211de59325bbd086c312324bdbf40e21d1045
-          cp -r ../device/firmware/ditingPkg Platforms/Xiaomi/ditingPkg
-          cp ../device/firmware/diting.toml Resources/Configs/diting.toml
-          git apply ../device/firmware/darwin-boot-diting.patch
+          cp -r ../device/platform-firmware/ditingPkg Platforms/Xiaomi/ditingPkg
+          cp ../device/platform-firmware/diting.toml Resources/Configs/diting.toml
+          git apply ../device/platform-firmware/darwin-boot-diting.patch
           python3 -m pip install --quiet -r pip-requirements.txt
           python3 build_uefi.py -d diting
           FD="Build/ditingPkg/DEBUG_CLANGPDB/FV/SILICIUM_UEFI.fd"

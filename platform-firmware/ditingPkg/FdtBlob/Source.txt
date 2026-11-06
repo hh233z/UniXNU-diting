@@ -1,0 +1,2 @@
+Diting 开发固件的 DTB 由 scripts/build-diting-fdt.py 从设备仓库的 dts/diting.dts 生成。
+该设备树仍有未完成的板级资源及未经实机验证的内存参数，生成文件不纳入 Git。
