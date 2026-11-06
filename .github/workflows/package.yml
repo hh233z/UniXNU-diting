@@ -196,6 +196,8 @@ jobs:
         # checkout and nobody's uncommitted work is published.
         run: |
           set -euo pipefail
+          # llvm is keg-only in Homebrew; llvm-objcopy was not on PATH.
+          export PATH="/usr/local/opt/llvm/bin:/usr/local/opt/lld/bin:$PATH"
           git clone --filter=blob:none https://github.com/Emilelu/uefi-mondrian.git uefi-mondrian
           cd uefi-mondrian
           git checkout e06211de59325bbd086c312324bdbf40e21d1045
@@ -218,6 +220,8 @@ jobs:
         working-directory: device
         run: |
           set -euo pipefail
+          # llvm is keg-only in Homebrew; llvm-objcopy was not on PATH.
+          export PATH="/usr/local/opt/llvm/bin:/usr/local/opt/lld/bin:$PATH"
           WORK="$GITHUB_WORKSPACE/UniXNU/out/diting/${{ inputs.os }}/diting_ipados18_ci"
           # The firmware built two steps above, not the Pong baseline.
           FD="$GITHUB_WORKSPACE/uefi-mondrian/Build/ditingPkg/DEBUG_CLANGPDB/FV/SILICIUM_UEFI.fd"
