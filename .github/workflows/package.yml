@@ -155,6 +155,9 @@ jobs:
           GITHUB_TOKEN: ${{ github.token }}
           PONG_ADRENO_FIRMWARE: ${{ runner.temp }}/adreno730
           PONG_VOLUME_LAYOUT: ${{ runner.temp }}/volume-layout.json
+          # The UFS storage imports are read from the decompressed 22H374 kernelcache the
+          # deps step extracts; the device script's default is a workstation path.
+          PONG_KERNELCACHE: ${{ github.workspace }}/UniXNU/out/ipsw/22H374/kernelcache.decompressed
         run: scripts/package.sh --os "${{ inputs.os }}" --uefi ../uefi-pong
       - name: keep the logs
         if: always()
