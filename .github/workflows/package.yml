@@ -20,11 +20,52 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  firmware:
+    # Mu-Basetools in this tree has no macOS x86 support (stuart update refuses the host),
+    # so the volume is built on Linux and handed to the macOS packaging job.
+    runs-on: ubuntu-24.04
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          path: device
+          submodules: false
+      - name: build the diting volume
+        run: |
+          set -euo pipefail
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq build-essential uuid-dev iasl nasm python3-venv mono-complete
+          git clone --filter=blob:none https://github.com/Emilelu/uefi-mondrian.git uefi-mondrian
+          cd uefi-mondrian
+          git checkout e06211de59325bbd086c312324bdbf40e21d1045
+          cp -r ../device/platform-firmware/ditingPkg Platforms/Xiaomi/ditingPkg
+          cp ../device/platform-firmware/diting.toml Resources/Configs/diting.toml
+          git apply ../device/platform-firmware/darwin-boot-diting.patch
+          python3 -m venv "$RUNNER_TEMP/uefi-venv"
+          . "$RUNNER_TEMP/uefi-venv/bin/activate"
+          python3 -m pip install --quiet --upgrade pip
+          python3 -m pip install --quiet -r pip-requirements.txt
+          python3 build_uefi.py -d diting
+          FD="Build/ditingPkg/DEBUG_CLANGPDB/FV/SILICIUM_UEFI.fd"
+          [ -f "$FD" ] || { echo "missing firmware volume: $FD" >&2; exit 1; }
+          sha256sum "$FD"; ls -l "$FD"
+          mkdir -p "$GITHUB_WORKSPACE/out"
+          cp "$FD" "$GITHUB_WORKSPACE/out/SILICIUM_UEFI.fd"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: diting-fd
+          path: out/SILICIUM_UEFI.fd
+          if-no-files-found: error
   package:
+    needs: firmware
     # The Pong component recipes build with Xcode and refuse a non-x86_64 Darwin host.
     runs-on: macos-15-intel
     timeout-minutes: 180
     steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: diting-fd
+          path: firmware-fd
       - uses: actions/checkout@v4
         with:
           path: device
@@ -190,29 +231,6 @@ jobs:
             --volume-layout "$RUNNER_TEMP/volume-layout.json" \
             --hardware-dtb "$DTB"
           ls -l "$WORK/boot"
-      - name: diting firmware
-        # The firmware tree is Emilelu/uefi-mondrian; ditingPkg, its config and the DarwinBoot
-        # delta are carried in this repository so the run does not depend on a workstation
-        # checkout and nobody's uncommitted work is published.
-        run: |
-          set -euo pipefail
-          # llvm is keg-only in Homebrew; llvm-objcopy was not on PATH.
-          export PATH="/usr/local/opt/llvm/bin:/usr/local/opt/lld/bin:$PATH"
-          git clone --filter=blob:none https://github.com/Emilelu/uefi-mondrian.git uefi-mondrian
-          cd uefi-mondrian
-          git checkout e06211de59325bbd086c312324bdbf40e21d1045
-          cp -r ../device/platform-firmware/ditingPkg Platforms/Xiaomi/ditingPkg
-          cp ../device/platform-firmware/diting.toml Resources/Configs/diting.toml
-          git apply ../device/platform-firmware/darwin-boot-diting.patch
-          # macOS Python is externally managed (PEP 668); keep the tooling in a venv.
-          python3 -m venv "$RUNNER_TEMP/uefi-venv"
-          . "$RUNNER_TEMP/uefi-venv/bin/activate"
-          python3 -m pip install --quiet --upgrade pip
-          python3 -m pip install --quiet -r pip-requirements.txt
-          python3 build_uefi.py -d diting
-          FD="Build/ditingPkg/DEBUG_CLANGPDB/FV/SILICIUM_UEFI.fd"
-          [ -f "$FD" ] || { echo "missing firmware volume: $FD" >&2; exit 1; }
-          sha256sum "$FD"; ls -l "$FD"
       - name: self-contained v4 (shim + firmware)
         # finalize-pong-adt.py leaves the kernel slot empty because a Pong device boots the
         # firmware from its own partition. A fastboot-boot candidate needs the shim and the
@@ -224,7 +242,7 @@ jobs:
           export PATH="/usr/local/opt/llvm/bin:/usr/local/opt/lld/bin:$PATH"
           WORK="$GITHUB_WORKSPACE/UniXNU/out/diting/${{ inputs.os }}/diting_ipados18_ci"
           # The firmware built two steps above, not the Pong baseline.
-          FD="$GITHUB_WORKSPACE/uefi-mondrian/Build/ditingPkg/DEBUG_CLANGPDB/FV/SILICIUM_UEFI.fd"
+          FD="$GITHUB_WORKSPACE/firmware-fd/SILICIUM_UEFI.fd"
           DTB="$WORK/device-tree/build/pong/hardware.dtb"
           [ -f "$FD" ] || { echo "missing firmware volume: $FD" >&2; exit 1; }
           [ -f "$DTB" ] || { echo "missing hardware DTB: $DTB" >&2; exit 1; }
