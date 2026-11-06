@@ -57,15 +57,20 @@ def main():
     parser.add_argument('--ramdisk', type=Path, help='Optional FAT payload; empty for UEFI bring-up')
     parser.add_argument('--output-dir', type=Path, help='Keep staged bring-up images in separate directories')
     parser.add_argument('--fd', type=Path, help='Use a saved firmware volume for controlled comparisons')
+    parser.add_argument('--uefi', type=Path, help='Firmware checkout (default Mu-Silicium)')
+    parser.add_argument('--config', type=Path, help='Firmware config TOML (default Resources/Configs/pong.toml)')
+    parser.add_argument('--dtb', type=Path, help='Board DTB appended after the shim+volume (default Resources/DTBs/pong.dtb)')
     args = parser.parse_args()
-    uefi = ROOT / 'Mu-Silicium'
-    config = tomllib.loads((uefi / 'Resources/Configs/pong.toml').read_text())
+    uefi = args.uefi.resolve() if args.uefi else ROOT / 'Mu-Silicium'
+    config_path = args.config if args.config else uefi / 'Resources/Configs/pong.toml'
+    config = tomllib.loads(config_path.read_text())
     base, size = config['uefi_fd']['base'], config['uefi_fd']['size']
     fd = args.fd or uefi / 'Build/pongPkg/RELEASE_CLANGPDB/FV/SILICIUM_UEFI.fd'
     firmware = fd.read_bytes()
     if len(firmware) != size:
         raise ValueError('Firmware size differs from the Pong configuration')
-    dtb = (uefi / 'Resources/DTBs/pong.dtb').read_bytes()
+    dtb_path = args.dtb if args.dtb else uefi / 'Resources/DTBs/pong.dtb'
+    dtb = dtb_path.read_bytes()
     if dtb[:4] != b'\xd0\x0d\xfe\xed' or struct.unpack_from('>I', dtb, 4)[0] != len(dtb):
         raise ValueError('Invalid Pong DTB')
     out = args.output_dir or ROOT / 'UniXNU/out/pong/boot'

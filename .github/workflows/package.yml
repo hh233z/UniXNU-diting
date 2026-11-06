@@ -190,6 +190,25 @@ jobs:
             --volume-layout "$RUNNER_TEMP/volume-layout.json" \
             --hardware-dtb "$DTB"
           ls -l "$WORK/boot"
+      - name: self-contained v4 (shim + firmware)
+        # finalize-pong-adt.py leaves the kernel slot empty because a Pong device boots the
+        # firmware from its own partition. A fastboot-boot candidate needs the shim and the
+        # volume in that slot, which scripts/build-bootimg.py already builds.
+        working-directory: device
+        run: |
+          set -euo pipefail
+          WORK="$GITHUB_WORKSPACE/UniXNU/out/diting/${{ inputs.os }}/diting_ipados18_ci"
+          FD="$GITHUB_WORKSPACE/uefi-pong/Build/pongPkg/DEBUG_CLANGPDB/FV/SILICIUM_UEFI.fd"
+          DTB="$WORK/device-tree/build/pong/hardware.dtb"
+          [ -f "$FD" ] || { echo "missing firmware volume: $FD" >&2; exit 1; }
+          [ -f "$DTB" ] || { echo "missing hardware DTB: $DTB" >&2; exit 1; }
+          python3 scripts/build-bootimg.py \
+            --uefi "$GITHUB_WORKSPACE/uefi-pong" \
+            --fd "$FD" \
+            --dtb "$DTB" \
+            --ramdisk "$WORK/payload/payload.img" \
+            --output-dir "$WORK/boot"
+          ls -l "$WORK/boot"
       - name: keep the logs
         if: always()
         run: |
@@ -216,6 +235,7 @@ jobs:
           path: |
             UniXNU/out/diting/*/*/boot/boot.img
             UniXNU/out/diting/*/*/boot/pong-xnu-initial.img
+            UniXNU/out/diting/*/*/boot/pong-unixnu-uefi.img
             UniXNU/out/diting/*/*/payload/payload.img
             UniXNU/out/diting/*/*/kernel/kernel.macho
             UniXNU/out/diting/*/*/package.manifest.json
