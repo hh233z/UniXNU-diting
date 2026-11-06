@@ -95,6 +95,15 @@ echo "=== step pack: boot image ==="
 # same path. bootimg takes the firmware volume from firmware.fd_path().
 u bootimg --uefi "$UEFI" --dtb "$TREE/build/pong/pong.dtb"
 
+
+echo "=== step pack: ADT via the local generator, flashable v4 image ==="
+# README.md 98-105: docs/porting/packaging.md stops at boot/boot.img; the local flow also
+# repacks the ADT (pong,ufs-*, touch, PMIC) and turns the payload into the PONGFAT1 envelope
+# the firmware accepts. finalize-pong-adt.py writes boot/pong-xnu-initial.img.
+FINALIZE_ARGS=(--work-dir "$WORK" --uefi "$UEFI" --unique-chip-id "${UNIXNU_UNIQUE_CHIP_ID:?}")
+if [ -n "${PONG_VOLUME_LAYOUT:-}" ]; then FINALIZE_ARGS+=(--volume-layout "$PONG_VOLUME_LAYOUT"); fi
+python3 "$DEVICE/scripts/finalize-pong-adt.py" "${FINALIZE_ARGS[@]}"
+
 echo "=== packaging complete; products under $WORK ==="
 find "$WORK" \( -path '*/boot/*' -o -path '*/payload/*' -o -path '*/kernel/*' \
   -o -name 'package.manifest.json' \) -type f 2>/dev/null | sort
