@@ -62,6 +62,14 @@ jobs:
           mkdir -p "$GITHUB_WORKSPACE/out"
           cp "$FD" "$GITHUB_WORKSPACE/out/SILICIUM_UEFI.fd"
       - uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: firmware-logs
+          path: |
+            uefi-mondrian/Build/BUILDLOG_*.txt
+            uefi-mondrian/Build/*.log
+          if-no-files-found: warn
+      - uses: actions/upload-artifact@v4
         with:
           name: diting-fd
           path: out/SILICIUM_UEFI.fd
