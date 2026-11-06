@@ -26,7 +26,7 @@ fetch = ["KernelCache", "DeviceTree", "StaticTrustCache", "Cryptex1,SystemOS", "
 # This is the community Pong A730/QCA6490/Darwin24 implementation, not the A740/WCN7850 source.
 # The kit lives in this repository at kits/PongPlatform24 and declares no archive recipe: the
 # kernel step of this board builds the aggregate itself, see [kernel] below.
-include = ["PongPlatform24"]
+include = ["PongPlatform24", "XnuPrelink"]
 
 [device_tree]
 source = "device:dts/diting.dts"
@@ -51,7 +51,7 @@ builder_component = "PongPlatform24"
 [kernel.prelink]
 # The native aggregate the recipe leaves at this path, and the prelinker this
 # board carried before the format 2 rewrite.
-tool = "kits/NativePrelink/emit_prelink.py"
+tool = "kits/XnuPrelink/emit_prelink.py"
 kernel = "build/xnu/ios-obj/DEVELOPMENT_ARM64_PONG/mach.development.pong"
 # The slide is the one the 21H461 profile qualifies; this board's fixed base
 # comes from the 22H374 storage bindings and is not yet expressed as a slide
