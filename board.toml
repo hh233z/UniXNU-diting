@@ -74,6 +74,10 @@ patches = [
   "Resources/MuPatches/Timer.patch",
   "Resources/MuPatches/Usb-Bus.patch",
 ]
+# The firmware volume builds from these checkouts; with the CI checkout not recursive,
+# the core initializes exactly this list before EDK II runs.
+submodules = ["Binaries", "Common/Mu", "Common/Mu_OEM_Sample", "Silicium-ACPI",
+              "Silicon/Silicium/OpensslPkg/Library/OpensslLib/openssl"]
 packages = [
   "{uefi}",
   "{tree}/package",
