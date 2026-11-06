@@ -185,11 +185,29 @@ jobs:
           [ -f "$DTB" ] || { echo "missing hardware DTB: $DTB" >&2; exit 1; }
           python3 scripts/finalize-pong-adt.py \
             --work-dir "$WORK" \
-            --uefi "$GITHUB_WORKSPACE/uefi-pong" \
+            --uefi "$GITHUB_WORKSPACE/uefi-mondrian" \
+            --config "$GITHUB_WORKSPACE/uefi-mondrian/Resources/Configs/diting.toml" \
             --unique-chip-id "$UNIXNU_UNIQUE_CHIP_ID" \
             --volume-layout "$RUNNER_TEMP/volume-layout.json" \
             --hardware-dtb "$DTB"
           ls -l "$WORK/boot"
+      - name: diting firmware
+        # The firmware tree is Emilelu/uefi-mondrian; ditingPkg, its config and the DarwinBoot
+        # delta are carried in this repository so the run does not depend on a workstation
+        # checkout and nobody's uncommitted work is published.
+        run: |
+          set -euo pipefail
+          git clone --filter=blob:none https://github.com/Emilelu/uefi-mondrian.git uefi-mondrian
+          cd uefi-mondrian
+          git checkout e06211de59325bbd086c312324bdbf40e21d1045
+          cp -r ../device/firmware/ditingPkg Platforms/Xiaomi/ditingPkg
+          cp ../device/firmware/diting.toml Resources/Configs/diting.toml
+          git apply ../device/firmware/darwin-boot-diting.patch
+          python3 -m pip install --quiet -r pip-requirements.txt
+          python3 build_uefi.py -d diting
+          FD="Build/ditingPkg/DEBUG_CLANGPDB/FV/SILICIUM_UEFI.fd"
+          [ -f "$FD" ] || { echo "missing firmware volume: $FD" >&2; exit 1; }
+          sha256sum "$FD"; ls -l "$FD"
       - name: self-contained v4 (shim + firmware)
         # finalize-pong-adt.py leaves the kernel slot empty because a Pong device boots the
         # firmware from its own partition. A fastboot-boot candidate needs the shim and the
@@ -198,7 +216,8 @@ jobs:
         run: |
           set -euo pipefail
           WORK="$GITHUB_WORKSPACE/UniXNU/out/diting/${{ inputs.os }}/diting_ipados18_ci"
-          FD="$GITHUB_WORKSPACE/uefi-pong/Build/pongPkg/DEBUG_CLANGPDB/FV/SILICIUM_UEFI.fd"
+          # The firmware built two steps above, not the Pong baseline.
+          FD="$GITHUB_WORKSPACE/uefi-mondrian/Build/ditingPkg/DEBUG_CLANGPDB/FV/SILICIUM_UEFI.fd"
           DTB="$WORK/device-tree/build/pong/hardware.dtb"
           [ -f "$FD" ] || { echo "missing firmware volume: $FD" >&2; exit 1; }
           [ -f "$DTB" ] || { echo "missing hardware DTB: $DTB" >&2; exit 1; }
