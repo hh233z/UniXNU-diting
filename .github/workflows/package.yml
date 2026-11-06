@@ -51,8 +51,10 @@ jobs:
           # blacktop/tap's ipsw cask does not load with current Homebrew:
           #   Cask 'ipsw' definition is invalid: invalid 'zap' stanza: wrong number of arguments
           # so take the CLI from the release tarball instead.
-          ver=$(curl -fsSL https://api.github.com/repos/blacktop/ipsw/releases/latest | python3 -c 'import json,sys;print(json.load(sys.stdin)["tag_name"].lstrip("v"))')
-          curl -fsSL "https://github.com/blacktop/ipsw/releases/download/v${ver}/ipsw_${ver}_macOS_x86_64.tar.gz" \
+          # Pinned, not "latest": the GitHub API is rate limited without a token (403) and
+          # the build must use the same tool version every run.
+          ipsw_ver=3.1.743
+          curl -fsSL "https://github.com/blacktop/ipsw/releases/download/v${ipsw_ver}/ipsw_${ipsw_ver}_macOS_x86_64.tar.gz" \
             | sudo tar -xz -C /usr/local/bin ipsw
           ipsw version
           ok=1
