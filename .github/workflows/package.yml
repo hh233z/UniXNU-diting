@@ -14,9 +14,15 @@ on:
         type: choice
         options: ["ipados-18.7.10-22H374"]
         default: "ipados-18.7.10-22H374"
+      layout_run_id:
+        description: "包含配套 volume-layout 的 Actions 运行编号"
+        required: true
+        type: string
+        default: "42062525837"
 
 permissions:
   contents: read
+  actions: read
 
 concurrency:
   group: package-${{ github.ref }}
@@ -35,6 +41,8 @@ jobs:
       - uses: actions/checkout@v4
         with:
           repository: UniXNU/UniXNU
+          # 固定已用于 Darwin 24 构建的核心版本，避免上游子模块指针变化。
+          ref: c96b29975645b711dc06bc435c3ad27321ce817c
           path: UniXNU
           submodules: recursive
       - uses: actions/checkout@v4
@@ -42,6 +50,12 @@ jobs:
           repository: Chengdong-Yu/uefi-pong
           path: uefi-pong
           submodules: recursive
+      - name: enable generic kernel component selection
+        run: |
+          git -C UniXNU apply --check ../device/migration/format2/unixnu-kernel-component.patch
+          git -C UniXNU apply ../device/migration/format2/unixnu-kernel-component.patch
+      - name: install device profile and components
+        run: python3 device/scripts/install-unixnu-inputs.py --unixnu UniXNU
       - name: tools
         run: |
           brew install dtc llvm lld cmake mtools blacktop/tap/ipsw
@@ -54,6 +68,21 @@ jobs:
             [ -f "/usr/local/opt/llvm/bin/$t" ] || [ -f "/usr/local/opt/lld/bin/$t" ] || { echo "missing tool: $t"; ok=0; }
           done
           [ "$ok" = 1 ]
+      - name: restore matching volume layout
+        uses: actions/download-artifact@v4
+        with:
+          name: volume-layout
+          path: volume-layout
+          run-id: ${{ inputs.layout_run_id }}
+          github-token: ${{ github.token }}
+      - name: check matching volume layout
+        run: >-
+          python3 device/scripts/check-ci-volume-layout.py
+          volume-layout/ci-volume-layout.json
+          device/os-profiles/ipados-18.7.10-22H374/profile.toml
+      - name: select CI defconfig
+        run: |
+          python3 -c 'from pathlib import Path; p=Path("device/board.toml"); s=p.read_text(); old=chr(34)+"ipados-18.7.10-22H374"+chr(34)+" = "+chr(34)+"diting_ipados18_defconfig"+chr(34); assert s.count(old)==1; p.write_text(s.replace(old,old.replace("diting_ipados18_defconfig","diting_ipados18_ci_defconfig")))'
       - name: platform seed
         env:
           seed: ${{ secrets.UNIXNU_UNIQUE_CHIP_ID }}
@@ -67,16 +96,28 @@ jobs:
         env:
           UNIXNU_UNIQUE_CHIP_ID: ${{ secrets.UNIXNU_UNIQUE_CHIP_ID }}
           GITHUB_TOKEN: ${{ github.token }}
-        run: scripts/package.sh --os "${{ inputs.os }}" --uefi ../uefi-pong
+          PONG_VOLUME_LAYOUT: ${{ github.workspace }}/volume-layout/ci-volume-layout.json
+        run: scripts/package.sh --os "${{ inputs.os }}" --uefi ../uefi-pong --skip-prelink
       - name: keep the logs
         if: always()
         run: |
           mkdir -p products/logs
-          find UniXNU/out/diting -type f -path '*/logs/*' -exec cp -f {} products/logs/ \; 2>/dev/null || true
+          if [ -d UniXNU/out/diting ]; then
+            find UniXNU/out/diting -type f \( -path '*/logs/*' -o -name 'build-*.log' -o -name 'PONG_BUILD_RESULT.json' \) -exec cp -f {} products/logs/ \;
+          fi
+      - name: upload build logs
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: diting-build-logs
+          retention-days: 7
+          if-no-files-found: ignore
+          path: products/logs/
       - name: images
         uses: actions/upload-artifact@v4
         with:
-          name: images-${{ inputs.os }}
+          # 当前固件仍有 Pong 板级内存图，产物仅用于主机构建验证。
+          name: unverified-build-only-${{ inputs.os }}
           retention-days: 1
           if-no-files-found: warn
           path: |

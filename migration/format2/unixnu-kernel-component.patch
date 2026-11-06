@@ -1,0 +1,40 @@
+--- a/scripts/unixnu/kernel.py
++++ b/scripts/unixnu/kernel.py
+@@ -167,8 +167,37 @@
+             raise Error(f'{key}: {value} not found; supply the archive or its build recipe')
+ 
+ 
++def build_selected_component(ctx, modules, identifier):
++    """使用设备声明的组件配方生成内核。"""
++    specs = [entry for entry in ctx.component_specs if entry["id"] == identifier]
++    if len(specs) != 1 or not specs[0].get("build"):
++        raise Error(f"[kernel] builder_component: {identifier} 没有可用的构建配方")
++    spec = specs[0]
++    module = modules.get((spec["kind"], identifier))
++    if module is None:
++        raise Error(f"[kernel] builder_component: {identifier} 未解析")
++    values = {"tree": str(ctx.tree), "component": str(module.path), "out": str(ctx.work)}
++    parts = [part.format(**values) for part in spec["build"]]
++    executable = Path(parts[0])
++    if not executable.is_file():
++        raise Error(f"内核组件构建脚本不存在: {executable}")
++    if executable.suffix in (".py", ".sh"):
++        parts.insert(0, "python3" if executable.suffix == ".py" else "bash")
++    env = dict(os.environ, UNIXNU_DEVICE=str(ctx.device))
++    env["PATH"] = toolchain_path(env.get("PATH"))
++    env["JOBS"] = str(ctx.jobs)
++    log(f"kernel: component-{identifier}")
++    run(parts, cwd=ctx.tree, env=env, log_file=ctx.logs / f"component-{identifier}.log")
++    target = ctx.tree / ctx.board["kernel"]["prelink"]["kernel"]
++    if not target.is_file():
++        raise Error(f"内核组件未生成预期内核: {target}")
++
++
+ def build(ctx, modules):
+     log('kernel: XNU')
++    component = ctx.board.get('kernel', {}).get('builder_component')
++    if component:
++        return build_selected_component(ctx, modules, component)
+     script = ctx.tree / 'scripts/build-xnu-4k-baseline.sh'
+     if not script.is_file():
+         raise Error(f'{script} missing')

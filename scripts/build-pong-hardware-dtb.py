@@ -1,16 +1,8 @@
 #!/usr/bin/env python3
-"""Build the boot image's device tree from the board DTS, inside the build tree.
+"""根据板级配置编译启动镜像使用的设备树。
 
-A firmware preflight script: unixnu runs it with the build tree as the working
-directory and UNIXNU_UEFI / UNIXNU_DEVICE in the environment, and the boot image
-names its output in board.toml [bootimg] dtb. The device tree is the one the
-firmware hands to the kernel, so it is compiled once, here, and never copied
-from a workstation.
-
-The board DTS, its include directories and the output path are read from
-board.toml ([device_tree] source and include_dirs, [bootimg] dtb) unless a flag
-overrides them, so the device tree the firmware carries is the one the board
-declares. Before this, the default was dts/pong.dts for every board.
+固件预处理在构建树中运行，输出位置由 board.toml 的 [bootimg] dtb 指定。
+UEFI 的 FDF 可能另行嵌入设备树；本脚本不会替换或验证那份固件输入。
 """
 import argparse
 import json
@@ -116,8 +108,16 @@ def main():
     data = output.read_bytes()
     if data[:4] != b'\xd0\x0d\xfe\xed':
         raise SystemExit(f'{output} is not a flattened device tree')
+    firmware_tree = None
+    if board.get('firmware', {}).get('config') == 'diting' and os.environ.get('UNIXNU_UEFI'):
+        firmware_tree = (Path(os.environ['UNIXNU_UEFI']) /
+                         'Platforms/Xiaomi/ditingPkg/FdtBlob/sm8475-xiaomi-diting.dtb')
+        if not firmware_tree.parent.is_dir():
+            raise SystemExit(f'{firmware_tree.parent} missing: not a Diting firmware checkout')
+        firmware_tree.write_bytes(data)
     record = {'source': str(source), 'includes': [str(item) for item in directories],
-              'output': str(output), 'bytes': len(data)}
+              'output': str(output), 'bytes': len(data),
+              'firmware_dtb': str(firmware_tree) if firmware_tree else None}
     output.with_suffix('.json').write_text(json.dumps(record, indent=2) + '\n')
 
     published = publish_drivers(device, tree)

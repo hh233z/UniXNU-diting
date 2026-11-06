@@ -970,9 +970,15 @@ if [ "$PONG_ADRENO_PLATFORM" != 0 ] && [ "$PONG_ADRENO_PLATFORM" != 1 ]; then
   exit 1
 fi
 if [ "$PONG_ADRENO_PLATFORM" = 1 ]; then
-  python3 "$PONG_NATIVE_DRIVER_SOURCE/scripts/build-pong-adreno-platform.py" \
-    --guest-build 22H374 --tree "$ROOT" --output-dir "$ROOT/build/pong-adreno"
-  test -f "$ROOT/build/pong-adreno/libPongAdrenoPlatform.a"
+  ADRENO_FW=$(python3 -c "import sys;sys.path.insert(0,'scripts');import pong_paths;p=pong_paths.adreno_firmware();print(p or '')" 2>/dev/null || true)
+  if [ -z "$ADRENO_FW" ] || [ ! -f "$ADRENO_FW/a730_sqe.fw" ]; then
+    echo "adreno: vendor firmware (a730_sqe.fw, gmu_gen70000.bin, a730_zap.*) is not available; skipping libPongAdrenoPlatform.a" >&2
+    PONG_ADRENO_PLATFORM=0
+  else
+    python3 "$PONG_NATIVE_DRIVER_SOURCE/scripts/build-pong-adreno-platform.py" \
+      --guest-build 22H374 --tree "$ROOT" --firmware-dir "$ADRENO_FW" --output-dir "$ROOT/build/pong-adreno"
+    test -f "$ROOT/build/pong-adreno/libPongAdrenoPlatform.a"
+  fi
 fi
 if [ "$ARM_DT_PLATFORM" = 1 ] && [ "${XNU_SOURCE_CORECRYPTO14:-0}" != 1 ]; then
   ARM_DT_ARCHIVE=$ROOT/build/armdt-platform/libArmDTPlatform.a

@@ -44,6 +44,8 @@ archives = []
 # select for every board. The kernel step passes this value through as XNU_MACHINE_CONFIG and
 # takes its object directory and aggregate name from it.
 machine_config = "PONG"
+# 由组件配方生成完整内核，避免通用引导步骤先选择其他机器配置。
+builder_component = "PongPlatform24"
 
 # Local prelink and userdata entries are documented under migration/ipados18.
 [kernel.prelink]
