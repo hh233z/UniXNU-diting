@@ -77,15 +77,6 @@ echo "=== step build: prelink (stage the native aggregate as kernel.macho) ==="
 # prelinking the original 22H374 kernelcache. This is the bootable image for bring-up.
 u build prelink --skip-prelink --uefi "$UEFI"
 
-# board.toml [firmware] packages reach the DarwinBoot24 package through {tree}; the
-# firmware step runs against the resolver tree, while the driver sources live in the
-# device checkout. Mirror the device drivers in before the firmware step if absent.
-mkdir -p "$TREE/drivers"
-for driver in "$DEVICE"/drivers/*/; do
-  driver_name=$(basename "$driver")
-  if [ ! -e "$TREE/drivers/$driver_name" ]; then ln -s "$driver" "$TREE/drivers/$driver_name"; fi
-done
-
 echo "=== step build: package, firmware and payload (kernel step omitted) ==="
 u build package firmware payload --uefi "$UEFI" -j "$JOBS"
 

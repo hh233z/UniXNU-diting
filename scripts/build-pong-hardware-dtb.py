@@ -59,6 +59,31 @@ def resolve(device, tree, entry):
     return (tree / relative).resolve()
 
 
+def publish_drivers(device, tree):
+    """Expose the device drivers in the tree EDK II reads.
+
+    board.toml [firmware] packages names {tree}/drivers/<module>, and the tree only carries
+    the modules the component catalog resolves. A board driver that ships in this repository
+    (drivers/<name>) is not one of them, so EDK II stopped with 'One Path in PACKAGES_PATH
+    doesn't exist'. Link every device driver in before the build; the assembled tree owns
+    drivers/ and re-clears it on the next assemble, so this runs on every firmware build.
+    """
+    source = device / 'drivers'
+    target = tree / 'drivers'
+    if not source.is_dir():
+        return []
+    target.mkdir(parents=True, exist_ok=True)
+    published = []
+    for driver in sorted(source.iterdir()):
+        if not driver.is_dir():
+            continue
+        link = target / driver.name
+        if link.exists() or link.is_symlink():
+            continue
+        link.symlink_to(driver.resolve())
+        published.append(driver.name)
+    return published
+
 def main():
     device = Path(os.environ.get('UNIXNU_DEVICE', Path(__file__).resolve().parents[1])).resolve()
     tree = Path.cwd()
@@ -94,6 +119,10 @@ def main():
     record = {'source': str(source), 'includes': [str(item) for item in directories],
               'output': str(output), 'bytes': len(data)}
     output.with_suffix('.json').write_text(json.dumps(record, indent=2) + '\n')
+
+    published = publish_drivers(device, tree)
+    if published:
+        print(f'device drivers published to the build tree: {", ".join(published)}')
     print(json.dumps(record, indent=2))
 
 
