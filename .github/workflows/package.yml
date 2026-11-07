@@ -247,11 +247,22 @@ jobs:
           UNIXNU_DEVICE: ${{ github.workspace }}/device
           PONG_WIFI_SOURCE: ${{ github.workspace }}/linux
           PONG_WIFI_SHARED: ${{ github.workspace }}/sheng/drivers/Ath12kWifi
+          PONG_WIFI_FIRMWARE: ${{ github.workspace }}/device/platform-firmware/wifi
+          PONG_HARDWARE_DTB: ${{ runner.temp }}/diting-live.dtb
         run: |
           set -euo pipefail
           export PATH="/usr/local/opt/llvm/bin:/usr/local/opt/lld/bin:$PATH"
           python3 device/kits/PongPlatform24/build-with-runtime.py --overlay-only --overlay-dir "$RUNNER_TEMP/wifi-overlay"
           python3 "$RUNNER_TEMP/wifi-overlay/scripts/build-pong-ath11k.py" --output-dir "$GITHUB_WORKSPACE/wifi-preflight" --jobs 4
+      - name: diting hardware tree
+        # The live tree names the Wi-Fi reset/enable/wake lines differently from Pong and
+        # its PCIe refgen clock sits at another index; apply.py bakes the device values in.
+        run: |
+          set -euo pipefail
+          python3 device/platform-firmware/dtb-fixups/apply.py \
+            device/platform-firmware/diting-live.dts "$RUNNER_TEMP/diting-live.dts"
+          dtc -I dts -O dtb -o "$RUNNER_TEMP/diting-live.dtb" "$RUNNER_TEMP/diting-live.dts"
+          ls -l "$RUNNER_TEMP/diting-live.dtb"
       - name: package
         working-directory: device
         env:

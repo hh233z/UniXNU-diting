@@ -52,8 +52,11 @@ def main():
  if (domain['control'],domain['collapse_vote'],domain['collapse_bit'])!=(0x17b004,0x162128,0):raise RuntimeError('Pong PCIe0 power domain required')
  header+='static constexpr unsigned kPongPcieCollapseVote=%du,kPongPcieCollapseMask=%du;\n'%(domain['collapse_vote']-0x100000,1<<domain['collapse_bit'])
  pcie=profile['pcie']
- if pcie['clock_names'][8]!='pcie_phy_refgen_clk' or pcie['max_clock_frequency_hz'][11]!=100000000:
-  raise RuntimeError('Pong pci-msm refgen clock plan changed; adapt its RCG before building')
+ # RCG index = position of the 100 MHz entry; diting shifts it from the Pong layout.
+ refgen=[i for i,f in enumerate(pcie['max_clock_frequency_hz']) if f==100000000]
+ if len(refgen)!=1 or pcie['clock_names'][8]!='pcie_phy_refgen_clk':
+  raise RuntimeError('pci-msm refgen plan: need one 100 MHz entry and the refgen clock name')
+ print('pcie refgen: name index 8, 100 MHz entry', refgen[0])
  for name,value in (('kPongPciePhyStatus',pcie['phy_status_offset']),
                     ('kPongPciePhyStatusMask',1<<pcie['phy_status_bit']),
                     ('kPongPciePhyPowerDown',pcie['phy_power_down_offset']),
