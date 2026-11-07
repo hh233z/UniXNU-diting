@@ -738,11 +738,12 @@ from pathlib import Path
 import sys
 directory = Path('build/xnu/ios-obj/DEVELOPMENT_ARM64_PONG')
 stamp = directory / '.pong-early-trace-mode'
-mode = sys.argv[1] + ':' + sys.argv[2] + ':minimal-ramoops-v1'
+mode = sys.argv[1] + ':' + sys.argv[2] + ':minimal-ramoops-v2'
 if not stamp.exists() or stamp.read_text() != mode:
     for name in ('start', 'arm_init', 'arm_vm_init', 'machine_routines', 'startup', 'serial_console', 'debug'):
         (directory / 'osfmk/DEVELOPMENT' / (name + '.o')).unlink(missing_ok=True)
     (directory / 'bsd/DEVELOPMENT/counter_test.o').unlink(missing_ok=True)
+    (directory / 'bsd/DEVELOPMENT/kern_exit.o').unlink(missing_ok=True)
     (directory / 'iokit/DEVELOPMENT/IOStartIOKit.cpo').unlink(missing_ok=True)
     (directory / 'libkern/DEVELOPMENT/OSRuntime.cpo').unlink(missing_ok=True)
     (directory / 'pexpert/DEVELOPMENT/pe_init.o').unlink(missing_ok=True)
