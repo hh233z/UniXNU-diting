@@ -297,7 +297,8 @@ jobs:
             --uefi "$GITHUB_WORKSPACE/uefi-pong" \
             --unique-chip-id "$UNIXNU_UNIQUE_CHIP_ID" \
             --volume-layout "$RUNNER_TEMP/volume-layout.json" \
-            --hardware-dtb "$DTB"
+            --hardware-dtb "$DTB" \
+            --ufs-probe
           ls -l "$WORK/boot"
       - name: self-contained v4 (shim + firmware)
         # finalize-pong-adt.py leaves the kernel slot empty because a Pong device boots the

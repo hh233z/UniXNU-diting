@@ -187,6 +187,13 @@ def main():
         command.append('--development-debug')
     if args.ufs_probe:
         command.append('--ufs-probe')
+        userdata = board.get('userdata', {})
+        if userdata.get('lba_bytes') != 4096:
+            raise SystemExit('UFS userdata geometry must use 4096-byte LBAs')
+        first, last = userdata.get('first_lba'), userdata.get('last_lba')
+        if not isinstance(first, int) or not isinstance(last, int) or not 0 < first <= last:
+            raise SystemExit('board.toml must specify a valid userdata LBA range')
+        command += ['--userdata-first-lba', hex(first), '--userdata-last-lba', hex(last)]
     if root_uuid:
         command += ['--root-match-volume-uuid', root_uuid]
     environment = dict(os.environ, PONG_HARDWARE_DTB=str(dtb))

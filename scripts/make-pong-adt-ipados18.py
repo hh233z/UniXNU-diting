@@ -123,6 +123,8 @@ def main():
                         help='software IOPlatformUUID seed, not an Apple silicon identifier')
     parser.add_argument('--ufs', '--ufs-probe', dest='ufs_probe', action='store_true',
                         help='publish the Pong SM8475 UFS nub; optional probes require a separate boot argument')
+    parser.add_argument('--userdata-first-lba', type=lambda value: int(value, 0))
+    parser.add_argument('--userdata-last-lba', type=lambda value: int(value, 0))
     parser.add_argument('--root-match-volume-uuid', default=None,
                         help='/chosen/root-matching UUID of the APFS system volume')
     parser.add_argument('--boot-manifest', type=Path, default=None,
@@ -138,6 +140,10 @@ def main():
     parser.add_argument('--skip-image-verification', action='store_true',
                         help='emit the DT without an additional output audit')
     args = parser.parse_args()
+    if (args.userdata_first_lba is None) != (args.userdata_last_lba is None):
+        parser.error('userdata first and last LBA must be provided together')
+    if args.userdata_first_lba is not None and not (0 < args.userdata_first_lba <= args.userdata_last_lba < 2**64):
+        parser.error('invalid userdata LBA range')
     if os.environ.get('PONG_HARDWARE_DTB'):
         load_format2_hardware(os.environ['PONG_HARDWARE_DTB'])
     if args.root_match_volume_uuid:
@@ -250,6 +256,9 @@ def main():
         # on the arm-io parent in Darwin 22. Keep the Linux SPI as board metadata
         # until a complete Pong GIC SPI provider and interrupt specifier exist.
         ('pong,ufs-spi', struct.pack('<I', UFS_SPI)),
+        *([('unixnu,userdata-first-lba', struct.pack('<Q', args.userdata_first_lba)),
+           ('unixnu,userdata-last-lba', struct.pack('<Q', args.userdata_last_lba))]
+          if args.userdata_first_lba is not None else []),
     ])
     # Actual Pong live DT: QUP0 SE4 / Goodix Berlin-D, GPIO20 reset/21 IRQ.
     # Absolute metadata avoids an incomplete arm-io interrupt/reg mapping.
