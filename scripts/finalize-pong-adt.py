@@ -143,7 +143,9 @@ def main():
     chip_id = args.chip_id or str(board.get('payload', {}).get('adt', {}).get('chip_id', '0x8010'))
 
     spec = board.get('payload', {})
-    boot_args = 'keepsyms=1 cpus=%d' % args.cpus
+    # Without these the kernel dies silently on a fresh board: -v prints early progress
+    # and debug=0x144 keeps the boot/interrupt trace lines.
+    boot_args = '-v debug=0x144 keepsyms=1 cpus=%d' % args.cpus
     extra = [item for item in spec.get('kernel_args', []) if item.split('=', 1)[0] not in ('keepsyms', 'cpus')]
     boot_args += ''.join(' ' + item for item in extra)
     # The manifest a local run stages: scripts/build-ipados18-bootimg-local.py
