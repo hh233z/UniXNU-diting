@@ -230,6 +230,36 @@ jobs:
               print(name, size)
           PY
           ls -l "$out"
+      - name: wifi sources
+        # Wi-Fi compiles the Linux ath11k sources against the sheng station code. Both are
+        # pinned by tag/commit and fetched sparsely; nothing is vendored into this repository.
+        run: |
+          set -euo pipefail
+          git clone --depth 1 --filter=blob:none --sparse --branch v7.0.14 https://github.com/gregkh/linux.git linux
+          git -C linux sparse-checkout set drivers/net/wireless/ath include
+          git clone --depth 1 --filter=blob:none --sparse --branch main https://github.com/UniXNU/UniXNU-sheng.git sheng
+          git -C sheng sparse-checkout set drivers/Ath12kWifi package
+          python3 - <<'PY'
+          import os, sys
+          from pathlib import Path
+          sys.path.insert(0, str(Path('device/scripts')))
+          import pong_paths
+          linux = Path('linux').resolve()
+          sheng = Path('sheng').resolve()
+          missing = []
+          if not (linux / 'drivers/net/wireless/ath/ath11k/pci.c').is_file():
+              missing.append('linux ath11k pci.c')
+          for rel in ('drivers/Ath12kWifi/include/nw_abi.h', 'drivers/Ath12kWifi/shim/src/lx_rt.c',
+                      'drivers/Ath12kWifi/src/nw_sta.c', 'drivers/Ath12kWifi/src/nw_mac80211.c'):
+              if not (sheng / rel).is_file():
+                  missing.append(rel)
+          if not (sheng / 'package').is_dir():
+              missing.append('sheng package')
+          print('linux:', linux, 'sheng:', sheng)
+          if missing:
+              raise SystemExit('missing wifi inputs: ' + ', '.join(missing))
+          print('wifi source inputs present')
+          PY
       - name: package
         working-directory: device
         env:
@@ -240,6 +270,8 @@ jobs:
           # The UFS storage imports are read from the decompressed 22H374 kernelcache the
           # deps step extracts; the device script's default is a workstation path.
           PONG_KERNELCACHE: ${{ github.workspace }}/UniXNU/out/ipsw/22H374/kernelcache.decompressed
+          PONG_WIFI_SOURCE: ${{ github.workspace }}/linux
+          PONG_SHENG_ROOT: ${{ github.workspace }}/sheng
         run: scripts/package.sh --os "${{ inputs.os }}" --uefi ../uefi-pong
       - name: v4 container
         # docs/porting/packaging.md stops at boot/boot.img (header v0). The flashable image the
