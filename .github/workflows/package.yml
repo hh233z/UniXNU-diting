@@ -251,8 +251,10 @@ jobs:
           # "; already on main" skips the file update, so force the sparse tree out.
           git -C sheng reset --hard HEAD
           git -C sheng log --oneline -1
-          ls drivers/Ath12kWifi/include/nw_abi.h sheng/drivers/Ath12kWifi/include/nw_abi.h 2>/dev/null || true
-          ls sheng/drivers/Ath12kWifi 2>/dev/null | head -5
+          # drivers/Ath12kWifi is a submodule (UniXNU/Ath12kWifi), not plain files.
+          git -C sheng submodule update --init --depth 1 drivers/Ath12kWifi
+          git -C sheng/drivers/Ath12kWifi log --oneline -1
+          ls sheng/drivers/Ath12kWifi | head -6
           python3 - <<'PY'
           import os, sys
           from pathlib import Path
