@@ -243,6 +243,9 @@ jobs:
           set -euo pipefail
           git clone --depth 1 --filter=blob:none --sparse --branch v7.0.14 https://github.com/gregkh/linux.git linux
           git -C linux sparse-checkout set drivers/net/wireless/ath include
+          # the shim includes <linux/kconfig.h>; make sure the sparse tree really has it
+          ls -l linux/include/linux/kconfig.h || echo "MISSING linux/include"
+          git -C linux log --oneline -1
           git clone --depth 1 --filter=blob:none --no-checkout --branch main https://github.com/UniXNU/UniXNU-sheng.git sheng
           # Cone mode rejects drivers/Ath12kWifi on this tree; fetch the paths only.
           git -C sheng sparse-checkout init --no-cone
