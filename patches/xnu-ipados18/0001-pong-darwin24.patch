@@ -2460,7 +2460,7 @@ index d5d5b16..5372d98 100644
  
  #include <pexpert/pexpert.h>
  
-+#if defined(PONG)
++#if defined(PONG) && defined(XNU_PONG_RAMOOPS_CONSOLE) && XNU_PONG_RAMOOPS_CONSOLE
 +extern void pong_ramoops_diagnostic_write(const char *, int);
 +
 +/* A write-only, small diagnostic endpoint for the Settings adapter. No
@@ -2499,7 +2499,7 @@ index d5d5b16..5372d98 100644
  	task_t task = proc_task(p);
  
  
-+#if defined(PONG)
++#if defined(PONG) && defined(XNU_PONG_RAMOOPS_CONSOLE) && XNU_PONG_RAMOOPS_CONSOLE
 +	if (strcmp(p->p_comm, "Preferences") == 0) {
 +		char line[768];
 +		os_reason_t reason = p->p_exit_reason;
