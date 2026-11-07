@@ -274,6 +274,10 @@ jobs:
           # deps step extracts; the device script's default is a workstation path.
           PONG_KERNELCACHE: ${{ github.workspace }}/UniXNU/out/ipsw/22H374/kernelcache.decompressed
           PONG_WIFI_SOURCE: ${{ github.workspace }}/linux
+          PONG_WIFI_SHARED: ${{ github.workspace }}/sheng/drivers/Ath12kWifi
+          PONG_WIFI_FIRMWARE: ${{ github.workspace }}/device/platform-firmware/wifi
+          PONG_HARDWARE_DTB: ${{ runner.temp }}/diting-live.dtb
+          PONG_WIFI_SOURCE: ${{ github.workspace }}/linux
           PONG_SHENG_ROOT: ${{ github.workspace }}/sheng
           # the recipes resolve the shared ABI through pong_native_inputs, not sheng_root
           PONG_WIFI_SHARED: ${{ github.workspace }}/sheng/drivers/Ath12kWifi
