@@ -126,8 +126,14 @@ jobs:
           # Pinned, not "latest": the GitHub API is rate limited without a token (403) and
           # the build must use the same tool version every run.
           ipsw_ver=3.1.743
-          curl -fsSL "https://github.com/blacktop/ipsw/releases/download/v${ipsw_ver}/ipsw_${ipsw_ver}_macOS_x86_64.tar.gz" \
-            | sudo tar -xz -C /usr/local/bin ipsw
+          # The runner lost DNS once (curl: 6) mid-download; retry instead of failing the run.
+          for attempt in 1 2 3 4 5; do
+            curl -fsSL --retry 5 --retry-all-errors --retry-delay 3 \
+              "https://github.com/blacktop/ipsw/releases/download/v${ipsw_ver}/ipsw_${ipsw_ver}_macOS_x86_64.tar.gz" -o /tmp/ipsw.tar.gz \
+              && break
+            echo "ipsw download attempt $attempt failed"; sleep 5
+          done
+          sudo tar -xzf /tmp/ipsw.tar.gz -C /usr/local/bin ipsw
           ipsw version
           ok=1
           for t in clang xcodebuild make git ninja cmake dtc fdtget fdtput aea compression_tool \
