@@ -49,6 +49,9 @@ jobs:
           # build_uefi.py only updates submodules with -u; the packages the DSC lists must exist.
           git submodule update --init --depth 1 Binaries Common/Mu Common/Mu_OEM_Sample Mu_Basecore Silicium-ACPI
           cp -r ../device/platform-firmware/ditingPkg Platforms/Xiaomi/ditingPkg
+          # build_uefi.py packs Resources/DTBs/<device>.dtb into the volume.
+          mkdir -p Resources/DTBs
+          cp ../device/platform-firmware/ditingPkg/FdtBlob/sm8475-xiaomi-diting.dtb Resources/DTBs/diting.dtb
           cp ../device/platform-firmware/diting.toml Resources/Configs/diting.toml
           git apply ../device/platform-firmware/darwin-boot-diting.patch
           python3 -m venv "$RUNNER_TEMP/uefi-venv"
@@ -56,7 +59,7 @@ jobs:
           python3 -m pip install --quiet --upgrade pip
           python3 -m pip install --quiet -r pip-requirements.txt
           python3 build_uefi.py -d diting
-          FD="Build/ditingPkg/DEBUG_CLANGPDB/FV/SILICIUM_UEFI.fd"
+          FD="Build/ditingPkg/RELEASE_CLANGPDB/FV/SILICIUM_UEFI.fd"
           [ -f "$FD" ] || { echo "missing firmware volume: $FD" >&2; exit 1; }
           sha256sum "$FD"; ls -l "$FD"
           mkdir -p "$GITHUB_WORKSPACE/out"
