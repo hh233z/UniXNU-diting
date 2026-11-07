@@ -24,17 +24,36 @@ def git(directory, *arguments):
     ).strip()
 
 
-def checkout(path, url, commit, patterns, cone):
+def fetch_commit(path, ref, commit):
+    """GitHub refuses a bare SHA fetch, so try the named ref and deepen until the commit lands."""
+    options = ["-c", "protocol.file.allow=always", "fetch", "--quiet", "--filter=blob:none"]
+    for spec in ([ref] if ref else []) + [commit]:
+        try:
+            git(path, *options, "--depth=1", "origin", spec)
+            return
+        except subprocess.CalledProcessError:
+            continue
+    branch = ref or "main"
+    for depth in (200, 1000):
+        try:
+            git(path, *options, f"--depth={depth}", "origin", branch)
+            break
+        except subprocess.CalledProcessError:
+            continue
+    else:
+        raise SystemExit(f"无法获取 {branch}")
+
+
+def checkout(path, url, ref, commit, patterns, cone):
     if path.exists():
         raise SystemExit(f"目标已存在，拒绝覆盖：{path}")
     path.mkdir(parents=True)
     git(path, "init", "--quiet")
     git(path, "remote", "add", "origin", url)
-    git(path, "-c", "protocol.file.allow=always", "fetch", "--quiet", "--depth=1",
-        "--filter=blob:none", "origin", commit)
+    fetch_commit(path, ref, commit)
     git(path, "sparse-checkout", "init", "--cone" if cone else "--no-cone")
     git(path, "sparse-checkout", "set", *patterns)
-    git(path, "checkout", "--quiet", "--detach", "FETCH_HEAD")
+    git(path, "checkout", "--quiet", "--detach", commit)
     if git(path, "rev-parse", "HEAD") != commit:
         raise SystemExit(f"源码版本不匹配：{path}")
 
@@ -54,9 +73,9 @@ def main():
     if linux.exists() or sheng.exists():
         raise SystemExit("linux 或 sheng 目标已存在，拒绝覆盖")
 
-    checkout(linux, args.linux_url or linux_spec["git"], linux_spec["commit"],
+    checkout(linux, args.linux_url or linux_spec["git"], linux_spec.get("ref"), linux_spec["commit"],
              ["drivers/net/wireless/ath", "drivers/bus/mhi", "drivers/soc/qcom", "include"], True)
-    checkout(sheng, args.sheng_url or sheng_spec["git"], sheng_spec["commit"],
+    checkout(sheng, args.sheng_url or sheng_spec["git"], sheng_spec.get("ref"), sheng_spec["commit"],
              ["/.gitmodules", "/package/", "/drivers/Ath12kWifi"], False)
     gitlink = git(sheng, "ls-tree", "HEAD", "drivers/Ath12kWifi").split()
     if len(gitlink) < 3 or gitlink[2] != shared_spec["commit"]:
