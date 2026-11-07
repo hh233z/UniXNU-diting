@@ -237,48 +237,21 @@ jobs:
           PY
           ls -l "$out"
       - name: wifi sources
-        # Wi-Fi compiles the Linux ath11k sources against the sheng station code. Both are
-        # pinned by tag/commit and fetched sparsely; nothing is vendored into this repository.
+        # 按设备仓库清单固定三份源码，并一次检查 ath11k、MHI、QMI 依赖。
+        run: >-
+          python3 device/scripts/prepare-ci-wifi.py
+          --workspace "$GITHUB_WORKSPACE"
+          --manifest device/configs/pong-native-sources.toml
+      - name: preflight Wi-Fi compile
+        env:
+          UNIXNU_DEVICE: ${{ github.workspace }}/device
+          PONG_WIFI_SOURCE: ${{ github.workspace }}/linux
+          PONG_WIFI_SHARED: ${{ github.workspace }}/sheng/drivers/Ath12kWifi
         run: |
           set -euo pipefail
-          git clone --depth 1 --filter=blob:none --sparse --branch v7.0.14 https://github.com/gregkh/linux.git linux
-          git -C linux sparse-checkout set drivers/net/wireless/ath include
-          # the shim includes <linux/kconfig.h>; make sure the sparse tree really has it
-          ls -l linux/include/linux/kconfig.h || echo "MISSING linux/include"
-          git -C linux log --oneline -1
-          git clone --depth 1 --filter=blob:none --no-checkout --branch main https://github.com/UniXNU/UniXNU-sheng.git sheng
-          # Cone mode rejects drivers/Ath12kWifi on this tree; fetch the paths only.
-          git -C sheng sparse-checkout init --no-cone
-          git -C sheng sparse-checkout set '/drivers/Ath12kWifi/' '/package/'
-          git -C sheng checkout --force main
-          # "; already on main" skips the file update, so force the sparse tree out.
-          git -C sheng reset --hard HEAD
-          git -C sheng log --oneline -1
-          # drivers/Ath12kWifi is a submodule (UniXNU/Ath12kWifi), not plain files.
-          git -C sheng submodule update --init --depth 1 drivers/Ath12kWifi
-          git -C sheng/drivers/Ath12kWifi log --oneline -1
-          ls sheng/drivers/Ath12kWifi | head -6
-          python3 - <<'PY'
-          import os, sys
-          from pathlib import Path
-          sys.path.insert(0, str(Path('device/scripts')))
-          import pong_paths
-          linux = Path('linux').resolve()
-          sheng = Path('sheng').resolve()
-          missing = []
-          if not (linux / 'drivers/net/wireless/ath/ath11k/pci.c').is_file():
-              missing.append('linux ath11k pci.c')
-          for rel in ('drivers/Ath12kWifi/include/nw_abi.h', 'drivers/Ath12kWifi/shim/src/lx_rt.c',
-                      'drivers/Ath12kWifi/src/nw_sta.c', 'drivers/Ath12kWifi/src/nw_mac80211.c'):
-              if not (sheng / rel).is_file():
-                  missing.append(rel)
-          if not (sheng / 'package').is_dir():
-              missing.append('sheng package')
-          print('linux:', linux, 'sheng:', sheng)
-          if missing:
-              raise SystemExit('missing wifi inputs: ' + ', '.join(missing))
-          print('wifi source inputs present')
-          PY
+          export PATH="/usr/local/opt/llvm/bin:/usr/local/opt/lld/bin:$PATH"
+          python3 device/kits/PongPlatform24/build-with-runtime.py --overlay-only --overlay-dir "$RUNNER_TEMP/wifi-overlay"
+          python3 "$RUNNER_TEMP/wifi-overlay/scripts/build-pong-ath11k.py" --output-dir "$GITHUB_WORKSPACE/wifi-preflight" --jobs 4
       - name: package
         working-directory: device
         env:
@@ -356,8 +329,11 @@ jobs:
           mkdir -p products/logs
           # Every log the run produced, not only logs/: the component recipe writes
           # build-<stamp>.log beside the configuration directory.
-          find UniXNU/out/diting -type f -name '*.log' 2>/dev/null | while read -r f; do
-            cp -f "$f" "products/logs/$(printf '%s' "$f" | tr '/' '_')"
+          for root in UniXNU/out/diting wifi-preflight; do
+            [ -d "$root" ] || continue
+            find "$root" -type f \( -name '*.log' -o -name 'compile-commands.json' -o -name 'undefined-symbols.txt' \) | while read -r f; do
+              cp -f "$f" "products/logs/$(printf '%s' "$f" | tr '/' '_')"
+            done
           done
       - name: logs
         if: always()

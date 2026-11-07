@@ -163,7 +163,7 @@ evidence = [{kind = "source", reported_kind = "host-build", reference = "migrati
 [[area]]
 id = "packaging"
 status = "implemented"
-components = ["PongPlatform24"]
+components = ["PongPlatform24", "XnuPrelink"]
 paths = ["scripts/package.sh", "scripts/finalize-pong-adt.py", "scripts/build-pong-hardware-dtb.py", "scripts/install-unixnu-inputs.py", "kits/PongPlatform24/**", "os-profiles/**", "board.toml", ".github/workflows/package.yml", "scripts/build-ipados18*", "scripts/build-pong-profile-kernel.py", "scripts/make-pong-adt-ipados18.py", "scripts/build-xnu-ipados18.sh", "patches/xnu-ipados18/**"]
 inputs = ["UniXNU c96b299（release 与 templates/package.sh）、uefi-pong 固件树、匹配 22H374 restore、UNIXNU_UNIQUE_CHIP_ID 平台种子"]
 configuration = ["board.toml 的 [package]/[package.defconfig]/[bootimg]/[userdata]，os-profiles/ipados-18.7.10-22H374，configs/pong_ipados18_ci_defconfig"]
