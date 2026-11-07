@@ -237,8 +237,12 @@ jobs:
           set -euo pipefail
           git clone --depth 1 --filter=blob:none --sparse --branch v7.0.14 https://github.com/gregkh/linux.git linux
           git -C linux sparse-checkout set drivers/net/wireless/ath include
-          git clone --depth 1 --filter=blob:none --sparse --branch main https://github.com/UniXNU/UniXNU-sheng.git sheng
-          git -C sheng sparse-checkout set drivers/Ath12kWifi package
+          git clone --depth 1 --filter=blob:none --no-checkout https://github.com/UniXNU/UniXNU-sheng.git sheng
+          # Pin the station commit; cone mode rejects drivers/Ath12kWifi on this tree.
+          git -C sheng fetch --depth 1 origin 08cde20
+          git -C sheng checkout --detach 08cde20
+          git -C sheng sparse-checkout init --no-cone
+          git -C sheng sparse-checkout set '/drivers/Ath12kWifi/' '/package/'
           python3 - <<'PY'
           import os, sys
           from pathlib import Path
