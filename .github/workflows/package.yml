@@ -296,7 +296,6 @@ jobs:
             --uefi "$GITHUB_WORKSPACE/uefi-pong" \
             --unique-chip-id "$UNIXNU_UNIQUE_CHIP_ID" \
             --volume-layout "$RUNNER_TEMP/volume-layout.json" \
-            --development-debug \
             --hardware-dtb "$DTB"
           ls -l "$WORK/boot"
       - name: self-contained v4 (shim + firmware)
