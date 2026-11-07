@@ -288,6 +288,8 @@ jobs:
           PONG_KERNELCACHE: ${{ github.workspace }}/UniXNU/out/ipsw/22H374/kernelcache.decompressed
           PONG_WIFI_SOURCE: ${{ github.workspace }}/linux
           PONG_SHENG_ROOT: ${{ github.workspace }}/sheng
+          # the recipes resolve the shared ABI through pong_native_inputs, not sheng_root
+          PONG_WIFI_SHARED: ${{ github.workspace }}/sheng/drivers/Ath12kWifi
         run: scripts/package.sh --os "${{ inputs.os }}" --uefi ../uefi-pong
       - name: v4 container
         # docs/porting/packaging.md stops at boot/boot.img (header v0). The flashable image the
