@@ -247,8 +247,12 @@ jobs:
           # Cone mode rejects drivers/Ath12kWifi on this tree; fetch the paths only.
           git -C sheng sparse-checkout init --no-cone
           git -C sheng sparse-checkout set '/drivers/Ath12kWifi/' '/package/'
-          git -C sheng checkout main
+          git -C sheng checkout --force main
+          # "; already on main" skips the file update, so force the sparse tree out.
+          git -C sheng reset --hard HEAD
           git -C sheng log --oneline -1
+          ls drivers/Ath12kWifi/include/nw_abi.h sheng/drivers/Ath12kWifi/include/nw_abi.h 2>/dev/null || true
+          ls sheng/drivers/Ath12kWifi 2>/dev/null | head -5
           python3 - <<'PY'
           import os, sys
           from pathlib import Path
