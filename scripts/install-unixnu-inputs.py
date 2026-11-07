@@ -83,6 +83,26 @@ def fix_prelink_info_extent(unixnu):
     source.write_text(text.replace(old, new, 1))
 
 
+def fix_apple_cpu_match(unixnu):
+    """保留平台组件，移除与本机 ArmCpu 冲突的苹果 CPU 匹配项。"""
+    source = unixnu / 'kits/XnuPrelink/emit_prelink.py'
+    text = source.read_text()
+    anchor = "        entry = copy.deepcopy(entries[identifier])\n"
+    addition = (
+        "        if identifier == 'com.apple.driver.AppleARMPlatform':\n"
+        "            personalities = entry.get('IOKitPersonalities', {})\n"
+        "            cpu = personalities.get('AppleARMCPU')\n"
+        "            if not isinstance(cpu, dict) or cpu.get('IOClass') != 'AppleARMCPU':\n"
+        "                raise ValueError('AppleARMCPU personality changed; review device matching')\n"
+        "            del personalities['AppleARMCPU']\n"
+    )
+    if text.count(anchor + addition) == 1:
+        return
+    if text.count(anchor) != 1 or addition in text:
+        raise SystemExit('XnuPrelink metadata handling changed; review CPU matching')
+    source.write_text(text.replace(anchor, anchor + addition, 1))
+
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--unixnu', required=True, type=Path)
@@ -93,6 +113,7 @@ def main():
     target = install_profile(unixnu, profile)
     added, present = install_components(unixnu)
     fix_prelink_info_extent(unixnu)
+    fix_apple_cpu_match(unixnu)
     print(json.dumps({'profile': profile, 'installed_at': str(target),
                       'components_added': added, 'components_present': present}, indent=2))
 

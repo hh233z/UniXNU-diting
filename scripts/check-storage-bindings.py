@@ -3,6 +3,7 @@
 import argparse
 from pathlib import Path
 import struct
+import xml.etree.ElementTree as ET
 
 
 REQUIRED = {
@@ -20,6 +21,7 @@ def inspect(data):
         raise ValueError('Mach-O 加载命令超出文件')
     segments = []
     symtab = None
+    prelink_info_data = None
     pos = 32
     for _ in range(count):
         if pos + 8 > end:
@@ -30,9 +32,13 @@ def inspect(data):
         if command == 0x19:
             if size < 72:
                 raise ValueError('Mach-O 段命令截断')
-            name, address, length, _, _, _, protection = struct.unpack_from('<16sQQQQII', data, pos + 8)
+            name, address, length, fileoff, filesize, _, protection = struct.unpack_from('<16sQQQQII', data, pos + 8)
             if length:
                 segments.append((address, address + length, protection, name.rstrip(b'\0').decode('ascii')))
+            if name.rstrip(b'\0') == b'__PRELINK_INFO':
+                if fileoff + filesize > len(data):
+                    raise ValueError('预链接信息超出文件')
+                prelink_info_data = data[fileoff:fileoff + filesize].split(b'\0', 1)[0]
         elif command == 2:
             if size < 24 or symtab is not None:
                 raise ValueError('Mach-O 符号表无效')
@@ -66,6 +72,17 @@ def inspect(data):
         raise ValueError('缺少预链接段或预链接信息段')
     if any(segment[1] > prelink_info[0] for segment in prelink_segments):
         failures.append('__PRELINK_INFO 不在所有预链接段之后，内核静态地址上界可能截断组件')
+    try:
+        root = ET.fromstring(prelink_info_data)
+    except (TypeError, ET.ParseError) as exc:
+        raise ValueError('无法解析预链接信息') from exc
+    for element in root.iter('dict'):
+        children = list(element)
+        if any(children[i].tag == 'key' and children[i].text == 'IOClass' and
+               children[i + 1].tag == 'string' and children[i + 1].text == 'AppleARMCPU'
+               for i in range(len(children) - 1)):
+            failures.append('AppleARMCPU 匹配项仍会与 ArmCpu 争用 CPU 节点')
+            break
     for name, value in sorted(found.items()):
         segment = next((s for s in segments if s[0] <= value < s[1]), None)
         if segment is None:
