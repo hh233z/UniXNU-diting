@@ -67,6 +67,10 @@ jobs:
           sha256sum "$FD"; ls -l "$FD"
           mkdir -p "$GITHUB_WORKSPACE/out"
           cp "$FD" "$GITHUB_WORKSPACE/out/SILICIUM_UEFI.fd"
+          # The macOS job packs the self-contained image and has no firmware tree.
+          cp BootShim/BootShim.bin "$GITHUB_WORKSPACE/out/BootShim.bin"
+          cp Resources/Scripts/mkbootimg.py "$GITHUB_WORKSPACE/out/mkbootimg.py"
+          cp Resources/Configs/diting.toml "$GITHUB_WORKSPACE/out/diting.toml"
       - uses: actions/upload-artifact@v4
         if: failure()
         with:
@@ -78,7 +82,7 @@ jobs:
       - uses: actions/upload-artifact@v4
         with:
           name: diting-fd
-          path: out/SILICIUM_UEFI.fd
+          path: out/
           if-no-files-found: error
   package:
     needs: firmware
@@ -285,8 +289,9 @@ jobs:
           print("envelope", len(data))
           PY
           python3 scripts/build-bootimg.py \
-            --uefi "$GITHUB_WORKSPACE/uefi-mondrian" \
-            --config "$GITHUB_WORKSPACE/uefi-mondrian/Resources/Configs/diting.toml" \
+            --shim "$GITHUB_WORKSPACE/firmware-fd/BootShim.bin" \
+            --mkbootimg "$GITHUB_WORKSPACE/firmware-fd/mkbootimg.py" \
+            --config "$GITHUB_WORKSPACE/firmware-fd/diting.toml" \
             --fd "$FD" \
             --dtb "$DTB" \
             --ramdisk "$RUNNER_TEMP/payload-envelope.img" \

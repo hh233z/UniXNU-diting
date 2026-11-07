@@ -60,6 +60,8 @@ def main():
     parser.add_argument('--uefi', type=Path, help='Firmware checkout (default Mu-Silicium)')
     parser.add_argument('--config', type=Path, help='Firmware config TOML (default Resources/Configs/pong.toml)')
     parser.add_argument('--dtb', type=Path, help='Board DTB appended after the shim+volume (default Resources/DTBs/pong.dtb)')
+    parser.add_argument('--shim', type=Path, help='Prebuilt BootShim.bin instead of compiling one')
+    parser.add_argument('--mkbootimg', type=Path, help='mkbootimg.py path (default uefi/Resources/Scripts/mkbootimg.py)')
     args = parser.parse_args()
     uefi = args.uefi.resolve() if args.uefi else ROOT / 'Mu-Silicium'
     config_path = args.config if args.config else uefi / 'Resources/Configs/pong.toml'
@@ -79,12 +81,13 @@ def main():
     ramdisk = args.ramdisk.read_bytes() if args.ramdisk else b''
     with tempfile.TemporaryDirectory(prefix='pong-bootimg-') as name:
         scratch = Path(name)
-        shim = compile_shim(uefi, base, size, True, scratch)
+        shim = args.shim.read_bytes() if args.shim else compile_shim(uefi, base, size, True, scratch)
         combined = shim + firmware
         kernel = gzip.compress(combined, mtime=0) + dtb
         (scratch / 'kernel').write_bytes(kernel)
         (scratch / 'ramdisk').write_bytes(ramdisk)
-        subprocess.run([sys.executable, str(uefi / 'Resources/Scripts/mkbootimg.py'),
+        mkbootimg = args.mkbootimg or (uefi / 'Resources/Scripts/mkbootimg.py')
+        subprocess.run([sys.executable, str(mkbootimg),
                         '--header_version', '4', '--kernel', str(scratch / 'kernel'),
                         '--ramdisk', str(scratch / 'ramdisk'), '-o', str(image)], check=True)
         data = image.read_bytes()
