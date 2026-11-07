@@ -52,6 +52,9 @@ jobs:
           # build_uefi.py packs Resources/DTBs/<device>.dtb into the volume.
           mkdir -p Resources/DTBs
           cp ../device/platform-firmware/ditingPkg/FdtBlob/sm8475-xiaomi-diting.dtb Resources/DTBs/diting.dtb
+          # build_uefi.py runs mkbootimg with --ramdisk Resources/ramdisk; the volume build
+          # does not need payload contents, but the file must exist.
+          : > Resources/ramdisk
           cp ../device/platform-firmware/diting.toml Resources/Configs/diting.toml
           git apply ../device/platform-firmware/darwin-boot-diting.patch
           python3 -m venv "$RUNNER_TEMP/uefi-venv"
