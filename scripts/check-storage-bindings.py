@@ -59,6 +59,13 @@ def inspect(data):
     if missing:
         raise ValueError('缺少存储绑定：' + ', '.join(sorted(missing)))
     failures = []
+    prelink_info = next((s for s in segments if s[3] == '__PRELINK_INFO'), None)
+    prelink_segments = [s for s in segments if s[3] in
+                        ('__PRELINK_TEXT', '__PLK_TEXT_EXEC', '__PLK_DATA_CONST', '__PRELINK_DATA')]
+    if prelink_info is None or not prelink_segments:
+        raise ValueError('缺少预链接段或预链接信息段')
+    if any(segment[1] > prelink_info[0] for segment in prelink_segments):
+        failures.append('__PRELINK_INFO 不在所有预链接段之后，内核静态地址上界可能截断组件')
     for name, value in sorted(found.items()):
         segment = next((s for s in segments if s[0] <= value < s[1]), None)
         if segment is None:
@@ -79,8 +86,8 @@ def main():
     for failure in failures:
         print(failure)
     if failures:
-        parser.exit(1, f'{len(failures)} 个存储绑定不在预期映射段；不要把镜像作为启动候选。\n')
-    print(f'{len(bindings)} 个存储绑定位于映射段；仍需核对实际类布局及运行时映射。')
+        parser.exit(1, f'{len(failures)} 项内核地址检查失败；不要把镜像作为启动候选。\n')
+    print(f'{len(bindings)} 个存储绑定位于映射段，预链接信息位于组件之后；仍需核对运行时行为。')
 
 
 if __name__ == '__main__':

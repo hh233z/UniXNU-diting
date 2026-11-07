@@ -727,6 +727,7 @@ if [ "$PONG_EARLY_TRACE" != 0 ] && [ "$PONG_EARLY_TRACE" != 1 ]; then
   exit 1
 fi
 PONG_RAMOOPS_CONSOLE=${XNU_PONG_RAMOOPS_CONSOLE:-0}
+PONG_RAMOOPS_BASE=${XNU_PONG_RAMOOPS_BASE:-0x85200000}
 if [ "$PONG_RAMOOPS_CONSOLE" != 0 ] && [ "$PONG_RAMOOPS_CONSOLE" != 1 ]; then
   echo 'XNU_PONG_RAMOOPS_CONSOLE must be 0 or 1' >&2
   exit 1
@@ -734,7 +735,7 @@ fi
 # The minimal ramoops mirror is independent of the removed framebuffer and
 # exception-vector tracing hooks.
 EXTRA_MAKE_ARGS+=("start.o_SFLAGS_ADD=-DXNU_NATIVE_ARCH_TIMER=$NATIVE_ARCH_TIMER -DXNU_PONG_EARLY_TRACE=$PONG_EARLY_TRACE")
-EXTRA_MAKE_ARGS+=("arm_init.o_CFLAGS_ADD=-DXNU_PONG_EARLY_TRACE=$PONG_EARLY_TRACE -DXNU_PONG_RAMOOPS_CONSOLE=$PONG_RAMOOPS_CONSOLE -mstrict-align -mgeneral-regs-only -march=armv8.1-a")
+EXTRA_MAKE_ARGS+=("arm_init.o_CFLAGS_ADD=-DXNU_PONG_EARLY_TRACE=$PONG_EARLY_TRACE -DXNU_PONG_RAMOOPS_CONSOLE=$PONG_RAMOOPS_CONSOLE -DXNU_PONG_RAMOOPS_BASE=$PONG_RAMOOPS_BASE -mstrict-align -mgeneral-regs-only -march=armv8.1-a")
 EXTRA_MAKE_ARGS+=("arm_vm_init.o_CFLAGS_ADD=-DXNU_PONG_EARLY_TRACE=$PONG_EARLY_TRACE")
 EXTRA_MAKE_ARGS+=("machine_routines.o_CFLAGS_ADD=-DXNU_PONG_EARLY_TRACE=$PONG_EARLY_TRACE")
 EXTRA_MAKE_ARGS+=("serial_console.o_CFLAGS_ADD=-DXNU_PONG_EARLY_TRACE=$PONG_EARLY_TRACE -DXNU_PONG_RAMOOPS_CONSOLE=$PONG_RAMOOPS_CONSOLE")
@@ -744,12 +745,12 @@ EXTRA_MAKE_ARGS+=("counter_test.o_CFLAGS_ADD=-DXNU_PONG_EARLY_TRACE=$PONG_EARLY_
 EXTRA_MAKE_ARGS+=("IOStartIOKit.cpo_CFLAGS_ADD=-DXNU_PONG_EARLY_TRACE=$PONG_EARLY_TRACE")
 EXTRA_MAKE_ARGS+=("OSRuntime.cpo_CFLAGS_ADD=-DXNU_PONG_EARLY_TRACE=$PONG_EARLY_TRACE")
 EXTRA_MAKE_ARGS+=("pe_init.o_CFLAGS_ADD=-DXNU_DT_PANIC_REGION=$DT_PANIC_REGION -DXNU_PONG_VOLATILE_PANIC_LOG=$PONG_VOLATILE_PANIC_LOG -DXNU_PONG_EARLY_TRACE=$PONG_EARLY_TRACE")
-python3 - "$PONG_EARLY_TRACE" "$PONG_RAMOOPS_CONSOLE" <<'PY_TRACE_MODE'
+python3 - "$PONG_EARLY_TRACE" "$PONG_RAMOOPS_CONSOLE" "$PONG_RAMOOPS_BASE" <<'PY_TRACE_MODE'
 from pathlib import Path
 import sys
 directory = Path('build/xnu/ios-obj/DEVELOPMENT_ARM64_PONG')
 stamp = directory / '.pong-early-trace-mode'
-mode = sys.argv[1] + ':' + sys.argv[2] + ':minimal-ramoops-v2'
+mode = ':'.join(sys.argv[1:]) + ':minimal-ramoops-v3'
 if not stamp.exists() or stamp.read_text() != mode:
     for name in ('start', 'arm_init', 'arm_vm_init', 'machine_routines', 'startup', 'serial_console', 'debug'):
         (directory / 'osfmk/DEVELOPMENT' / (name + '.o')).unlink(missing_ok=True)

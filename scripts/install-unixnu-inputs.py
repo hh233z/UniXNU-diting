@@ -67,6 +67,22 @@ def install_components(unixnu):
     return added, updated
 
 
+def fix_prelink_info_extent(unixnu):
+    """让静态内核的地址上界包含所有预链接组件。"""
+    kit = unixnu / 'kits/XnuPrelink'
+    if head(kit) != 'b74ed7c74a07f0eb5f81089c660905ecc4cabb7f':
+        raise SystemExit('XnuPrelink revision differs; review the prelink layout fix')
+    source = kit / 'emit_prelink.py'
+    text = source.read_text()
+    old = "info_va = align(max(s['va'] + s['size'] for s in native['segments'] if s['size']))"
+    new = "info_va = align(max(s['va'] + s['size'] for s in [*native['segments'], *new_segments] if s['size']))"
+    if text.count(new) == 1 and old not in text:
+        return
+    if text.count(old) != 1 or new in text:
+        raise SystemExit('XnuPrelink prelink-info calculation changed; review before building')
+    source.write_text(text.replace(old, new, 1))
+
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--unixnu', required=True, type=Path)
@@ -76,6 +92,7 @@ def main():
     profile = board['board']['os_profile']
     target = install_profile(unixnu, profile)
     added, present = install_components(unixnu)
+    fix_prelink_info_extent(unixnu)
     print(json.dumps({'profile': profile, 'installed_at': str(target),
                       'components_added': added, 'components_present': present}, indent=2))
 
