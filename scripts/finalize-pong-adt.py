@@ -142,12 +142,17 @@ def main():
     root_uuid = (layout.get('os') or {}).get('uuid')
     chip_id = args.chip_id or str(board.get('payload', {}).get('adt', {}).get('chip_id', '0x8010'))
 
-    spec = board.get('payload', {})
-    # Without these the kernel dies silently on a fresh board: -v prints early progress
-    # and debug=0x144 keeps the boot/interrupt trace lines.
-    boot_args = '-v debug=0x144 keepsyms=1 cpus=%d' % args.cpus
-    extra = [item for item in spec.get('kernel_args', []) if item.split('=', 1)[0] not in ('keepsyms', 'cpus')]
-    boot_args += ''.join(' ' + item for item in extra)
+    config = read_member(payload, '/EFI/UniXNU/unixnu.toml')
+    if config is None:
+        raise SystemExit('payload is missing the UniXNU boot configuration')
+    entries = [entry for entry in tomllib.loads(config.decode('utf-8')).get('entry', [])
+               if entry.get('type') == 'xnu']
+    if len(entries) != 1 or not isinstance(entries[0].get('args'), str):
+        raise SystemExit('payload must have exactly one XNU entry with boot arguments')
+    boot_args = entries[0]['args']
+    cpus = [item for item in boot_args.split() if item.startswith('cpus=')]
+    if cpus != [f'cpus={args.cpus}']:
+        raise SystemExit('the payload CPU count does not match the generated ADT')
     # The manifest a local run stages: scripts/build-ipados18-bootimg-local.py
     # writes exactly these keys, and with --skip-image-verification the digests
     # of the kernel and the loader stay null.

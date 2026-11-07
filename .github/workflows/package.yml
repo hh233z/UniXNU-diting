@@ -289,6 +289,7 @@ jobs:
         run: |
           set -euo pipefail
           WORK="$GITHUB_WORKSPACE/UniXNU/out/diting/${{ inputs.os }}/diting_ipados18_ci"
+          python3 scripts/check-storage-bindings.py "$WORK/kernel/kernel.macho"
           DTB="$WORK/device-tree/build/pong/hardware.dtb"
           [ -f "$DTB" ] || { echo "missing hardware DTB: $DTB" >&2; exit 1; }
           python3 scripts/finalize-pong-adt.py \
