@@ -83,7 +83,10 @@ def main():
     # Fail at the configuration boundary, before building an archive whose
     # startup entry or platform helper would otherwise be omitted at link.
     dependencies = {
-        'XNU_PONG_WIFI': ('XNU_PONG_POWER', 'XNU_ARMCPU', 'XNU_NATIVE_UFS'),
+        # Wi-Fi itself needs the shared SMMU lease, which PongPlatformResources provides;
+        # that object is built by the full power archive or by --resources-only when
+        # NATIVE_UFS is set, so the power/audio archive is not required to build it.
+        'XNU_PONG_WIFI': ('XNU_ARMCPU', 'XNU_NATIVE_UFS'),
         'XNU_PONG_BACKLIGHT': ('XNU_PONG_POWER',),
         'XNU_PONG_POWER': ('XNU_ARM_DT_PLATFORM', 'XNU_ARMCPU'),
         'XNU_ARM_DT_PLATFORM': ('XNU_ARMCPU',),
