@@ -151,6 +151,21 @@ def main():
         staged = target
     else:
         staged = produced
+    if os.environ.get('PONG_ENTRY_PROBE', '0') == '1':
+        # docs/guide/debugging: a patched kernel colours the screen under the green
+        # DarwinBoot bar (blue = kernel entry with the MMU off, magenta = just before it
+        # is enabled) and can reset once the MMU is on, so a hang past the handoff still
+        # tells us how far execution got.
+        probe = device / 'scripts/patch-xnu-entry-probe.py'
+        if not probe.is_file():
+            raise SystemExit(f'{probe} missing: PONG_ENTRY_PROBE needs the entry probe script')
+        probe_args = ['--panic-screen']
+        if os.environ.get('PONG_ENTRY_PROBE_NO_RESET', '0') == '1':
+            probe_args.append('--no-reset')
+        else:
+            probe_args += ['--reset-delay', os.environ.get('PONG_ENTRY_PROBE_RESET_DELAY', '6')]
+        print(json.dumps({'entry_probe': str(staged)}), flush=True)
+        subprocess.run([sys.executable, str(probe), str(staged), *probe_args], check=True)
     print(json.dumps({'aggregate': str(produced), 'staged': str(staged),
                       'bytes': produced.stat().st_size}, indent=2))
 

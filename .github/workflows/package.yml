@@ -334,6 +334,12 @@ jobs:
           PONG_WIFI_SHARED: ${{ github.workspace }}/sheng/drivers/Ath12kWifi
           PONG_WIFI_FIRMWARE: ${{ github.workspace }}/device/platform-firmware/wifi
           PONG_HARDWARE_DTB: ${{ runner.temp }}/diting-live.dtb
+          # docs/guide/debugging: colour bars under the green DarwinBoot bar tell us how
+          # far the kernel got; a reset once the MMU is on proves it passed that point.
+          # 入口探针在这个内核上还没安装成功：patch-xnu-entry-probe.py 需要的填充区
+          # (0xfffffff0074a6518) 在我们的核心里已被占用，脚本直接退出。
+          # 先用 0 保持构建可用，等换到空闲段或改用串口再打开。
+          PONG_ENTRY_PROBE: "0"
         run: |
           set -euo pipefail
           export PATH="/usr/local/opt/llvm/bin:/usr/local/opt/lld/bin:$PATH"
