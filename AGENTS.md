@@ -256,3 +256,36 @@ stream 0xe0, SPI 265, UFS compatible `qcom,sm8475-ufshc` — verify against the 
     root volume (UUID or manifest), which is a different problem;
   * the menu again → the payload never handed off.
 - The stall build is deliberately sticky: the phone stays as it is until someone reboots it.
+
+## 2026-11-09 03:40 — the ADT the driver receives is correct
+
+Added the reusable `scripts/dump-pong-adt.py` (parses the Apple device tree out of any payload
+image without knowing the FAT layout; `--all` lists blobs, `--index` selects one).
+
+`payload.img` from run 42509554099 carries **two** device-tree blobs:
+
+```
+[0] 0xc3800   13732 bytes  7 top-level nodes   (arm-io/ufshc has only reg/compatible/interrupts)
+[1] 0x3227800 14684 bytes  7 top-level nodes   (the one with the board properties)
+```
+
+Blob 1, `/device-tree/arm-io/ufshc`, carries exactly what `drivers/NativeUfs` validates:
+
+```
+compatible                qcom,sm8475-ufshc qcom,sm8450-ufshc
+pong,ufs-hc-base          0x1d84000
+pong,ufs-hc-size          0x3000
+pong,gcc-ufs-page         0x187000
+pong,smmu-stream-id       0xe0
+pong,smmu-base            0x15000000
+pong,smmu-size            0x100000
+pong,smmu-context-banks   0x4e
+pong,smmu-match-groups    0x78
+pong,ufs-spi              0x109
+unixnu,userdata-first-lba 0x2f8a00
+unixnu,userdata-last-lba  0x3adf3fa
+```
+
+So matching and every board-property check pass; the remaining suspects are the GCC power/clock gate
+(`0x187004` bit 31 and the AXI/AHB/aggregate enable bits) and the transport itself. Both are reported
+by the stall build now on the phone.
