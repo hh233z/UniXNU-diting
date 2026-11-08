@@ -48,6 +48,9 @@ jobs:
           git checkout e06211de59325bbd086c312324bdbf40e21d1045
           # build_uefi.py only updates submodules with -u; the packages the DSC lists must exist.
           git submodule update --init --depth 1 Binaries Common/Mu Common/Mu_OEM_Sample Mu_Basecore Silicium-ACPI
+          # stuart setup skips a dirty submodule. The logger edit below dirties Mu_Basecore,
+          # so the nested modules (mipisyst and the rest) have to be fetched first.
+          git -C Mu_Basecore submodule update --init --depth 1 --recursive
           # Mu's DxeMain never consumes AdvancedLoggerLib, so the DXE log buffer is never
           # created and the Tools plugin reports "no log". Insert the library class where the
           # DXE core links it; DxeCore keeps its own framebuffer DebugLib.

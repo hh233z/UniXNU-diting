@@ -126,3 +126,12 @@
   onecrypto-bin_extdep with extdep_state.yaml, so stuart update does not download them.
 - The DxeCore AdvancedLoggerLib link has still not been compiled.
 
+
+## 2026-11-08 19:5x — nested Mu submodules
+
+- Run 42477512954 seeded the ext deps, then Build.py failed: MdePkg.dec include
+  Library/MipiSysTLib/mipisyst/library/include is not in the workspace.
+- stuart setup skips a dirty submodule. Inserting AdvancedLoggerLib dirties Mu_Basecore
+  before setup, so the recursive checkout of mipisyst never runs. The firmware job now
+  initializes Mu_Basecore submodules before that edit.
+
