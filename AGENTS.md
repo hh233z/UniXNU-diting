@@ -239,3 +239,20 @@ stream 0xe0, SPI 265, UFS compatible `qcom,sm8475-ufshc` — verify against the 
   driver logs the `formatUfsRootDiagnostics` block and then holds the CPU (`IOSleep` loop), so the
   last console lines stay on the panel for a photograph. `panic()` cannot be used: it is a macro in
   this SDK and the symbol is not linkable from the archive.
+
+## 2026-11-09 03:20 — device state and what to look for
+
+- The phone was written with `build-work/userdata/userdata-root.img` (SHNGROOT + OS + SystemOS,
+  manifest sha f237878b…) over adb (`dd` to `/dev/block/sda37`), verified by reading back the first
+  eight bytes. Android's fastboot cannot do this write on this host: the 32-bit fastboot aborts with
+  `std::bad_alloc` on a 10 GiB image, and `-S 256M` does not help.
+- The image booted is `pong-unixnu-uefi.img` from run 42509554099 (sha256 F2EDDF7F…, 101,191,680 B),
+  built from 1c04458. It contains `pong_ufs_stall=1`.
+- Expected panel states and what each means:
+  * a `PONG_UFS ...` report with gdsc/axi/ahb/cap/ver/hcs/hce lines and the boot stops → the driver
+    matched but the transport or the power/clocks gate failed; the values name the failing gate;
+  * `PONG_UFS PROBE FAILED: <property> ...` → a board property check failed, the name is the answer;
+  * no stall and the root-mount panic returns → the transport succeeded and the failure moved to the
+    root volume (UUID or manifest), which is a different problem;
+  * the menu again → the payload never handed off.
+- The stall build is deliberately sticky: the phone stays as it is until someone reboots it.
