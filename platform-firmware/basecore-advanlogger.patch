@@ -1,0 +1,10 @@
+--- a/Mu_Basecore/MdeModulePkg/Core/Dxe/DxeMain.inf
++++ b/Mu_Basecore/MdeModulePkg/Core/Dxe/DxeMain.inf
+@@ -101,6 +101,7 @@
+   OrderedCollectionLib
+   DxeMemoryProtectionHobLib ## MU_CHANGE
+   SafeIntLib                ## MU_CHANGE
++  AdvancedLoggerLib         ## UniXNU: create the DXE Advanced Logger buffer
+ 
+ [Guids]
+   gEfiEventMemoryMapChangeGuid                  ## PRODUCES             ## Event
