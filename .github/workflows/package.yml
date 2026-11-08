@@ -79,7 +79,16 @@ jobs:
           . "$RUNNER_TEMP/uefi-venv/bin/activate"
           python3 -m pip install --quiet --upgrade pip
           python3 -m pip install --quiet -r pip-requirements.txt
-          python3 build_uefi.py -d diting
+          # GitHub release downloads intermittently answer 504 for the OneCrypto and basetools
+          # assets; retry the whole build, stuart update re-runs on each attempt.
+          for attempt in 1 2 3; do
+            if python3 build_uefi.py -d diting; then
+              break
+            fi
+            echo "firmware build attempt $attempt failed; retrying"
+            sleep 30
+          done
+          test -f Build/ditingPkg/RELEASE_CLANGPDB/FV/SILICIUM_UEFI.fd
           FD="Build/ditingPkg/RELEASE_CLANGPDB/FV/SILICIUM_UEFI.fd"
           [ -f "$FD" ] || { echo "missing firmware volume: $FD" >&2; exit 1; }
           sha256sum "$FD"; ls -l "$FD"
