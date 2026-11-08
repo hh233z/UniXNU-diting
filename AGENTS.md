@@ -96,3 +96,22 @@
 - `D:\ai\diting\artifacts\ci-20261107-diting-firmware\pong-unixnu-uefi.img` (first hardware boot, sha ac5aa923).
 - `D:\ai\diting\build-work\greenB\...\pong-unixnu-uefi.img` (Tools menu enabled, sha FB2867EE).
 
+- Apple 22H374 的 OS、SystemOS、AppOS 已在 WSL 本地提取/解密并只读挂载，未上传。用户态 helper Action 42458543571 成功，输出在 `D:\ai\diting\build-work\runtime-42458543571`。用户态 APFS 写入仅通过小样文件、属主与权限的独立读取；完整卷及设备均未验证，尚无可刷入的 userdata 成品。
+
+## 2026-11-08 17:2x — Advanced Logger / firmware CDN
+
+- On hardware the menu works, `Tools` is present (payload entry), but `Tools -> Advanced Logger`
+  shows `Advanced Logger: no log`.
+- Cause: the plugin reads through `AdvancedLoggerAccessLibGetNextFormattedLine`, which does
+  `LocateProtocol(gAdvancedLoggerProtocolGuid)`. That protocol is installed by the DXE_CORE
+  instance of `AdvancedLoggerLib`, and Mu's stock `Mu_Basecore/MdeModulePkg/Core/Dxe/DxeMain.inf`
+  never consumes `AdvancedLoggerLib`, so the buffer is never created.
+- Fix in the firmware job: insert `AdvancedLoggerLib` into `[LibraryClasses]` of `DxeMain.inf`
+  before `[Guids]`, idempotently, in place (a patch failed because CI checks out Mu_Basecore
+  3c9c7b2e, not the workstation revision, and the patch file lost its CRLF).
+- Current blocker: the firmware job cannot fetch its external dependencies. Both
+  `basetools-v2026080000.0.1.tar.gz` and `OneCrypto-Accelerated.zip` return **HTTP 504** from the
+  GitHub release CDN, also from this workstation with curl, so it is an upstream outage, not our
+  configuration. Retries (3x) and longer backoff do not help; the build resumes when GitHub serves
+  the assets again.
+
