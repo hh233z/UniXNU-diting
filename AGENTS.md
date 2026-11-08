@@ -176,3 +176,16 @@
   before DarwinBoot, and mirrors the boot-refused / inputs-validated Prints
   into DEBUG_ERROR.
 
+## 2026-11-08 21:3x — logger fix booted
+
+- Run 42482636331 on 585b305 is green. The firmware log shows the locate
+  retry and the DarwinBoot DEBUG_ERROR mirrors, and DarwinBoot.c was
+  compiled with -U MDEPKG_NDEBUG after -D MDEPKG_NDEBUG.
+- SILICIUM_UEFI.fd sha256
+  91554cbc12a1f40d313a52f0c04b6bb17616709f73918780cc5f61a43ffdb9a7,
+  3145728 bytes. pong-unixnu-uefi.img is 101191680 bytes, sha256
+  d49888c27b41235db026de8beee25844bee2ed00bb785900a309e479635e321e.
+- fastboot boot on 9e0c2b55, product diting, unlocked yes, slot a.
+  Sending and Booting returned OKAY. No partition was written.
+  The Advanced Logger screen for this image was not read from the host.
+
