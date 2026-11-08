@@ -189,3 +189,28 @@
   Sending and Booting returned OKAY. No partition was written.
   The Advanced Logger screen for this image was not read from the host.
 
+
+## 2026-11-09 — the storage path is the wrong driver (documentation audit)
+
+`unixnu.com/zh/porting/ufs`, `/zh/reference/components` and `/drivers/sheng-ufs` state the supported
+storage implementation and its integration; the device repository does not follow it yet:
+
+| requirement | documentation | this repository |
+| --- | --- | --- |
+| driver source | `UniXNU/ShengUfs` vendored at `drivers/ShengUfs` (catalog id `ShengUfs`, revision e2b32cc) | `drivers/NativeUfs`, imported by hand from UniXNU-pong |
+| publication module | `RootPublication.h`, `RootWindowRead.h`, `GccUfs.h` | absent |
+| boot argument | `native-ufs-root=1` | not used anywhere in the repository |
+| component selection | `[components] include` contains `ShengUfs`, kernel links `component:ShengUfs` | `include = ["PongPlatform24", "XnuPrelink"]` |
+| compatible | `qcom,sm8550-ufshc` (board constant to adapt) | Pong constants `pong,ufs-*` |
+
+Bring-up stage list (`/zh/porting/bring-up`) puts us at **stage 6**: the kernel reaches the platform
+expert and IOKit, then panics `Failed to mount root device`. Stage 6 requires the block driver to
+print link speed and the command queue, publish `OS` and `SystemOS`, and match
+`root_match_volume_uuid`. The imported Pong probe driver never publishes root media, so the current
+driver cannot pass stage 6 regardless of tuning.
+
+Next: vendor `drivers/ShengUfs` at e2b32cc, add `ShengUfs` to `[components] include`, link its
+archive (catalog aliases `build/native-ufs/libNativeUfs.a` to `build/sheng-ufs/libShengUfs.a`), add
+`native-ufs-root=1`, and adapt the board constants (diting: controller 0x01d84000, SMMU 0x15000000,
+stream 0xe0, SPI 265, UFS compatible `qcom,sm8475-ufshc` — verify against the live FDT).
+

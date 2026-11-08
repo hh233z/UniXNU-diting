@@ -26,7 +26,7 @@ fetch = ["KernelCache", "DeviceTree", "StaticTrustCache", "Cryptex1,SystemOS", "
 # This is the community Pong A730/QCA6490/Darwin24 implementation, not the A740/WCN7850 source.
 # The kit lives in this repository at kits/PongPlatform24 and declares no archive recipe: the
 # kernel step of this board builds the aggregate itself, see [kernel] below.
-include = ["PongPlatform24", "XnuPrelink"]
+include = ["PongPlatform24", "XnuPrelink", "ShengUfs"]
 
 [device_tree]
 source = "device:dts/diting.dts"
@@ -129,6 +129,11 @@ kernel_args = [
   "pong_adsp=2",
   "pong_audio=2",
   "pong_ufs_readwrite=0",
+  # docs/porting/ufs: the storage driver publishes the root media only in root mode.
+  "native-ufs-root=1",
+  # Temporary bring-up aid: on a UFS failure the driver logs the report and then holds the CPU,
+  # so the panel keeps the failing line long enough to photograph. Remove once root mounts.
+  "pong_ufs_stall=1",
   "ignition_level=1",
   "dyld_flags=0x8",
   "launchd_rd=md0",
