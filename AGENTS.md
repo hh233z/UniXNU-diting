@@ -135,3 +135,19 @@
   before setup, so the recursive checkout of mipisyst never runs. The firmware job now
   initializes Mu_Basecore submodules before that edit.
 
+## 2026-11-08 20:3x — logger firmware packaged
+
+- Run 42478126479 on 4570412 is green. The firmware job checked out mipisyst
+  370b5944, seeded the vendored ext deps, and linked DxeCore with
+  DxeCoreAdvancedLoggerLib. SILICIUM_UEFI.fd is 3145728 bytes, sha256
+  b6782ca101d0fd52d55a6e9e40c072ad4af240ac8ae69bbefcddc9b62a9359cb.
+- Package artifact images-ipados-18.7.10-22H374. The fastboot candidate
+  boot/pong-unixnu-uefi.img is 101109760 bytes, sha256
+  e0a4bd1f1d026dadc78346ef8f2fa4467675a11bdedebdaba3bed8d565e6bbe2;
+  its fd_sha256 matches that volume. hardware_tested is false.
+- check-storage-bindings.py reported 9 storage bindings inside mapped
+  segments, with prelink info after the components. Runtime behavior is
+  still unchecked.
+- No partition was written. Tools -> Advanced Logger is still a device
+  observation; this build only creates the DXE logger buffer.
+
