@@ -372,3 +372,16 @@ Two variants are built for the next session:
 - `no-stall` (12a8596): identical but without the stall, so the boot continues to the root-mount panic.
 
 Both are otherwise the same kernel; the stall only decides whether the failure is frozen on screen.
+
+Both next-session images are built and downloaded:
+
+| variant | run | path | sha256 (first 16) | boot arg |
+| --- | --- | --- | --- | --- |
+| stall | 42509554099 | `build-work/greenD/.../boot/pong-unixnu-uefi.img` | `F2EDDF7F1B7B0466` | `pong_ufs_stall=1` |
+| no-stall | 42519844089 | `build-work/greenE/.../boot/pong-unixnu-uefi.img` | `589710228B605371` | — |
+
+The `no-stall` branch (12a8596) holds the variant; main keeps the stall build. The branch was rebuilt
+after the first attempt accidentally committed `git commit -a` gitlink deletions for the drivers that
+are not checked out locally (`drivers/ArmDTPlatform`, `DarwinBoot24`, `NativeRamBlock`, `PongAdreno`,
+`PongBootCapture`, `PongMetal`, `PongPower`), which made that CI checkout fail with a missing source
+file. Only `board.toml` is in the branch commit now.
