@@ -349,3 +349,26 @@ resolved by UUID.
 compares the layout's measured UUIDs against the profile, and the window this port flashes is the raw
 `SystemOS.dmg`, whose volume is `4a77ba00-2826-44c4-b883-1fa92ac36880`, not the UUID of a macOS-prepared
 copy.
+
+## 2026-11-09 04:30 — reading the UFS report (ready-made mapping)
+
+The stall build prints `formatUfsRootDiagnostics` before it freezes; this is what each field means
+and what to do next. Line names come from `drivers/NativeUfs/RootDiagnostics.h`.
+
+| field | meaning | next action |
+| --- | --- | --- |
+| `powered=0` (GDSC bit 31 clear at `0x187004`) | the firmware handed off with the UFS PHY power domain down | enable `gcc_ufs_phy_gdsc` (0x187004) and the PHY branches before reading the host, or make the payload keep it up |
+| `buses=0` (AXI 0x187018 / AHB 0x187020 / AGGRE 0x1870d4 enable bits clear) | the clock branches are gated | enable the three branch bits, then re-read; `hwcg` may still report CLK_OFF on an idle branch, so judge by the enable bit only |
+| `cap=0`/`cap=ffffffff` or `ver` out of range | the host block is not clocked (or not mapped) | same as above; do not trust any other field until `ver` is sane |
+| `hcs` bit0 clear | the device is not present on the link | link/firmware handoff problem, not a driver bug |
+| `hcs[3:0] != 0xf`, `db != 0`, or `is != 0` | the controller still owns commands from the previous owner | the request list is not ours to take; find who left it running (the bootloader's UFS driver) |
+| `stage=` | exact step in `hostBringUp`/`RootQueue`/`RootCommands` | read the matching source line |
+| `manifest=` | `RootLayout` status: 0 ok, 1 no magic, 2 version/count, 3 hash, 4 bounds, 5 names, 6 overlap, 7 attributes | the flashed image's SHNGROOT block; we verified ours, so a non-zero here means the partition was overwritten |
+| `GPT/read lba=… userdata=…` | the GPT entry the driver resolved | must equal 0x2F8A00..0x3ADF3FA |
+
+Two variants are built for the next session:
+
+- `main` (2e6fc90): `pong_ufs_stall=1`, freezes on a UFS failure so the panel keeps the report.
+- `no-stall` (12a8596): identical but without the stall, so the boot continues to the root-mount panic.
+
+Both are otherwise the same kernel; the stall only decides whether the failure is frozen on screen.
