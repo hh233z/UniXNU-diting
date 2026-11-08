@@ -49,9 +49,23 @@ jobs:
           # build_uefi.py only updates submodules with -u; the packages the DSC lists must exist.
           git submodule update --init --depth 1 Binaries Common/Mu Common/Mu_OEM_Sample Mu_Basecore Silicium-ACPI
           # Mu's DxeMain never consumes AdvancedLoggerLib, so the DXE log buffer is never
-          # created and the Tools plugin reports "no log". Add the library class where the
+          # created and the Tools plugin reports "no log". Insert the library class where the
           # DXE core links it; DxeCore keeps its own framebuffer DebugLib.
-          git apply ../device/platform-firmware/basecore-advanlogger.patch
+          python3 - <<'PY'
+          from pathlib import Path
+          path = Path("Mu_Basecore/MdeModulePkg/Core/Dxe/DxeMain.inf")
+          data = path.read_bytes()
+          if b"AdvancedLoggerLib" in data:
+              print("AdvancedLoggerLib already present")
+          else:
+              nl = b"\r\n" if b"\r\n" in data else b"\n"
+              marker = b"[Guids]" + nl
+              assert marker in data, "DxeMain.inf has no [Guids] section"
+              add = b"  AdvancedLoggerLib         ## UniXNU: create the DXE Advanced Logger buffer" + nl
+              data = data.replace(marker, add + nl + marker, 1)
+              path.write_bytes(data)
+              print("AdvancedLoggerLib inserted")
+          PY
           cp -r ../device/platform-firmware/ditingPkg Platforms/Xiaomi/ditingPkg
           # build_uefi.py packs Resources/DTBs/<device>.dtb into the volume.
           mkdir -p Resources/DTBs
