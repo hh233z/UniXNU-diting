@@ -79,8 +79,13 @@ jobs:
           . "$RUNNER_TEMP/uefi-venv/bin/activate"
           python3 -m pip install --quiet --upgrade pip
           python3 -m pip install --quiet -r pip-requirements.txt
-          # GitHub release downloads intermittently answer 504 for the OneCrypto and basetools
-          # assets; retry the whole build, stuart update re-runs on each attempt.
+          # GitHub-hosted runners still get HTTP 504 for these two release assets.
+          # The device repo carries the upstream archives. Seeding extdep_state.yaml
+          # makes stuart update treat them as already resolved.
+          python3 ../device/platform-firmware/seed-ext-deps.py \
+            ../device/platform-firmware/vendor \
+            .
+          # Retry the build itself. A seeded ext_dep is not downloaded again.
           for attempt in 1 2 3; do
             if python3 build_uefi.py -d diting; then
               break

@@ -115,3 +115,14 @@
   configuration. Retries (3x) and longer backoff do not help; the build resumes when GitHub serves
   the assets again.
 
+
+
+## 2026-11-08 19:1x — ext deps vendored
+
+- Run 42474456806 still died in stuart update with HTTP 504 for the same two assets. From this
+  workstation the same URLs returned the real gzip and zip.
+- platform-firmware/vendor/ now carries those two upstream archives. seed-ext-deps.py checks the
+  sha256 values from Mu ext_dep descriptors and unpacks them into Mu-Basetools_extdep and
+  onecrypto-bin_extdep with extdep_state.yaml, so stuart update does not download them.
+- The DxeCore AdvancedLoggerLib link has still not been compiled.
+
