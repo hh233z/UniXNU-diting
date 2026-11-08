@@ -289,3 +289,35 @@ unixnu,userdata-last-lba  0x3adf3fa
 So matching and every board-property check pass; the remaining suspects are the GCC power/clock gate
 (`0x187004` bit 31 and the AXI/AHB/aggregate enable bits) and the transport itself. Both are reported
 by the stall build now on the phone.
+
+## 2026-11-09 03:55 — the persistent log channel already exists
+
+The firmware reads a ramoops ring at `0xA7000000` on every boot and dumps its tail as `RAMOOPS|`
+lines through `DEBUG()` (`Platforms/Xiaomi/UniXNUPkg/Driver/UniXNURamDiskDxe/UniXNURamDiskDxe.c`,
+`DumpRamoops`), which is exactly what the Advanced Logger plugin exports.
+
+Header layout, shared by both sides:
+
+```
+uint32 sig   = 0x43474244   ('DBGC')
+uint32 start
+uint32 size
+// then capacity = 0x200000 - 12 bytes of ring, written by the kernel
+```
+
+The kernel side is `osfmk/arm64/pong_ramoops_console.h` from `patches/xnu-ipados18`:
+`pong_ramoops_console_init()` maps `CONFIG_XNU_PONG_RAMOOPS_BASE` (0xa7000000 in both diting
+defconfigs) plus 4 MiB, writes the magic and a `PONG DIAGNOSTIC v92` line, and every later console
+write is mirrored into the ring.
+
+Consequence: the console of a hung boot — including every `PONG_UFS` line — should survive in DRAM
+and be readable from the firmware on the **next** boot, without a screen and without a QR scan of the
+panic screen. The one observation so far (`RAMOOPS: sig=0x1400382E size=0x0`) predates any kernel run
+that had the mirror enabled, so the channel is untested rather than broken.
+
+Next device session, in this order:
+1. reboot the stalled phone,
+2. `fastboot boot` the same image again (the firmware dumps the previous ring at startup),
+3. `Tools -> Advanced Logger`, scan with OneSend, send the `.log`.
+
+That file should contain the kernel console tail of the stalled run.
