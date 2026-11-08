@@ -34,6 +34,3 @@
 [submodule "drivers/PongWifi"]
 	path = drivers/PongWifi
 	url = https://github.com/Chengdong-Yu/pong-wifi.git
-[submodule "drivers/ShengUfs"]
-	path = drivers/ShengUfs
-	url = https://github.com/UniXNU/ShengUfs.git
