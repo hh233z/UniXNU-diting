@@ -70,14 +70,18 @@ def install_components(unixnu):
 def fix_prelink_info_extent(unixnu):
     """让静态内核的地址上界包含所有预链接组件。"""
     kit = unixnu / 'kits/XnuPrelink'
-    if head(kit) != 'b74ed7c74a07f0eb5f81089c660905ecc4cabb7f':
-        raise SystemExit('XnuPrelink revision differs; review the prelink layout fix')
     source = kit / 'emit_prelink.py'
+    if not source.is_file():
+        raise SystemExit(f'XnuPrelink emit_prelink.py missing under {kit}')
     text = source.read_text()
     old = "info_va = align(max(s['va'] + s['size'] for s in native['segments'] if s['size']))"
     new = "info_va = align(max(s['va'] + s['size'] for s in [*native['segments'], *new_segments] if s['size']))"
     if text.count(new) == 1 and old not in text:
         return
+    if head(kit) != 'b74ed7c74a07f0eb5f81089c660905ecc4cabb7f':
+        raise SystemExit(
+            f'XnuPrelink revision {head(kit)} differs from the one this patch was written for '
+            'and does not carry the fix; review the prelink layout')
     if text.count(old) != 1 or new in text:
         raise SystemExit('XnuPrelink prelink-info calculation changed; review before building')
     source.write_text(text.replace(old, new, 1))
