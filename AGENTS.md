@@ -344,3 +344,8 @@ macOS prepare step; the window we flash is the raw `SystemOS.dmg` whose volume i
 `4a77ba00-2826-44c4-b883-1fa92ac36880`. Nothing consumes the SystemOS UUID for the root mount, but
 the record is wrong for the image we ship and must be corrected before the SystemOS volume is
 resolved by UUID.
+
+`profile.toml systemos_volume_uuid` corrected in the same commit: `check-ci-volume-layout.py`
+compares the layout's measured UUIDs against the profile, and the window this port flashes is the raw
+`SystemOS.dmg`, whose volume is `4a77ba00-2826-44c4-b883-1fa92ac36880`, not the UUID of a macOS-prepared
+copy.

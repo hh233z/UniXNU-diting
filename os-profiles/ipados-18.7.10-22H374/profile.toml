@@ -60,4 +60,4 @@ windows = [{ name = "OS", component = "OS" }, { name = "SystemOS", component = "
 # 337CF716-F62B-446B-B959-4A5F12A7701C). The Data volume UUID belongs to the installed image,
 # not to the restore, so it is not recorded here.
 os_volume_uuid = "B07DF049-7AD9-47B5-9F8F-9EE728056398"
-systemos_volume_uuid = "D44F8E57-4171-4C6B-B21A-1808F6EF2E20"
+systemos_volume_uuid = "4A77BA00-2826-44C4-B883-1FA92AC36880"
