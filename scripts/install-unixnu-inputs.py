@@ -93,6 +93,9 @@ def fix_prelink_info_extent(unixnu):
 def fix_apple_cpu_match(unixnu):
     """保留平台组件，移除与本机 ArmCpu 冲突的苹果 CPU 匹配项。"""
     source = unixnu / 'kits/XnuPrelink/emit_prelink.py'
+    if not source.is_file():
+        print(f'XnuPrelink kit not checked out under {source.parent}; skipping the CPU match patch')
+        return
     text = source.read_text()
     anchor = "        entry = copy.deepcopy(entries[identifier])\n"
     addition = (
