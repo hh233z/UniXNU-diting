@@ -214,3 +214,28 @@ archive (catalog aliases `build/native-ufs/libNativeUfs.a` to `build/sheng-ufs/l
 `native-ufs-root=1`, and adapt the board constants (diting: controller 0x01d84000, SMMU 0x15000000,
 stream 0xe0, SPI 265, UFS compatible `qcom,sm8475-ufshc` — verify against the live FDT).
 
+
+## 2026-11-09 02:30 — storage experiments (what is actually true now)
+
+- The imported `drivers/NativeUfs` is already adapted for diting: `kGccUfsPage = 0x00187000`,
+  `kUfsHost = 0x01d84000`, `kUfsStreamId = 0xe0`, ADT properties `pong,smmu-base = 0x15000000`,
+  `pong,smmu-size = 0x100000`, `pong,smmu-context-banks = 78`, `pong,smmu-match-groups = 120`,
+  `pong,ufs-spi = 265`. The ADT generator writes the ufshc node with
+  `compatible = qcom,sm8475-ufshc\0qcom,sm8450-ufshc\0` (make-pong-adt-ipados18.py:244), which is
+  exactly what the driver's `compatible()` accepts, so matching is not the blocker.
+- Swapping in the supported ShengUfs component is **not** a board.toml edit: `[kernel]
+  builder_component = PongPlatform24` makes the core skip `build_archives()` entirely, the kit recipe
+  rebuilds `drivers/NativeUfs` unconditionally from `PONG_NATIVE_DRIVER_SOURCE` and unlinks any alias,
+  and the archive the kernel links is hard-coded at three sites in the **merged** copy
+  `kits/PongPlatform24/build-support/merged-scripts/build-xnu-ipados18.sh` (the repo copy is not what
+  runs). A real switch needs a `UFS_DRIVER`/`UFS_ARCHIVE` parameter, a `--driver` option in
+  `build-pong-ufs-ipados18-macos.py`, VerifiedRoot/VirtioMmioBlock include paths, and the
+  bindings.json producer to keep writing `mac-build/native-ufs/bindings.json` (Adreno platform reads
+  it). Until that is done, tune the imported driver.
+- `native-ufs-root=1` must **not** be set while the imported driver is used: the core rejects the
+  payload with `native UFS root boot needs exactly one sheng-pmgr=2`, and that PMGR personality is
+  not part of this board.
+- Current experiment (build 1c04458): `pong_ufs_stall=1` in `kernel_args`. On a UFS failure the
+  driver logs the `formatUfsRootDiagnostics` block and then holds the CPU (`IOSleep` loop), so the
+  last console lines stay on the panel for a photograph. `panic()` cannot be used: it is a macro in
+  this SDK and the symbol is not linkable from the archive.
