@@ -78,6 +78,56 @@ jobs:
           : > Resources/ramdisk
           cp ../device/platform-firmware/diting.toml Resources/Configs/diting.toml
           git apply ../device/platform-firmware/darwin-boot-diting.patch
+          # A failed first LocateProtocol used to stick for the life of the driver,
+          # so DarwinBoot's later DEBUG_ERROR lines never reached the buffer.
+          python3 - <<'PY'
+          from pathlib import Path
+          path = Path("Common/Mu/AdvLoggerPkg/Library/AdvancedLoggerLib/Dxe/AdvancedLoggerLib.c")
+          data = path.read_bytes()
+          nl = b"\r\n" if b"\r\n" in data else b"\n"
+          old = b"  if (!mInitialized) {" + nl + b"    mInitialized = TRUE;" + nl
+          if old not in data:
+              done = b"} else {" + nl + b"        mInitialized = TRUE;"
+              if done in data:
+                  print("logger latch already retried")
+              else:
+                  raise SystemExit("AdvancedLoggerLib.c latch site not found")
+          else:
+              data = data.replace(old, b"  if (!mInitialized) {" + nl, 1)
+              needle = (
+                  b"        Status = EFI_NOT_FOUND;" + nl
+                  + b"      }" + nl
+                  + b"    }" + nl
+              )
+              insert = (
+                  b"        Status = EFI_NOT_FOUND;" + nl
+                  + b"      } else {" + nl
+                  + b"        mInitialized = TRUE;" + nl
+                  + b"      }" + nl
+                  + b"    }" + nl
+              )
+              if needle not in data:
+                  raise SystemExit("AdvancedLoggerLib.c signature check not found")
+              path.write_bytes(data.replace(needle, insert, 1))
+              print("logger locate retries until the protocol exists")
+          boot = Path("Platforms/Xiaomi/DarwinBootPkg/Driver/DarwinBoot.c")
+          text = boot.read_bytes()
+          bnl = b"\r\n" if b"\r\n" in text else b"\n"
+          prints = [
+              b'Print (L"DARWINBOOT: unsupported inputs or exception level; firmware retained\\n");',
+              b'Print (L"DARWINBOOT: inputs validated; exiting boot services\\n");',
+              b'Print (L"DARWINBOOT: boot refused: %r; firmware retained\\n", Status);',
+          ]
+          for line in prints:
+              if line not in text:
+                  raise SystemExit("missing DarwinBoot line: " + line.decode())
+              debug = b"DEBUG ((DEBUG_ERROR, " + line[len(b"Print (L"):-2] + b"));"
+              if debug in text:
+                  continue
+              text = text.replace(line, debug + bnl + line, 1)
+          boot.write_bytes(text)
+          print("DarwinBoot Print lines mirrored to DEBUG_ERROR")
+          PY
           python3 -m venv "$RUNNER_TEMP/uefi-venv"
           . "$RUNNER_TEMP/uefi-venv/bin/activate"
           python3 -m pip install --quiet --upgrade pip

@@ -84,10 +84,12 @@ READ_LOCK_STATUS   = TRUE
   !include Include/RAW.inc
 
   # UniXNU application, firmware boot registrar and XNU loader.
+  # AdvLogDxe installs the logger protocol. Keep it ahead of DarwinBoot so a
+  # driver that logs before DXE core publish still has a buffer by handoff.
+  INF ditingPkg/Drivers/AdvLogDxe/AdvLogDxe.inf
   INF UniXNUPkg/Application/UniXNU/UniXNU.inf
   INF UniXNUPkg/Driver/UniXNUDxe/UniXNUDxe.inf
   INF DarwinBootPkg/Driver/DarwinBoot.inf
-  INF ditingPkg/Drivers/AdvLogDxe/AdvLogDxe.inf
   INF UniXNUPkg/Driver/AdvancedLogDxe/AdvancedLogDxe.inf
 !if $(MONDRIAN_INITRD_DISK_ENABLED) == 1
   INF ditingPkg/Drivers/MondrianBootMemoryDxe/MondrianBootMemoryDxe.inf

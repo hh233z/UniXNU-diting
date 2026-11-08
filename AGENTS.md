@@ -164,3 +164,15 @@
   Android adb. The host did not observe the screen. Tools ->
   Advanced Logger is still unread.
 
+## 2026-11-08 20:5x — Advanced Logger was empty
+
+- Temporary boots of run 42478126479 still showed Advanced Logger: no log.
+  The menu reads only the Advanced Logger buffer. RELEASE builds pass
+  -D MDEPKG_NDEBUG, and DebugLib.h turns DEBUG() into if(FALSE), so the
+  buffer stays empty. On-screen DARWINBOOT lines are Print(), which never
+  enters that buffer.
+- The firmware build now undefines MDEPKG_NDEBUG, keeps DEBUG_ERROR as the
+  runtime filter, retries a missed logger LocateProtocol, installs AdvLogDxe
+  before DarwinBoot, and mirrors the boot-refused / inputs-validated Prints
+  into DEBUG_ERROR.
+

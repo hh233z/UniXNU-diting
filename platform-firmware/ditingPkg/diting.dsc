@@ -146,3 +146,10 @@
   # pass the global level and reach the Advanced Logger buffer.
   gUniXNUPkgTokenSpaceGuid.PcdUniXNUDebugLevel|0x80000000
   gUniXNUPkgTokenSpaceGuid.PcdUniXNUDeviceModel|"Redmi K50 Ultra"
+
+# RELEASE tooling defines MDEPKG_NDEBUG, and DebugLib.h then turns DEBUG()
+# into if(FALSE). The Tools page only reads the Advanced Logger buffer, so
+# the menu says "no log" while Print() text is still on the screen. Undefine
+# it after the toolchain flag. PcdDebugPrintErrorLevel stays DEBUG_ERROR.
+[BuildOptions]
+  RELEASE_*_*_CC_FLAGS = -U MDEPKG_NDEBUG

@@ -43,6 +43,6 @@ AdvLogDxeEntry (
     return Status;
   }
 
-  DEBUG ((DEBUG_INFO, "ADVLOG: producer ready, protocol installed\n"));
+  DEBUG ((DEBUG_ERROR, "ADVLOG: producer ready, protocol installed\n"));
   return EFI_SUCCESS;
 }
