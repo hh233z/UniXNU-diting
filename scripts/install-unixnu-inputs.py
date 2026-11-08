@@ -72,7 +72,10 @@ def fix_prelink_info_extent(unixnu):
     kit = unixnu / 'kits/XnuPrelink'
     source = kit / 'emit_prelink.py'
     if not source.is_file():
-        raise SystemExit(f'XnuPrelink emit_prelink.py missing under {kit}')
+        # The record workflow checks the configuration before any component checkout exists;
+        # the patch is applied where the kit is actually present.
+        print(f'XnuPrelink kit not checked out under {kit}; skipping the info-extent patch')
+        return
     text = source.read_text()
     old = "info_va = align(max(s['va'] + s['size'] for s in native['segments'] if s['size']))"
     new = "info_va = align(max(s['va'] + s['size'] for s in [*native['segments'], *new_segments] if s['size']))"
