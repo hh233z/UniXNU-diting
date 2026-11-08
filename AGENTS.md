@@ -151,7 +151,7 @@
 - No partition was written. Tools -> Advanced Logger is still a device
   observation; this build only creates the DXE logger buffer.
 
-## 2026-11-08 21:0x — temporary boot of the logger image
+## 2026-11-08 20:4x — temporary boot of the logger image
 
 - fastboot boot of the run 42478126479 image
   pong-unixnu-uefi.img, 101109760 bytes, built from 4570412.
