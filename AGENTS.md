@@ -321,3 +321,26 @@ Next device session, in this order:
 3. `Tools -> Advanced Logger`, scan with OneSend, send the `.log`.
 
 That file should contain the kernel console tail of the stalled run.
+
+## 2026-11-09 03:45 — root UUID verified against the shipped images
+
+Added `scripts/apfs-volume-uuid.py` (lists every APFS volume superblock of a raw container with its
+UUID and name; offsets from apfsprogs `include/apfs/raw.h`: magic 32, uuid 0xF0, name 0x2C0).
+
+Measured on the images this port actually ships:
+
+```
+OS.dmg        volume b07df049-7ad9-47b5-9f8f-9ee728056398  name CrystalUpdate22H374.J171J172OS
+SystemOS.dmg  volume 4a77ba00-2826-44c4-b883-1fa92ac36880  name CrystalUpdate22H374.J171J172SystemCryptex
+AppOS.dmg     volume 78e7965a-108b-4dc9-a7a4-7ed503838e4f  name AppCryptex
+```
+
+The OS volume UUID equals `profile.toml os_volume_uuid` and the payload's `root_match_volume_uuid`
+(`b07df049-7ad9-47b5-9f8f-9ee728056398`), so a published OS window is mountable by UUID.
+
+**Discrepancy to fix:** `profile.toml systemos_volume_uuid` records
+`D44F8E57-4171-4C6B-B21A-1808F6EF2E20`, which is the UUID of a *prepared* SystemOS volume made by the
+macOS prepare step; the window we flash is the raw `SystemOS.dmg` whose volume is
+`4a77ba00-2826-44c4-b883-1fa92ac36880`. Nothing consumes the SystemOS UUID for the root mount, but
+the record is wrong for the image we ship and must be corrected before the SystemOS volume is
+resolved by UUID.
