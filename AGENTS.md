@@ -151,3 +151,16 @@
 - No partition was written. Tools -> Advanced Logger is still a device
   observation; this build only creates the DXE logger buffer.
 
+## 2026-11-08 21:0x — temporary boot of the logger image
+
+- fastboot boot of the run 42478126479 image
+  pong-unixnu-uefi.img, 101109760 bytes, built from 4570412.
+  Host copy:
+  D:\ai\diting\artifacts\ci-42478126479\...\boot\pong-unixnu-uefi.img.
+- Device 9e0c2b55, product diting, model 22081212C, unlocked yes,
+  current slot a. Sending and Booting both returned OKAY.
+  No partition was written and the slot was not changed.
+- Fifteen seconds later the phone was not in fastboot and not in
+  Android adb. The host did not observe the screen. Tools ->
+  Advanced Logger is still unread.
+
