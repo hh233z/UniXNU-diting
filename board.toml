@@ -100,6 +100,7 @@ BUILDID_STRING = "UniXNU-Diting"
 PONG_INITRD_DISK_ENABLED = "1" # Set 0 to isolate SEC/HOB without the disk DXE.
 
 [payload]
+tools = true
 # The boot menu entry the firmware's DarwinBoot lists first, and the volume label of payload.img.
 title = "Diting iPadOS 18.7.10"
 volume = "UNIXNU"
