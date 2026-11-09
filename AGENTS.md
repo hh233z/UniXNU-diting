@@ -546,3 +546,9 @@ exactly the gate that produced `writable UFS Data UUID unavailable` with the rea
 
 Watching for: `PONG APFS: UUID ... bound to Data UFS window`, `scratch Data mount` no longer SKIP, and
 whether the `posix_spawn(...) error 0xd - Permission denied` loop stops.
+
+## 2026-11-10：服务启动权限诊断
+
+- 22H374 原生 launchd 与 xpcproxy 已实机运行，多个目标服务的 `posix_spawn` 返回 EACCES；Data 在只读轮次未挂载，写入轮次尚未观察到其最终状态。
+- `applog=1` 现有逻辑会把 spawn 文件操作中输出到 `/dev/null` 的路径重定向到 `/dev/console`；这是一条待验证的失败路径，不能认定为实际原因。
+- `pong_exec_diag=1` 启用有次数上限的 xpcproxy spawn 诊断，区分文件操作、路径查找、执行权限、镜像激活、persona、签名约束及 Data 状态；诊断不修改原错误或权限行为。实际根因必须以该镜像的设备日志为准。

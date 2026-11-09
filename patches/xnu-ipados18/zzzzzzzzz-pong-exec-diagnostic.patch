@@ -1,0 +1,328 @@
+diff --git a/bsd/kern/kern_exec.c b/bsd/kern/kern_exec.c
+--- a/bsd/kern/kern_exec.c
++++ b/bsd/kern/kern_exec.c
+@@ -402,6 +402,37 @@
+ static int copyoutptr(user_addr_t ua, user_addr_t ptr, int ptr_size);
+ static void exec_resettextvp(proc_t, struct image_params *);
+ static int process_signature(proc_t, struct image_params *);
++
++#if defined(ARM64_BOARD_CONFIG_PONG) && (DEVELOPMENT || DEBUG)
++/* 仅记录启动进程的真实拒绝，不更改 spawn 或签名判定。 */
++static TUNABLE(uint32_t, pong_exec_diag, "pong_exec_diag", 0);
++static uint32_t pong_diag_spawn_count, pong_diag_open_count, pong_diag_action_count;
++static uint32_t pong_diag_lookup_count, pong_diag_perm_count, pong_diag_image_count;
++static uint32_t pong_diag_signature_count, pong_diag_persona_count;
++#if defined(XNU_OWNER_DATA_MOUNT) && XNU_OWNER_DATA_MOUNT
++extern volatile int native_owner_data_status, native_owner_data_stage, native_owner_data_readonly;
++#endif
++
++static bool
++pong_exec_diag_emit(uint32_t *count)
++{
++	proc_t caller = current_proc();
++	if (!pong_exec_diag || !caller) {
++		return false;
++	}
++	const char *const names[] = {"xpcproxy", "timed", "sharingd", "ptpd", "logd",
++	    "accountsd", "tccd", "contextstored"};
++	bool match = false;
++	for (unsigned i = 0; i < sizeof(names) / sizeof(names[0]); i++) {
++		if (strcmp(caller->p_comm, names[i]) == 0) {
++			match = true;
++			break;
++		}
++	}
++	if (!match) return false;
++	return __atomic_fetch_add(count, 1, __ATOMIC_RELAXED) < 8;
++}
++#endif
+ static void exec_prefault_data(proc_t, struct image_params *, load_result_t *);
+ static errno_t exec_handle_port_actions(struct image_params *imgp,
+     struct exec_port_actions *port_actions);
+@@ -2325,6 +2356,13 @@
+ 
+ again:
+ 	error = namei(ndp);
++#if defined(ARM64_BOARD_CONFIG_PONG) && (DEVELOPMENT || DEBUG)
++	if ((error == EACCES || error == EPERM) && pong_exec_diag_emit(&pong_diag_lookup_count)) {
++		kauth_cred_t cred = vfs_context_ucred(imgp->ip_vfs_context);
++		printf("PONG EXEC lookup err=%d uid=%u gid=%u path=%.160s\n", error,
++		    kauth_cred_getuid(cred), kauth_cred_getgid(cred), excpath);
++	}
++#endif
+ 	if (error) {
+ 		if (error == ERESTART) {
+ 			error = EINTR;
+@@ -2385,6 +2423,11 @@
+ 	error = -1;
+ 	for (i = 0; error == -1 && execsw[i].ex_imgact != NULL; i++) {
+ 		error = (*execsw[i].ex_imgact)(imgp);
++#if defined(ARM64_BOARD_CONFIG_PONG) && (DEVELOPMENT || DEBUG)
++		if ((error == EACCES || error == EPERM) && pong_exec_diag_emit(&pong_diag_image_count)) {
++			printf("PONG EXEC image err=%d activator=%d path=%.160s\n", error, i, excpath);
++		}
++#endif
+ 
+ 		switch (error) {
+ 		/* case -1: not claimed: continue */
+@@ -2968,6 +3011,15 @@
+ 			error = open1(imgp->ip_vfs_context, ndp,
+ 			    psfa->psfaa_openargs.psfao_oflag,
+ 			    vap, NULL, NULL, &origfd, AUTH_OPEN_NOAUTHFD);
++#if defined(ARM64_BOARD_CONFIG_PONG) && (DEVELOPMENT || DEBUG)
++			if ((error == EACCES || error == EPERM) && pong_exec_diag_emit(&pong_diag_open_count)) {
++				const char *original = psfa->psfaa_openargs.psfao_path;
++				const char *effective = exec_applog_path(psfa->psfaa_filedes, original);
++				printf("PONG EXEC open err=%d uid=%u gid=%u fd=%d flags=0x%x from=%.96s to=%.96s\n",
++				    error, kauth_cred_getuid(p_cred), kauth_cred_getgid(p_cred),
++				    psfa->psfaa_filedes, psfa->psfaa_openargs.psfao_oflag, original, effective);
++			}
++#endif
+ 
+ 			kfree_type(typeof(*__open_data), __open_data);
+ 
+@@ -3126,6 +3178,12 @@
+ 		/* All file actions failures are considered fatal, per POSIX */
+ 
+ 		if (error) {
++#if defined(ARM64_BOARD_CONFIG_PONG) && (DEVELOPMENT || DEBUG)
++			if ((error == EACCES || error == EPERM) && pong_exec_diag_emit(&pong_diag_action_count)) {
++				printf("PONG EXEC action err=%d index=%d type=%d fd=%d\n", error,
++				    action, psfa->psfaa_type, psfa->psfaa_filedes);
++			}
++#endif
+ 			if (PSFA_OPEN == psfa->psfaa_type) {
+ 				DTRACE_PROC1(spawn__open__failure, uintptr_t,
+ 				    psfa->psfaa_openargs.psfao_path);
+@@ -3682,6 +3740,9 @@
+ 	struct vnode_attr *origvap = NULL;
+ 	struct uthread  *uthread = 0;   /* compiler complains if not set to 0*/
+ 	int error, sig;
++#if defined(ARM64_BOARD_CONFIG_PONG) && (DEVELOPMENT || DEBUG)
++	const char *pong_spawn_phase = "setup";
++#endif
+ 	int is_64 = IS_64BIT_PROCESS(p);
+ 	struct vfs_context context;
+ 	struct user__posix_spawn_args_desc px_args = {};
+@@ -3873,6 +3934,11 @@
+ 				goto bad;
+ 			}
+ 			if ((error = spawn_validate_persona(px_persona)) != 0) {
++#if defined(ARM64_BOARD_CONFIG_PONG) && (DEVELOPMENT || DEBUG)
++				if (pong_exec_diag_emit(&pong_diag_persona_count)) {
++					printf("PONG EXEC persona stage=validate err=%d\n", error);
++				}
++#endif
+ 				goto bad;
+ 			}
+ 		}
+@@ -4212,6 +4278,9 @@
+ 		struct kaudit_record *save_uu_ar = uthread->uu_ar;
+ 		uthread->uu_ar = NULL;
+ #endif
++#if defined(ARM64_BOARD_CONFIG_PONG) && (DEVELOPMENT || DEBUG)
++	pong_spawn_phase = "file-actions";
++#endif
+ 		error = exec_handle_file_actions(imgp,
+ 		    imgp->ip_px_sa != NULL ? px_sa.psa_flags : 0);
+ #if CONFIG_AUDIT
+@@ -4223,6 +4292,9 @@
+ 		}
+ 	}
+ 
++#if defined(ARM64_BOARD_CONFIG_PONG) && (DEVELOPMENT || DEBUG)
++	pong_spawn_phase = "port-actions";
++#endif
+ 	/* Has spawn port actions? */
+ 	if (imgp->ip_px_spa != NULL) {
+ #if CONFIG_AUDIT
+@@ -4243,6 +4315,9 @@
+ 		}
+ 	}
+ 
++#if defined(ARM64_BOARD_CONFIG_PONG) && (DEVELOPMENT || DEBUG)
++	pong_spawn_phase = "attributes";
++#endif
+ 	/* Has spawn attr? */
+ 	if (imgp->ip_px_sa != NULL) {
+ 		/*
+@@ -4274,10 +4349,16 @@
+ 				goto bad;
+ 			}
+ 
++#if defined(ARM64_BOARD_CONFIG_PONG) && (DEVELOPMENT || DEBUG)
++	pong_spawn_phase = "credentials";
++#endif
+ 			error = spawn_posix_cred_adopt(p, imgp->ip_px_pcred_info);
+ 			if (error != 0) {
+ 				goto bad;
+ 			}
++#if defined(ARM64_BOARD_CONFIG_PONG) && (DEVELOPMENT || DEBUG)
++			pong_spawn_phase = "attributes";
++#endif
+ 		}
+ 
+ #if CONFIG_PERSONAS
+@@ -4295,10 +4376,21 @@
+ 			 * to ensure that the new persona has access to the image/file
+ 			 * being executed.
+ 			 */
++#if defined(ARM64_BOARD_CONFIG_PONG) && (DEVELOPMENT || DEBUG)
++	pong_spawn_phase = "persona";
++#endif
+ 			error = spawn_persona_adopt(p, imgp->ip_px_persona);
+ 			if (error != 0) {
++#if defined(ARM64_BOARD_CONFIG_PONG) && (DEVELOPMENT || DEBUG)
++				if (pong_exec_diag_emit(&pong_diag_persona_count)) {
++					printf("PONG EXEC persona stage=adopt err=%d\n", error);
++				}
++#endif
+ 				goto bad;
+ 			}
++#if defined(ARM64_BOARD_CONFIG_PONG) && (DEVELOPMENT || DEBUG)
++			pong_spawn_phase = "attributes";
++#endif
+ 		}
+ #endif /* CONFIG_PERSONAS */
+ #if !SECURE_KERNEL
+@@ -4371,6 +4463,9 @@
+ 		proc_signal_set = 0;
+ 	}
+ 
++#if defined(ARM64_BOARD_CONFIG_PONG) && (DEVELOPMENT || DEBUG)
++	pong_spawn_phase = "mac-execve";
++#endif
+ #if MAC_SPAWN   /* XXX */
+ 	if (uap->mac_p != USER_ADDR_NULL) {
+ 		error = mac_execve_enter(uap->mac_p, imgp);
+@@ -4384,7 +4479,13 @@
+ 	 * Warning: If activation failed after point of no return, it returns error
+ 	 * as 0 and pretends the call succeeded.
+ 	 */
++#if defined(ARM64_BOARD_CONFIG_PONG) && (DEVELOPMENT || DEBUG)
++	pong_spawn_phase = "activate";
++#endif
+ 	error = exec_activate_image(imgp);
++#if defined(ARM64_BOARD_CONFIG_PONG) && (DEVELOPMENT || DEBUG)
++	if (!error) pong_spawn_phase = "post-activate";
++#endif
+ #if defined(HAS_APPLE_PAC)
+ 	const uint8_t disable_user_jop = imgp->ip_flags & IMGPF_NOJOP ? TRUE : FALSE;
+ 	ml_task_set_jop_pid_from_shared_region(new_task, disable_user_jop);
+@@ -4540,6 +4641,23 @@
+ 	}
+ 
+ bad:
++#if defined(ARM64_BOARD_CONFIG_PONG) && (DEVELOPMENT || DEBUG)
++	if ((error == EACCES || error == EPERM) && pong_exec_diag_emit(&pong_diag_spawn_count)) {
++		char path[192];
++		size_t copied = 0;
++		if (copyinstr(uap->path, path, sizeof(path), &copied) != 0) {
++			strlcpy(path, "<unavailable>", sizeof(path));
++		}
++		kauth_cred_t cred = kauth_cred_get();
++		printf("PONG EXEC spawn err=%d phase=%s caller=%s uid=%u gid=%u path=%.160s\n",
++		    error, pong_spawn_phase, current_proc()->p_comm,
++		    kauth_cred_getuid(cred), kauth_cred_getgid(cred), path);
++#if defined(XNU_OWNER_DATA_MOUNT) && XNU_OWNER_DATA_MOUNT
++		printf("PONG EXEC data status=%d stage=%d readonly=%d\n",
++		    native_owner_data_status, native_owner_data_stage, native_owner_data_readonly);
++#endif
++	}
++#endif
+ 
+ 	if (error == 0) {
+ 		/* reset delay idle sleep status if set */
+@@ -6732,6 +6850,11 @@
+ 
+ 	/* Only allow execution of regular files */
+ 	if (!vnode_isreg(vp)) {
++#if defined(ARM64_BOARD_CONFIG_PONG) && (DEVELOPMENT || DEBUG)
++		if (pong_exec_diag_emit(&pong_diag_perm_count)) {
++			printf("PONG EXEC permission stage=nonregular err=%d\n", EACCES);
++		}
++#endif
+ 		return EACCES;
+ 	}
+ 
+@@ -6745,6 +6868,11 @@
+ 	VATTR_WANTED(vap, va_fileid);
+ 	VATTR_WANTED(vap, va_data_size);
+ 	if ((error = vnode_getattr(vp, vap, imgp->ip_vfs_context)) != 0) {
++#if defined(ARM64_BOARD_CONFIG_PONG) && (DEVELOPMENT || DEBUG)
++		if ((error == EACCES || error == EPERM) && pong_exec_diag_emit(&pong_diag_perm_count)) {
++			printf("PONG EXEC permission stage=getattr err=%d\n", error);
++		}
++#endif
+ 		return error;
+ 	}
+ 
+@@ -6754,6 +6882,12 @@
+ 	 * file really is executable.
+ 	 */
+ 	if (!vfs_authopaque(vnode_mount(vp)) && ((vap->va_mode & (S_IXUSR | S_IXGRP | S_IXOTH)) == 0)) {
++#if defined(ARM64_BOARD_CONFIG_PONG) && (DEVELOPMENT || DEBUG)
++		if (pong_exec_diag_emit(&pong_diag_perm_count)) {
++			printf("PONG EXEC permission stage=mode err=%d mode=%o owner=%u:%u\n",
++			    EACCES, (unsigned)vap->va_mode, vap->va_uid, vap->va_gid);
++		}
++#endif
+ 		return EACCES;
+ 	}
+ 
+@@ -6788,6 +6922,14 @@
+ #if CONFIG_MACF
+ 	error = mac_vnode_check_exec(imgp->ip_vfs_context, vp, imgp);
+ 	if (error) {
++#if defined(ARM64_BOARD_CONFIG_PONG) && (DEVELOPMENT || DEBUG)
++		if ((error == EACCES || error == EPERM) && pong_exec_diag_emit(&pong_diag_perm_count)) {
++			kauth_cred_t cred = vfs_context_ucred(imgp->ip_vfs_context);
++			printf("PONG EXEC permission stage=mac-vnode err=%d uid=%u gid=%u mode=%o owner=%u:%u\n",
++			    error, kauth_cred_getuid(cred), kauth_cred_getgid(cred),
++			    (unsigned)vap->va_mode, vap->va_uid, vap->va_gid);
++		}
++#endif
+ 		return error;
+ 	}
+ #endif
+@@ -6799,6 +6941,14 @@
+ 		action |= KAUTH_VNODE_READ_DATA;
+ 	}
+ 	if ((error = vnode_authorize(vp, NULL, action, imgp->ip_vfs_context)) != 0) {
++#if defined(ARM64_BOARD_CONFIG_PONG) && (DEVELOPMENT || DEBUG)
++		if ((error == EACCES || error == EPERM) && pong_exec_diag_emit(&pong_diag_perm_count)) {
++			kauth_cred_t cred = vfs_context_ucred(imgp->ip_vfs_context);
++			printf("PONG EXEC permission stage=vnode-authorize err=%d uid=%u gid=%u mode=%o owner=%u:%u\n",
++			    error, kauth_cred_getuid(cred), kauth_cred_getgid(cred),
++			    (unsigned)vap->va_mode, vap->va_uid, vap->va_gid);
++		}
++#endif
+ 		return error;
+ 	}
+ 
+@@ -8367,6 +8517,12 @@
+ 	/* call the launch constraints hook */
+ 	os_reason_t launch_constraint_reason;
+ 	if ((error = mac_proc_check_launch_constraints(p, imgp, &launch_constraint_reason)) != 0) {
++#if defined(ARM64_BOARD_CONFIG_PONG) && (DEVELOPMENT || DEBUG)
++		if (pong_exec_diag_emit(&pong_diag_signature_count)) {
++			printf("PONG EXEC signature stage=launch-constraints err=%d process=%s flags=0x%x\n",
++			    error, p->p_comm, imgp->ip_csflags);
++		}
++#endif
+ 		signature_failure_reason = launch_constraint_reason;
+ 		goto done;
+ 	}
+@@ -8519,6 +8675,12 @@
+ 	}
+ 
+ done:
++#if defined(ARM64_BOARD_CONFIG_PONG) && (DEVELOPMENT || DEBUG)
++	if (error && pong_exec_diag_emit(&pong_diag_signature_count)) {
++		printf("PONG EXEC signature stage=decision err=%d process=%s mac=%d csflags=0x%x\n",
++		    error, p->p_comm, imgp->ip_mac_return, imgp->ip_csflags);
++	}
++#endif
+ 	if (0 == error) {
+ 		/*
+ 		 * Update the new process's signature-dependent process state.
