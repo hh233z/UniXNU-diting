@@ -503,3 +503,10 @@ unavailable` → `scratch Data mount SKIP error=6 step=0` (ENXIO). The driver pu
 read-only while `pong_ufs_readwrite=0`, so the kernel finds no *writable* Data device and skips the
 mount instead of panicking. Making only the Data window writable while OS/SystemOS stay read-only is
 a driver change to do after launchd is seen running.
+
+## 2026-11-10 00:35 — stock init path enabled
+
+`pong_init_path` removed from `kernel_args` (commit 865ff27), build 42650203427 green, image sha
+F354D89C, booted on the phone. With the argument absent the kernel leaves the Pong branch and walks its
+normal `init_programs` list, so `/sbin/launchd` is attempted as the stock init. No userdata change, so
+no reflash was needed.
