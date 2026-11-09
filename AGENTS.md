@@ -412,3 +412,17 @@ unlock state, flashes that, and can boot the payload in the same step.
 Fallback if the sparse flash is refused: `dd` the raw image, then set the bootloader control block to
 `boot-fastboot` in `/dev/block/by-name/misc` and force an immediate reboot (`echo b >
 /proc/sysrq-trigger`), so Android never unmounts `/data`. Not used yet.
+
+## 2026-11-09 21:15 — userdata written from the bootloader (sparse)
+
+`fastboot flash userdata userdata-root.sparse.img` with the phone in the bootloader succeeded where
+the raw image failed: 14 sparse chunks, every `Sending`/`Writing` line OKAY, total 276 s. Android never
+ran, so nothing could rewrite the SHNGROOT block.
+
+Pre-flight facts checked before the write: `fastboot devices` -> 9e0c2b55, `product=diting`,
+`unlocked=yes`, `partition-size:userdata = 0x37E69FB000` (240,092,426,240 bytes = the 223.6 GiB the
+board records), sparse encoding round-trip verified against the raw image on the host.
+
+Then `fastboot boot pong-unixnu-uefi.img` (stall variant, F2EDDF7F) was sent: `Sending ... OKAY`,
+`Booting OKAY`. The panel is the only remaining witness; the phone dropped off adb, which is what a
+running payload looks like.
