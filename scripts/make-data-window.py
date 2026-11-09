@@ -6,8 +6,12 @@ container: it checks for `EFI PART` at offset 512. The reference board ships an 
 image produced by `hdiutil create -fs APFS`, which is exactly a GPT with one Apple APFS partition.
 This reproduces that on Linux with sgdisk and mkapfs.
 
+The volume UUID matters: the kernel compares the Data volume against the UUID the build compiles in
+(`XNU_OWNER_DATA_VOLUME_UUID`). Pass it with --uuid; mkapfs takes the volume UUID as -u (its -U
+sets the container UUID instead).
+
 Usage:
-    make-data-window.py <output.img> [--gib 8] [--label Data]
+    make-data-window.py <output.img> [--gib 8] [--label Data] [--uuid UUID]
 
 Requires sgdisk (gdisk) and mkapfs (apfsprogs).
 """
@@ -32,6 +36,7 @@ def main():
     parser.add_argument('output', type=Path)
     parser.add_argument('--gib', type=int, default=8)
     parser.add_argument('--label', default='Data')
+    parser.add_argument('--uuid', help='APFS volume UUID the kernel expects')
     args = parser.parse_args()
     sgdisk = tool('sgdisk')
     mkapfs = tool('mkapfs')
@@ -55,8 +60,10 @@ def main():
     part = args.output.with_suffix('.apfs.img')
     with part.open('wb') as handle:
         handle.truncate(blocks * 4096)
-    subprocess.run([mkapfs, '-L', args.label, str(part), str(blocks)], check=True,
-                   capture_output=True)
+    command = [mkapfs, '-L', args.label]
+    if args.uuid:
+        command += ['-u', args.uuid]
+    subprocess.run(command + [str(part), str(blocks)], check=True, capture_output=True)
     with part.open('rb') as source, args.output.open('r+b') as target:
         target.seek(first * 512)
         shutil.copyfileobj(source, target, 8 << 20)

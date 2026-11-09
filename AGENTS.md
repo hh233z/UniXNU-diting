@@ -459,3 +459,23 @@ What each line establishes:
 Next experiment (this commit): `pong_init_path=/sbin/launchd`, so the stock launchd is the init and the
 boot no longer depends on our userland helper being installed. Only the payload changes, so the flash
 is not needed again; a `fastboot boot` of the new image is enough.
+
+## 2026-11-09 23:20 — Data window matches, launchd is the init now
+
+- The CI workflow hard-codes the Data volume UUID it compiles in
+  (`.github/workflows/package.yml`, volume layout step: `'data': {'uuid': '337CF716-F62B-446B-B959-4A5F12A7701C'}`),
+  and `build-ipados18-pong-macos.py` passes `layout['data']['uuid']` as `XNU_OWNER_DATA_VOLUME_UUID`.
+  Our first Data window was created with a random mkapfs UUID, so the kernel skipped the mount
+  (`scratch Data mount SKIP error=-6`).
+- `scripts/make-data-window.py` now takes `--uuid` and passes it to mkapfs **-u** (the volume UUID;
+  `-U` sets the container UUID). Rebuilt with `337cf716-f62b-446b-b959-4a5f12a7701c` and verified with
+  `scripts/apfs-volume-uuid.py`.
+- The SystemOS UUID also comes from `profile.toml` through the same layout step, so the 2e6fc90
+  correction (`4A77BA00-2826-44C4-B883-1FA92AC36880`) took effect in the 42634647682 build.
+- Rebuilt userdata (19,411,238,912 bytes), sparse (1157 chunks), flashed from the bootloader in 494 s,
+  then `fastboot boot` of the build with `pong_init_path=/sbin/launchd` (sha A135720C).
+
+Panel: the OS root binds by UUID, APFS mounts, the SystemOS wait now uses 4a77ba00, the Data mount no
+longer reports the UUID mismatch, the kernel then tries to exec `/sbin/launchd` and panics in
+`kern_exec`. The exact errno needs a legible photo of the last lines before concluding whether the
+root tree really lacks the file or the exec is rejected for another reason.
