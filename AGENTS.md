@@ -536,3 +536,13 @@ Experiment: `pong_ufs_readwrite=1`. The root volume is mounted read-only by APFS
 the block device's write flag, so this mainly lets the Data window be published writable; if the
 services stop failing, the hypothesis is confirmed and the driver can later be restricted to publish
 only the Data window writable.
+
+## 2026-11-10 01:35 — writable window build booted
+
+`pong_ufs_readwrite=1` (commit e8aafae), build 42658401487 green, image sha 5AA052E2, booted.
+`native_pong_ufs_data_volume_device` -> `native_pong_ufs_volume_device(uuid, 2, ...)` accepts a Data
+window only when the block reports `PongWritable` **and** the IOMedia reports writable, so this flag is
+exactly the gate that produced `writable UFS Data UUID unavailable` with the read-only build.
+
+Watching for: `PONG APFS: UUID ... bound to Data UFS window`, `scratch Data mount` no longer SKIP, and
+whether the `posix_spawn(...) error 0xd - Permission denied` loop stops.
