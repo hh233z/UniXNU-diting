@@ -385,3 +385,30 @@ after the first attempt accidentally committed `git commit -a` gitlink deletions
 are not checked out locally (`drivers/ArmDTPlatform`, `DarwinBoot24`, `NativeRamBlock`, `PongAdreno`,
 `PongBootCapture`, `PongMetal`, `PongPower`), which made that CI checkout fail with a missing source
 file. Only `board.toml` is in the branch commit now.
+
+## 2026-11-09 08:10 — why the manifest failed, and the fix
+
+The panel from the stall run reported:
+
+```
+GPT/read lba=2f8a00 userdata=2f8a00..3adf3fa magic=474e4853 544f4f52 manifest=3
+WINDOWS found=0 prepared=0 published=0 bytes=0 policies=0 verify=ffffffff
+PONG_UFS: no media published; continue boot
+```
+
+So the UFS path itself works: GPT parsed, the first userdata block was read, and its `SHNGROOT` magic
+matched. `manifest=3` is `RootLayout`'s header-SHA failure, and the local image still hashes exactly
+(`ae82e3ea…` stored and computed) — the block on the phone was changed after the write.
+
+Cause: the image was written with `dd` from a running Android and then `adb reboot bootloader`. That
+is an orderly reboot, so Android unmounts `/data` and f2fs writes its superblock at offset 1024 of the
+partition, which sits inside the SHNGROOT block — the magic survives, the hash does not.
+
+Fix: write the partition **from the bootloader**, with Android out of the picture. 32-bit fastboot
+cannot take the 10 GiB raw image, so `scripts/make-sparse-image.py` encodes it with the Android sparse
+format (645 chunks, 10,809,777,752 bytes) and `scripts/flash-userdata-image.py` checks the product and
+unlock state, flashes that, and can boot the payload in the same step.
+
+Fallback if the sparse flash is refused: `dd` the raw image, then set the bootloader control block to
+`boot-fastboot` in `/dev/block/by-name/misc` and force an immediate reboot (`echo b >
+/proc/sysrq-trigger`), so Android never unmounts `/data`. Not used yet.
