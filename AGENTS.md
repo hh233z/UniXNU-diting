@@ -426,3 +426,36 @@ board records), sparse encoding round-trip verified against the raw image on the
 Then `fastboot boot pong-unixnu-uefi.img` (stall variant, F2EDDF7F) was sent: `Sending ... OKAY`,
 `Booting OKAY`. The panel is the only remaining witness; the phone dropped off adb, which is what a
 running payload looks like.
+
+## 2026-11-09 22:20 — **root volume mounted** (stage 6 reached)
+
+Three-window userdata image (OS 6,845,104,128 at 0x100000; SystemOS 3,963,617,280 at 0x198100000;
+Data 8 GiB GPT+APFS at 0x285000000; image 19,411,238,912 bytes) written from the bootloader with
+`fastboot flash userdata` on the sparse encoding (25 chunks, 492 s), then `fastboot boot`.
+
+Panel evidence:
+
+```
+PONG_UFS: OS root binding UUID b07df049-7ad9-47b5-9f8f-9ee728056398 bound to OS UFS window /dev/disk2s1
+PONG: APFS: diting
+PONG_UFS: wait for SystemOS UUID D44F8E57-4171-4C6B-B21A-1808F6EF2E20, timeout=5s
+PONG_UFS: SystemOS UUID wait timed out
+PONG_UFS: SystemOS media identity published on /dev/disk2s1
+PONG DEVELOPMENT: scratch Data mount SKIP error=-6 stage=0
+Pong init: Loading helper /pong/init
+Pong init: helper exec result=2
+panic: Pong init helper exec failed, errno 2 @kern_exec.c:7067
+```
+
+What each line establishes:
+
+- the OS window is published, the APFS root volume is mounted, and the kernel resolves it by UUID;
+- the SystemOS wait used the **stale** `D44F8E57…` value (the profile entry corrected in 2e6fc90 has
+  not been in a build yet); the media that appears is `4a77ba00-2826-44c4-b883-1fa92ac36880`;
+- the Data window is accepted by the manifest/GPT and its mount is skipped, not fatal;
+- `load_init_program` runs and execs the configured init, so the failure is only that `/pong/init` is
+  not part of the stock Apple OS volume.
+
+Next experiment (this commit): `pong_init_path=/sbin/launchd`, so the stock launchd is the init and the
+boot no longer depends on our userland helper being installed. Only the payload changes, so the flash
+is not needed again; a `fastboot boot` of the new image is enough.
