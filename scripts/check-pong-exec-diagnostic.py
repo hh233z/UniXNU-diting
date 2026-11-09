@@ -17,6 +17,7 @@ stub = r'''
 #include <stdbool.h>
 #include <string.h>
 #include <errno.h>
+#include <fcntl.h>
 #include <sys/stat.h>
 #define ARM64_BOARD_CONFIG_PONG 1
 #define DEVELOPMENT 1
@@ -131,7 +132,7 @@ int main(int argc, char **argv) {
         assert 'stage=' + stage in on, stage
     print('patched XNU source applies; permission outcomes unchanged with diagnostics off/on')
 
-    applog = section(modified, 'static const char *\nexec_applog_path(int fd, const char *path)', '\n#endif')
+    applog = section(modified, 'static const char *\nexec_applog_path(int fd, const char *path, int oflag)', '\n#endif')
     call_start = '\t\t\terror = open1(imgp->ip_vfs_context, ndp,\n'
     open_block = section(modified, call_start, '\n\t\t\tkfree_type(typeof(*__open_data), __open_data);')
     open_stubs = r'''
@@ -149,6 +150,12 @@ int main(void) {
     struct action item = {2, {2, "/dev/null"}}, *psfa = &item;
     kauth_cred_t p_cred = &cred; void *ndp = NULL, *vap = NULL; int origfd = 0, error;
     pong_exec_diag = 1;
+    if (strcmp(exec_applog_path(2, "/dev/null", O_RDWR), "/dev/null") != 0 ||
+        strcmp(exec_applog_path(2, "/dev/null", O_WRONLY), "/dev/console") != 0 ||
+        strcmp(exec_applog_path(0, "/dev/null", O_WRONLY), "/dev/null") != 0) return 1;
+    exec_applog = 0;
+    if (strcmp(exec_applog_path(2, "/dev/null", O_WRONLY), "/dev/null") != 0) return 1;
+    exec_applog = 1;
 '''+open_block+r'''
     printf("RESULT %d\n", error);
     return 0;
@@ -158,8 +165,8 @@ int main(void) {
     subprocess.run(['clang','-std=gnu11','-Wall','-Wextra','-Werror','-Wno-unused-variable',
                     '-Wno-unused-function',str(c),'-o',str(exe)],check=True)
     result = subprocess.check_output([str(exe)],text=True)
-    assert 'from=/dev/null to=/dev/console' in result and 'RESULT 13' in result, result
-    print('real file-action diagnostic reports original/effective path without changing EACCES')
+    assert 'from=/dev/null to=/dev/null' in result and 'RESULT 13' in result, result
+    print('applog preserves O_RDWR; write-only redirection and diagnostic error remain intact')
 
     spawn_at = modified.index('bad:\n#if defined(ARM64_BOARD_CONFIG_PONG)', modified.index('posix_spawn(proc_t ap,'))
     spawn_end = modified.index('\n\tif (error == 0) {\n\t\t/* reset delay idle sleep status if set */', spawn_at)

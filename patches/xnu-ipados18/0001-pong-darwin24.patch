@@ -1812,9 +1812,9 @@ index 240bbf6..400dba5 100644
 +}
 +
 +static const char *
-+exec_applog_path(int fd, const char *path)
++exec_applog_path(int fd, const char *path, int oflag)
 +{
-+	if (exec_applog && (fd == 1 || fd == 2) && strcmp(path, "/dev/null") == 0) {
++	if (exec_applog && (fd == 1 || fd == 2) && (oflag & O_ACCMODE) == O_WRONLY && strcmp(path, "/dev/null") == 0) {
 +		return "/dev/console";
 +	}
 +	return path;
@@ -1828,7 +1828,7 @@ index 240bbf6..400dba5 100644
  
  			NDINIT(ndp, LOOKUP, OP_OPEN, FOLLOW | AUDITVNPATH1, UIO_SYSSPACE,
 +#if defined(ARM64_BOARD_CONFIG_PONG) && (DEVELOPMENT || DEBUG)
-+			    CAST_USER_ADDR_T(exec_applog_path(psfa->psfaa_filedes, psfa->psfaa_openargs.psfao_path)),
++			    CAST_USER_ADDR_T(exec_applog_path(psfa->psfaa_filedes, psfa->psfaa_openargs.psfao_path, psfa->psfaa_openargs.psfao_oflag)),
 +#else
  			    CAST_USER_ADDR_T(psfa->psfaa_openargs.psfao_path),
 +#endif

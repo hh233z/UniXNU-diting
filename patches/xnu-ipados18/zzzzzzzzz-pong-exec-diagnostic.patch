@@ -72,7 +72,7 @@ diff --git a/bsd/kern/kern_exec.c b/bsd/kern/kern_exec.c
 +#if defined(ARM64_BOARD_CONFIG_PONG) && (DEVELOPMENT || DEBUG)
 +			if ((error == EACCES || error == EPERM) && pong_exec_diag_emit(&pong_diag_open_count)) {
 +				const char *original = psfa->psfaa_openargs.psfao_path;
-+				const char *effective = exec_applog_path(psfa->psfaa_filedes, original);
++				const char *effective = exec_applog_path(psfa->psfaa_filedes, original, psfa->psfaa_openargs.psfao_oflag);
 +				printf("PONG EXEC open err=%d uid=%u gid=%u fd=%d flags=0x%x from=%.96s to=%.96s\n",
 +				    error, kauth_cred_getuid(p_cred), kauth_cred_getgid(p_cred),
 +				    psfa->psfaa_filedes, psfa->psfaa_openargs.psfao_oflag, original, effective);
