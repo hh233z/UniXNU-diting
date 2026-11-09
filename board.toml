@@ -144,7 +144,6 @@ kernel_args = [
   "pong_ui_software=1",
   "pong_touch=1",
   "pong_buttons=1",
-  "pong_init_path=/sbin/launchd",
   "pong_build=ipados18-22H374",
   "pong_gpu_scanout=1",
   "pong_gpu_pool_mib=0",

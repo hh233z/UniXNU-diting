@@ -479,3 +479,27 @@ Panel: the OS root binds by UUID, APFS mounts, the SystemOS wait now uses 4a77ba
 longer reports the UUID mismatch, the kernel then tries to exec `/sbin/launchd` and panics in
 `kern_exec`. The exact errno needs a legible photo of the last lines before concluding whether the
 root tree really lacks the file or the exec is rejected for another reason.
+
+## 2026-11-09 23:55 — the init path whitelist, and the Data mount is SKIP not panic
+
+`patches/xnu-ipados18/0001-pong-darwin24.patch` (load_init_program):
+
+```c
+if (PE_parse_boot_argn("pong_init_path", pong_init_path, sizeof(pong_init_path))) {
+    if (strcmp(pong_init_path, "/pong/init") != 0)
+        panic("Unsupported Pong init path");
+    ... exec /pong/init ...
+}
+// only reached when pong_init_path is absent:
+for (i = 0; i < init_programs...) load_init_program_at_path(...);
+```
+
+So `pong_init_path=/sbin/launchd` was itself the panic. The argument is removed; with it absent the
+kernel walks its normal `init_programs` list and `/sbin/launchd` is tried as the stock init.
+
+The Data lines before the panic are not fatal and are separate:
+`UUID candidate ... accepted=0 window=Data` → `UUID lookup MISS` → `writable UFS Data UUID
+unavailable` → `scratch Data mount SKIP error=6 step=0` (ENXIO). The driver publishes every window
+read-only while `pong_ufs_readwrite=0`, so the kernel finds no *writable* Data device and skips the
+mount instead of panicking. Making only the Data window writable while OS/SystemOS stay read-only is
+a driver change to do after launchd is seen running.
