@@ -552,3 +552,9 @@ whether the `posix_spawn(...) error 0xd - Permission denied` loop stops.
 - 22H374 原生 launchd 与 xpcproxy 已实机运行，多个目标服务的 `posix_spawn` 返回 EACCES；Data 在只读轮次未挂载，写入轮次尚未观察到其最终状态。
 - `applog=1` 现有逻辑会把 spawn 文件操作中输出到 `/dev/null` 的路径重定向到 `/dev/console`；这是一条待验证的失败路径，不能认定为实际原因。
 - `pong_exec_diag=1` 启用有次数上限的 xpcproxy spawn 诊断，区分文件操作、路径查找、执行权限、镜像激活、persona、签名约束及 Data 状态；诊断不修改原错误或权限行为。实际根因必须以该镜像的设备日志为准。
+
+## 2026-11-10：applog 读写重定向修正
+
+- 22H374 的 xpcproxy 以 `O_RDWR | O_NOCTTY` 打开输出的 `/dev/null`；console 默认权限为 `root:wheel 0622`，非 root 读写打开可能触发 EACCES。
+- `e331648` 保留读写打开的 `/dev/null`，仍将只写打开的标准输出或标准错误按 `applog` 设置重定向到 console。本地源码级验证通过，设备上是否消除 EACCES 仍需确认。
+- greenH 对照镜像仅将 `applog=1` 改为 `applog=0`，已通过 `fastboot boot` 临时启动；观察结果尚未收到。Action 42698962449 构建的是此前的诊断提交 `835b22a`，不含本次修正。
