@@ -510,3 +510,29 @@ a driver change to do after launchd is seen running.
 F354D89C, booted on the phone. With the argument absent the kernel leaves the Pong branch and walks its
 normal `init_programs` list, so `/sbin/launchd` is attempted as the stock init. No userdata change, so
 no reflash was needed.
+
+## 2026-11-10 00:50 — launchd runs; services die on EACCES
+
+With `pong_init_path` absent the kernel walks its normal init list, `/sbin/launchd` executes, and the
+console scrolls: launchd is managing services. Every service then fails the same way:
+
+```
+Service could not initialize: posix_spawn(/usr/libexec/timed)
+error 0xd - Permission denied
+Initialization failure: 22H374: xpcproxy
+xpcproxy exited due to exit(78)
+```
+
+and the same for `/usr/libexec/sharingd`, `/usr/libexec/ptpd`,
+`/System/Library/PrivateFrameworks/CoreDuetContext.framework/Resources/contextstored`.
+
+`xpcproxy` itself starts, i.e. execution from the mounted OS volume works; the denial happens when
+xpcproxy spawns the service. The kernel skipped the Data mount just before
+(`scratch Data mount SKIP error=6 step=0`, ENXIO) because the driver publishes every window read-only
+while `pong_ufs_readwrite=0`, so `writable UFS Data UUID unavailable` even though the UUID candidate is
+accepted. A missing `/private/var` is the most plausible cause of the EACCES storm.
+
+Experiment: `pong_ufs_readwrite=1`. The root volume is mounted read-only by APFS policy regardless of
+the block device's write flag, so this mainly lets the Data window be published writable; if the
+services stop failing, the hypothesis is confirmed and the driver can later be restricted to publish
+only the Data window writable.

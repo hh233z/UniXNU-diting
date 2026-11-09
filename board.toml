@@ -128,7 +128,7 @@ kernel_args = [
   "pong_skip_setup=1",
   "pong_adsp=2",
   "pong_audio=2",
-  "pong_ufs_readwrite=0",
+  "pong_ufs_readwrite=1",
   # Temporary bring-up aid: on a UFS failure the driver logs the report and then holds the CPU,
   # so the panel keeps the failing line long enough to photograph. Remove once root mounts.
   "pong_ufs_stall=1",
