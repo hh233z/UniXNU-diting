@@ -595,3 +595,10 @@ generated table and loop into the base patch itself, where the context is guaran
 The code creates the 87 directories at depth 2 (app bundles excluded) right after the Data volume is
 mounted at `/private/var`, using the `mkdir`/`chmod`/`chown` syscall wrappers already proven by the Data
 tmp experiment, and prints `PONG APFS: var skeleton created=%d failed=%d`.
+
+## 2026-11-11 02:15 — skeleton build booted (verification pending)
+
+Build 42859003034 (4147d47) produced image sha C5D58F80; `fastboot boot` OKAY on 9e0c2b55 and the phone
+left adb/fastboot, i.e. the payload is running. The panel is the only witness so far: the expected line
+is `PONG APFS: var skeleton created=87 failed=0`, and the next questions are whether the `/tmp` ENOENT
+and the persona/usermanagerd failures changed.
