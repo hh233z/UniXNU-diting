@@ -623,3 +623,7 @@ so it carries `PerformAfterUserspaceReboot` but **no `PerformInRestore`**, which
 claim. `PerformInRestore` appears on other tasks (`restore-datapartition`, `exclaves-boot`), so the key
 is understood by this launchd build. Whether the current boot counts as restore mode decides if the
 persona initialisation runs; that is the next thing to establish from the panel, not to guess.
+
+## 2026-11-11：合并已构建的 Data 骨架与 SystemOS 路径
+
+- 4147d47 的 Data 目录骨架和 ci/systemos-union 的只读根卷合并此前位于不同分支；本次把后者的 CI 配置接入包含骨架的 main，避免新构建回到仅依靠 Cryptex 备用路径的配置。之前照片未完整证明 trampoline 已解决；合并后的挂载、Data 骨架、用户态与界面均待实机验证。
