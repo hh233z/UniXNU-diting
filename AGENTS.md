@@ -559,3 +559,22 @@ whether the `posix_spawn(...) error 0xd - Permission denied` loop stops.
 - `e331648` 保留读写打开的 `/dev/null`，仍将只写打开的标准输出或标准错误按 `applog` 设置重定向到 console。本地源码级验证通过，设备上是否消除 EACCES 仍需确认。
 - greenH 对照镜像仅将 `applog=1` 改为 `applog=0`，已通过 `fastboot boot` 临时启动；观察结果尚未收到。Action 42698962449 构建的是此前的诊断提交 `835b22a`，不含本次修正。
 - greenH 的 `applog=0` 对照启动进入了 `watchdogd[186]` 退出引起的 panic，退出原因 namespace 2、code 5 对应 SIGTRAP；此前 EACCES 是否全部消失仍待完整日志。现有用户异常抓取名单已加入 watchdogd，下一镜像可打印异常 PC、LR、共享缓存 slide 和部分用户栈，供定位退出位置。
+- Action 42727444462（aa093e2）已成功，构建日志确认编译 `pong_ui_exception.o`。其镜像追加 `panic_on_crash_disabled=1` 后离线生成 `D:\ai\diting\build-work\watchdog-trace-no-panic.img`，尚未实机启动；该开关只抑制非 launchd 进程退出触发的 panic，不能消除进程崩溃或其他 panic。
+- 2026-11-10 实机日志：SpringBoard、accountsd 等已 spawn，但以 `couldn't dlopen libobjc-trampolines.dylib` 退出；本地 OS 卷缺少该库，匹配的 SystemOS 卷中有该库。当前非 union 模式将 SystemOS 挂在 `/private/preboot`，标准 `/usr/lib` 路径不可见；不能仅凭此确认所有崩溃的根因。
+- 独立实验分支 `ci/systemos-union`（1ec3b7b）启用已有 SystemOS 根目录联合挂载，Action 42817934102 构建中；不要将实验构建当作实机通过。
+- Union 实机日志出现 `Unable to set current working directory /tmp` / ENOENT；OS 中 `/tmp -> private/var/tmp`，本地 8 GiB Data 种子 APFS 为空。实验提交 9628bd4 在核验 Data 可写后创建缺失 tmp，已测试、构建 Action 42829451753 尚未完成；完整 Data 种子仍需按现有 userland/init 方案处理。
+- 2026-11-10 文档复核：新图显示 `mobile.usermanagerd` SIGABRT，描述 `Daemon failed to load persona manifest`。原始 OS 的 launchd `Boot.usermanagerd` 和 `Boot.launchd_cache_loader` 均没有 `PerformInRestore`；`userland/build-ipados18.py:adapt_launchd18` 与 `migration/ipados18/services.md` 已记录相应准备步骤。是否为此次失败的直接原因仍须核对实际启动模式。
+- 空 Data 卷不是完整 Data seed；现有 tmp 补丁只是局部实验。当前 package 工作流没有 userdata job 或 ipsw_url 输入，README 已修正。继续按匹配 Data 种子、OS 用户态准备和可回读日志的路径排查，勿直接套用 Sheng 镜像或覆盖手机数据。
+
+## 2026-11-10 23:45 — Data skeleton generated from the matching OS volume
+
+The OS restore volume already carries the complete `/private/var` skeleton with the right owners and
+modes (mounted read-only at `/home/nagatoquin/unixnu/diagnostics/mounts/diting-os/root`). That removes
+the need for a macOS-prepared Data image for the directory layout: `scripts/gen-var-skeleton.py` reads
+the mounted volume and emits `patches/xnu-ipados18/zzzzzzzzzzz-pong-data-skeleton.patch`, which creates
+every missing directory (mode, uid, gid) right after the Data volume is mounted at `/private/var` and
+leaves existing entries untouched. 87 directories at depth 2, app bundles excluded; metadata only, no
+Apple file contents.
+
+The patch follows the pattern the Data tmp experiment established (`mkdir`/`chmod` syscall wrappers
+called from `native_owner_data_prepare`), and adds `chown` for the recorded owner.
