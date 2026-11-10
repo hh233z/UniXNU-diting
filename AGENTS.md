@@ -578,3 +578,20 @@ Apple file contents.
 
 The patch follows the pattern the Data tmp experiment established (`mkdir`/`chmod` syscall wrappers
 called from `native_owner_data_prepare`), and adds `chown` for the recorded owner.
+
+## 2026-11-11 01:30 — Data skeleton builds (patched into the base XNU patch)
+
+The first attempt shipped the skeleton as its own follow-up patch
+(`zzzzzzzzzzz-pong-data-skeleton.patch`), and the CI rejected it with
+`Patch does not apply cleanly`: a follow-up hunk cannot be anchored reliably because every earlier
+patch shifts the line numbers, and `git apply` only searches a short distance from the hint. A second
+attempt anchored at line 1 failed the same way.
+
+Fix: `scripts/gen-var-skeleton.py --insert-into patches/xnu-ipados18/0001-pong-darwin24.patch` inserts the
+generated table and loop into the base patch itself, where the context is guaranteed to match, and
+`scripts/recount-patch.py` recomputes every hunk header from its body afterwards. Build 42859003034
+(4147d47) is green, so the kernel compiles with the new code.
+
+The code creates the 87 directories at depth 2 (app bundles excluded) right after the Data volume is
+mounted at `/private/var`, using the `mkdir`/`chmod`/`chown` syscall wrappers already proven by the Data
+tmp experiment, and prints `PONG APFS: var skeleton created=%d failed=%d`.
