@@ -558,3 +558,4 @@ whether the `posix_spawn(...) error 0xd - Permission denied` loop stops.
 - 22H374 的 xpcproxy 以 `O_RDWR | O_NOCTTY` 打开输出的 `/dev/null`；console 默认权限为 `root:wheel 0622`，非 root 读写打开可能触发 EACCES。
 - `e331648` 保留读写打开的 `/dev/null`，仍将只写打开的标准输出或标准错误按 `applog` 设置重定向到 console。本地源码级验证通过，设备上是否消除 EACCES 仍需确认。
 - greenH 对照镜像仅将 `applog=1` 改为 `applog=0`，已通过 `fastboot boot` 临时启动；观察结果尚未收到。Action 42698962449 构建的是此前的诊断提交 `835b22a`，不含本次修正。
+- greenH 的 `applog=0` 对照启动进入了 `watchdogd[186]` 退出引起的 panic，退出原因 namespace 2、code 5 对应 SIGTRAP；此前 EACCES 是否全部消失仍待完整日志。现有用户异常抓取名单已加入 watchdogd，下一镜像可打印异常 PC、LR、共享缓存 slide 和部分用户栈，供定位退出位置。

@@ -11090,7 +11090,7 @@ index 0000000..ad5e3d0
 +pong_ui_exception(exception_type_t exception, mach_exception_data_t code,
 +    mach_msg_type_number_t count, thread_t thread)
 +{
-+	static const char * const names[] = { "SpringBoard", "backboardd", "containermanagerd", "contextstored", "biomed", "notifyd" };
++	static const char * const names[] = { "SpringBoard", "backboardd", "containermanagerd", "contextstored", "biomed", "notifyd", "watchdogd" };
 +	static unsigned records[sizeof(names) / sizeof(names[0])];
 +	static const unsigned message_regs[] = { 0, 1, 2, 3, 8, 16, 20, 21 };
 +	if (!ml_get_interrupts_enabled() || thread != current_thread() ||
