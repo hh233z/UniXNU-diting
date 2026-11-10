@@ -602,3 +602,24 @@ Build 42859003034 (4147d47) produced image sha C5D58F80; `fastboot boot` OKAY on
 left adb/fastboot, i.e. the payload is running. The panel is the only witness so far: the expected line
 is `PONG APFS: var skeleton created=87 failed=0`, and the next questions are whether the `/tmp` ENOENT
 and the persona/usermanagerd failures changed.
+
+## 2026-11-11 02:20 — launchd boot task inspected (read-only)
+
+The mounted OS volume's `/sbin/launchd` (560,752 bytes) embeds its boot-task plist. The `usermanagerd`
+task is:
+
+```
+<key>usermanagerd</key>
+<dict>
+    <key>PerformAfterUserspaceReboot</key><true/>
+    <key>ProgramArguments</key><array>
+        <string>/usr/libexec/usermanagerd</string><string>--init</string>
+    </array>
+    <key>AllowCrash</key><true/>
+</dict>
+```
+
+so it carries `PerformAfterUserspaceReboot` but **no `PerformInRestore`**, which matches the handover's
+claim. `PerformInRestore` appears on other tasks (`restore-datapartition`, `exclaves-boot`), so the key
+is understood by this launchd build. Whether the current boot counts as restore mode decides if the
+persona initialisation runs; that is the next thing to establish from the panel, not to guess.
