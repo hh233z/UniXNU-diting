@@ -9,7 +9,7 @@ soc_source = "sm8475"
 # UniXNU/profiles/os/ has no 18.x profile yet.
 os_profile = "ipados-18.7.10-22H374"
 description = "Redmi K50 Ultra (diting/SM8475): UniXNU bring-up from the Pong baseline"
-kit = "pong"
+kit = "diting"
 
 # iPadOS 18.7.10 restore selected from the matching J171 BuildIdentity.
 [ipsw]
@@ -24,9 +24,9 @@ fetch = ["KernelCache", "DeviceTree", "StaticTrustCache", "Cryptex1,SystemOS", "
 
 [components]
 # This is the community Pong A730/QCA6490/Darwin24 implementation, not the A740/WCN7850 source.
-# The kit lives in this repository at kits/PongPlatform24 and declares no archive recipe: the
+# The kit lives in this repository at kits/DitingPlatform24 and declares no archive recipe: the
 # kernel step of this board builds the aggregate itself, see [kernel] below.
-include = ["PongPlatform24", "XnuPrelink"]
+include = ["DitingPlatform24", "XnuPrelink"]
 
 [device_tree]
 source = "device:dts/diting.dts"
@@ -45,7 +45,7 @@ archives = []
 # takes its object directory and aggregate name from it.
 machine_config = "PONG"
 # 由组件配方生成完整内核，避免通用引导步骤先选择其他机器配置。
-builder_component = "PongPlatform24"
+builder_component = "DitingPlatform24"
 
 # Local prelink and userdata entries are documented under migration/ipados18.
 [kernel.prelink]

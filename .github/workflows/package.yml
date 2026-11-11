@@ -343,7 +343,7 @@ jobs:
         run: |
           set -euo pipefail
           export PATH="/usr/local/opt/llvm/bin:/usr/local/opt/lld/bin:$PATH"
-          python3 device/kits/PongPlatform24/build-with-runtime.py --overlay-only --overlay-dir "$RUNNER_TEMP/wifi-overlay"
+          python3 device/kits/DitingPlatform24/build-with-runtime.py --overlay-only --overlay-dir "$RUNNER_TEMP/wifi-overlay"
           python3 "$RUNNER_TEMP/wifi-overlay/scripts/build-pong-ath11k.py" --output-dir "$GITHUB_WORKSPACE/wifi-preflight" --jobs 4
       - name: diting hardware tree
         # The live tree names the Wi-Fi reset/enable/wake lines differently from Pong and

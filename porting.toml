@@ -9,7 +9,7 @@ summary = "Redmi K50 Ultra (diting/SM8475), iPadOS 18.7.10 / Darwin 24 bring-up 
 [[area]]
 id = "configuration"
 status = "implemented"
-components = ["PongPlatform24"]
+components = ["DitingPlatform24"]
 paths = ["board.toml", "feeds.toml", "unixnu.lock", ".gitmodules", "configs/**", "dts/**", "migration/format2/**", "scripts/*format2*", "scripts/*native*sources*", "scripts/pong_native_inputs.py", "scripts/build-pong-profile-kernel.py", ".github/workflows/**", "README.md", "README_EN.md"]
 inputs = ["Pong live Android DT、NothingOSS SM8475源码与匹配22H374 restore"]
 configuration = ["board.toml、pong_ipados18_defconfig 与对应板级配置"]
@@ -23,7 +23,7 @@ evidence = [{kind = "source", reported_kind = "host-build", reference = "README.
 [[area]]
 id = "firmware"
 status = "implemented"
-components = ["PongPlatform24"]
+components = ["DitingPlatform24"]
 paths = ["drivers/DarwinBoot24/**", "scripts/build-darwinboot24*"]
 inputs = ["Pong live Android DT、NothingOSS SM8475源码与匹配22H374 restore"]
 configuration = ["board.toml、pong_ipados18_defconfig 与对应板级配置"]
@@ -37,7 +37,7 @@ evidence = [{kind = "source", reference = "migration/format2/README.zh.md", resu
 [[area]]
 id = "cpu"
 status = "implemented"
-components = ["PongPlatform24"]
+components = ["DitingPlatform24"]
 paths = ["drivers/ArmCpu/**", "drivers/ArmDTPlatform/**", "scripts/build-pong-armcpu*", "scripts/build-pong-platform*"]
 inputs = ["Pong live Android DT、NothingOSS SM8475源码与匹配22H374 restore"]
 configuration = ["board.toml、pong_ipados18_defconfig 与对应板级配置"]
@@ -51,7 +51,7 @@ evidence = [{kind = "source", reported_kind = "host-build", reference = "migrati
 [[area]]
 id = "memory"
 status = "implemented"
-components = ["PongPlatform24"]
+components = ["DitingPlatform24"]
 paths = ["configs/pong-memory-sm8475.json", "drivers/PongAdreno/ArmSmmu4K/**"]
 inputs = ["Pong live Android DT、NothingOSS SM8475源码与匹配22H374 restore"]
 configuration = ["board.toml、pong_ipados18_defconfig 与对应板级配置"]
@@ -65,7 +65,7 @@ evidence = [{kind = "source", reported_kind = "host-build", reference = "migrati
 [[area]]
 id = "storage"
 status = "implemented"
-components = ["PongPlatform24"]
+components = ["DitingPlatform24"]
 paths = ["drivers/NativeUfs/**", "scripts/*ufs*", "scripts/*storage*", "scripts/*os-delta*"]
 inputs = ["Pong live Android DT、NothingOSS SM8475源码与匹配22H374 restore"]
 configuration = ["board.toml、pong_ipados18_defconfig 与对应板级配置"]
@@ -79,7 +79,7 @@ evidence = [{kind = "source", reported_kind = "host-build", reference = "migrati
 [[area]]
 id = "display"
 status = "implemented"
-components = ["PongPlatform24"]
+components = ["DitingPlatform24"]
 paths = ["configs/pong-display-sm8475.json", "drivers/PongPower/PongBacklight*", "scripts/*display*"]
 inputs = ["Pong live Android DT、NothingOSS SM8475源码与匹配22H374 restore"]
 configuration = ["board.toml、pong_ipados18_defconfig 与对应板级配置"]
@@ -93,7 +93,7 @@ evidence = [{kind = "source", reported_kind = "host-build", reference = "migrati
 [[area]]
 id = "input"
 status = "implemented"
-components = ["PongPlatform24"]
+components = ["DitingPlatform24"]
 paths = ["userland/touch.c", "userland/touch.h", "patches/xnu-ipados18/**", "drivers/GoodixTouch/**", "userland/ui_compat18.c"]
 inputs = ["Pong live Android DT、NothingOSS SM8475源码与匹配22H374 restore"]
 configuration = ["board.toml、pong_ipados18_defconfig 与对应板级配置"]
@@ -107,7 +107,7 @@ evidence = [{kind = "source", reported_kind = "device-capture", reference = "mig
 [[area]]
 id = "gpu"
 status = "implemented"
-components = ["PongPlatform24"]
+components = ["DitingPlatform24"]
 paths = ["drivers/PongAdreno/**", "drivers/PongMetal/**", "patches/mesa/**", "patches/metal2vulkan/**", "scripts/*metal*", "scripts/*adreno*", "scripts/*turnip*"]
 inputs = ["Pong live Android DT、NothingOSS SM8475源码与匹配22H374 restore"]
 configuration = ["board.toml、pong_ipados18_defconfig 与对应板级配置"]
@@ -121,7 +121,7 @@ evidence = [{kind = "source", reported_kind = "device-capture", reference = "mig
 [[area]]
 id = "network"
 status = "implemented"
-components = ["PongPlatform24"]
+components = ["DitingPlatform24"]
 paths = ["drivers/PongWifi/**", "configs/pong-wifi-sm8475.json", "scripts/*wifi*", "scripts/*ath11k*"]
 inputs = ["Pong live Android DT、NothingOSS SM8475源码与匹配22H374 restore"]
 configuration = ["board.toml、pong_ipados18_defconfig 与对应板级配置"]
@@ -135,7 +135,7 @@ evidence = [{kind = "source", reported_kind = "host-build", reference = "migrati
 [[area]]
 id = "audio"
 status = "implemented"
-components = ["PongPlatform24"]
+components = ["DitingPlatform24"]
 paths = ["drivers/PongPower/PongAudio*", "drivers/PongPower/PongIOAudio2.h", "drivers/PongPower/ShengAudioReach*", "userland/PongAudioPlugIn.c", "userland/audio-route.c", "scripts/*audio*"]
 inputs = ["Pong live Android DT、NothingOSS SM8475源码与匹配22H374 restore"]
 configuration = ["board.toml、pong_ipados18_defconfig 与对应板级配置"]
@@ -149,7 +149,7 @@ evidence = [{kind = "source", reported_kind = "host-build", reference = "migrati
 [[area]]
 id = "power"
 status = "implemented"
-components = ["PongPlatform24"]
+components = ["DitingPlatform24"]
 paths = ["drivers/PongPower/**", "configs/pong-power-sm8475.json", "userland/sleepserver/**"]
 inputs = ["Pong live Android DT、NothingOSS SM8475源码与匹配22H374 restore"]
 configuration = ["board.toml、pong_ipados18_defconfig 与对应板级配置"]
@@ -163,21 +163,21 @@ evidence = [{kind = "source", reported_kind = "host-build", reference = "migrati
 [[area]]
 id = "packaging"
 status = "implemented"
-components = ["PongPlatform24", "XnuPrelink"]
-paths = ["scripts/package.sh", "scripts/finalize-pong-adt.py", "scripts/build-pong-hardware-dtb.py", "scripts/install-unixnu-inputs.py", "kits/PongPlatform24/**", "os-profiles/**", "board.toml", ".github/workflows/package.yml", "scripts/build-ipados18*", "scripts/build-pong-profile-kernel.py", "scripts/make-pong-adt-ipados18.py", "scripts/build-xnu-ipados18.sh", "patches/xnu-ipados18/**"]
+components = ["DitingPlatform24", "XnuPrelink"]
+paths = ["scripts/package.sh", "scripts/finalize-pong-adt.py", "scripts/build-pong-hardware-dtb.py", "scripts/install-unixnu-inputs.py", "kits/DitingPlatform24/**", "os-profiles/**", "board.toml", ".github/workflows/package.yml", "scripts/build-ipados18*", "scripts/build-pong-profile-kernel.py", "scripts/make-pong-adt-ipados18.py", "scripts/build-xnu-ipados18.sh", "patches/xnu-ipados18/**"]
 inputs = ["UniXNU c96b299（release 与 templates/package.sh）、uefi-pong 固件树、匹配 22H374 restore、UNIXNU_UNIQUE_CHIP_ID 平台种子"]
 configuration = ["board.toml 的 [package]/[package.defconfig]/[bootimg]/[userdata]，os-profiles/ipados-18.7.10-22H374，configs/pong_ipados18_ci_defconfig"]
 procedure = ["scripts/package.sh --check 走 deps/preflight/patches；CI 的 package job 跑 scripts/package.sh --os … --skip-prelink，再跑 scripts/finalize-pong-adt.py：用本地同一份 make-pong-adt-ipados18.py 与同一组参数（12 GiB DRAM、4 GiB 窗口、单 CPU）重写 payload 里的 ADT，并重打 boot.img 与 PONGFAT1 包装的 boot.img.pong。"]
-findings = ["scripts/package.sh --check --no-deps 在 Linux 上通过：1 个补丁、pong_ipados18_defconfig、OS ipados-18.7.10-22H374。release 只跑 kernel/package/firmware/payload，不含 userdata；本板内核需要 MACHINE_CONFIGS=PONG，共享 kernel 步骤写死 BCM2837，因此由 kits/PongPlatform24 作为组件 recipe 编译；共享 kernel 步骤的 tree 已有真实 drivers/ 目录，设备 builder 另用一棵树并在编完后回填 mach.development.pong。bootimg 的 validate 只认 v0-v2 头，board 覆写 header_version = 0。本板固件只认 PONGFAT1 包装的 ramdisk，故规范产物 boot/boot.img 之外另出 boot.img.pong。userdata 不走 unixnu userdata：它写 SHNGROOT v2 且缺 Data 窗口，本板 RootLayout.h 只接受 v1 且强制 OS/SystemOS/Data 三窗口。", "package.yml 去掉未使用的 blacktop/tap/ipsw；porting-record.yml 改为 submodules: recursive，与 drivers/ submodule 拆分对齐。"]
+findings = ["scripts/package.sh --check --no-deps 在 Linux 上通过：1 个补丁、pong_ipados18_defconfig、OS ipados-18.7.10-22H374。release 只跑 kernel/package/firmware/payload，不含 userdata；本板内核需要 MACHINE_CONFIGS=PONG，共享 kernel 步骤写死 BCM2837，因此由 kits/DitingPlatform24 作为组件 recipe 编译；共享 kernel 步骤的 tree 已有真实 drivers/ 目录，设备 builder 另用一棵树并在编完后回填 mach.development.pong。bootimg 的 validate 只认 v0-v2 头，board 覆写 header_version = 0。本板固件只认 PONGFAT1 包装的 ramdisk，故规范产物 boot/boot.img 之外另出 boot.img.pong。userdata 不走 unixnu userdata：它写 SHNGROOT v2 且缺 Data 窗口，本板 RootLayout.h 只接受 v1 且强制 OS/SystemOS/Data 三窗口。", "package.yml 去掉未使用的 blacktop/tap/ipsw；porting-record.yml 改为 submodules: recursive，与 drivers/ submodule 拆分对齐。"]
 completion = ["在 macOS runner 上跑通 package.yml 两个 job，并取得 boot.img、boot.img.pong、payload.img、kernel.macho、package.manifest.json 与 userdata 分片"]
 limits = ["CI 尚未在 macOS runner 上运行；真机未刷入。prelink slide 尚未在本板表达，流水线用 --skip-prelink。devicetree.generate() 要求单段 /memory，自定义 DT 属性不透传。"]
 next_action = ["在 fork 上手动触发 package.yml，带 ipsw_url，核对两处产物再上真机"]
-evidence = [{kind = "source", reference = "migration/format2/README.zh.md", result = "board.toml、os-profiles 与 PongPlatform24 kit 已按 docs/porting/packaging.md 组织；package.sh --check 通过，CI 未跑。"}]
+evidence = [{kind = "source", reference = "migration/format2/README.zh.md", result = "board.toml、os-profiles 与 DitingPlatform24 kit 已按 docs/porting/packaging.md 组织；package.sh --check 通过，CI 未跑。"}]
 
 [[area]]
 id = "diagnostics"
 status = "implemented"
-components = ["PongPlatform24"]
+components = ["DitingPlatform24"]
 paths = ["migration/ipados18/**", "scripts/pong_adt_contract.py", "userland/settings_compat18.c", "userland/init.c", "porting.toml", ".github/**"]
 inputs = ["Pong live Android DT、NothingOSS SM8475源码与匹配22H374 restore"]
 configuration = ["board.toml、pong_ipados18_defconfig 与对应板级配置"]
@@ -191,7 +191,7 @@ evidence = [{kind = "source", reported_kind = "host-build", reference = ".github
 [[area]]
 id = "mobilegestalt-device-information"
 status = "implemented"
-components = ["PongPlatform24"]
+components = ["DitingPlatform24"]
 paths = ["userland/usb_compat18.c", "userland/PongGestaltKeys.h", "userland/usb_services18.py", "userland/init.c"]
 inputs = ["22H374 native lockdownd call sites", "actual Pong IOPMPowerSource and Speaker IOAudio2Device"]
 configuration = ["root-owned Pong board identity seed; existing native USB pairing retained"]
@@ -205,7 +205,7 @@ evidence = [{kind = "source", reported_kind = "device-capture", reference = "mig
 [[area]]
 id = "native-category-volume"
 status = "implemented"
-components = ["PongPlatform24"]
+components = ["DitingPlatform24"]
 paths = ["userland/settings_compat18.c", "userland/ui_compat18.c", "drivers/PongPower/PongIOAudio2.h"]
 inputs = ["22H374 AVSystemController and CoreAudio native control ABI", "services144 user audible lock sound and actual integer volume1"]
 configuration = ["One-time native media/ringer low-volume migration; retain full mute and subsequent user volume choices"]
@@ -219,7 +219,7 @@ evidence = [{kind = "source", reported_kind = "host-build", reference = "migrati
 [[area]]
 id = "native-ringtone-display-wake"
 status = "implemented"
-components = ["PongPlatform24"]
+components = ["DitingPlatform24"]
 paths = ["drivers/PongPower/PongIOAudio2.h", "drivers/PongMetal/PongMetalScanout.h", "drivers/PongMetal/NativeBridgeMetalFrontend.mm", "userland/audio_codecs18.h", "userland/settings_compat18.c", "patches/xnu-ipados18/zzzzz-pong-wake-scanout-alpha.patch"]
 inputs = ["services146 native volume preferences and real PCM/DSP completions", "services146 wake scanout not-submitted and surface timeout logs"]
 configuration = ["Serialized bounded IOAudio2 restart; native ringtone config; CPU/GPU opaque scanout; existing128GB Data/pairing retained"]
@@ -233,7 +233,7 @@ evidence = [{kind = "source", reported_kind = "host-build", reference = "migrati
 [[area]]
 id = "main-gpu-metal-ringer149"
 status = "implemented"
-components = ["PongPlatform24"]
+components = ["DitingPlatform24"]
 paths = ["userland/settings_compat18.c", "drivers/PongAdreno/submit/NativeAdrenoMemory.cpp", "drivers/PongAdreno/submit/NativeAdrenoRing.cpp", "drivers/PongMetal/NativeBridgeMetalFrontend.mm", "drivers/PongMetal/bridge/NativeMetalObjects.rs", "patches/metal2vulkan/upstream149"]
 inputs = ["core6790e7c, AdrenoMetal a0f0287, Adreno740 a9a2cbb", "actual22H374 SBRingerControl method ABI and148 logs"]
 configuration = ["A730/SM8475 ABI1 and22H374 kept; diagnostics opt-in"]
@@ -247,7 +247,7 @@ evidence = [{kind = "source", reported_kind = "host-build", reference = "migrati
 [[area]]
 id = "adreno-ringer-freeze150"
 status = "implemented"
-components = ["PongPlatform24"]
+components = ["DitingPlatform24"]
 paths = ["drivers/PongAdreno/submit/NativeAdrenoVm.cpp", "drivers/PongAdreno/submit/NativeAdrenoRing.cpp", "drivers/PongAdreno/PongAdrenoCp.cpp", "drivers/PongMetal/bridge/NativeMetalObjects.rs", "userland/settings_compat18.c", "userland/audio_codecs18.h", "userland/init.c"]
 inputs = ["services149 REC CP opcode cause1/device-lost/backboardd crash", "native ringer accepted cached mute false, ringtone scalar0.6763", "Adreno740 main a9a2cbb/36c4e44 and Qualcomm KGSL ring allocation"]
 configuration = ["Pong SM8475/A730, 22H374 arm64/native4KiB; board.toml and pong_ipados18_defconfig; matching per-round kernel/runtime recipes documented in the evidence reference."]
@@ -261,7 +261,7 @@ evidence = [{kind = "source", reported_kind = "host-build", reference = "migrati
 [[area]]
 id = "control-center-native-ringtone151"
 status = "implemented"
-components = ["PongPlatform24"]
+components = ["DitingPlatform24"]
 paths = ["userland/ringtones18.py", "userland/ui_compat18.c", "drivers/PongMetal/PrimeShaders.h", "drivers/PongMetal/PongMetalPlugin.mm", "patches/metal2vulkan/upstream149/0025-pong-bounded-idle-memory.patch"]
 inputs = ["150 live USB log: compressed MTLReplayer shader page-in failure and backboardd SIGBUS", "150 live USB log: scalar DisplayBrightness consumed by CBSliderCommitTelemetry as dictionary; cache slide resolved from actual objc export", "Native ringer request accepted, actual DSP PCM and TFA state"]
 configuration = ["Pong SM8475/A730, 22H374 arm64/native4KiB; board.toml and pong_ipados18_defconfig; matching per-round kernel/runtime recipes documented in the evidence reference."]
@@ -275,7 +275,7 @@ evidence = [{kind = "source", reported_kind = "host-build", reference = "migrati
 [[area]]
 id = "upstream-metal-keyboard152"
 status = "implemented"
-components = ["PongPlatform24"]
+components = ["DitingPlatform24"]
 paths = ["drivers/PongAdreno/submit/NativeAdrenoMemory.cpp", "drivers/PongAdreno/submit/NativeAdrenoVm.cpp", "drivers/PongAdreno/submit/NativeAdrenoPublish.cpp", "drivers/PongMetal/PongMetalPlugin.mm", "drivers/PongMetal/NativeBridgeMetalFrontend.mm", "userland/ui_compat18.c", "userland/init.c", "patches/mesa/0005-pong-22h374-const-oom-cache-budget.patch"]
 inputs = ["UniXNU6790e7c/Adreno740a9a2cbb/AdrenoMetal831a9dc/Sheng28b3028", "151 real backboardd SIGSEGV: null device after unchecked constant-stream reservation", "Native keyboard resources and user-reported phone keyplane offset/123 failure"]
 configuration = ["Pong SM8475/A730, 22H374 arm64/native4KiB; board.toml and pong_ipados18_defconfig; matching per-round kernel/runtime recipes documented in the evidence reference."]
@@ -289,7 +289,7 @@ evidence = [{kind = "source", reported_kind = "host-build", reference = "migrati
 [[area]]
 id = "gpu-guide-memory-bgra153"
 status = "implemented"
-components = ["PongPlatform24"]
+components = ["DitingPlatform24"]
 paths = ["drivers/PongAdreno/submit/NativeAdrenoMemory.cpp", "drivers/PongAdreno/submit/NativeAdrenoPublish.cpp", "drivers/PongAdreno/PongAdrenoClient.cpp", "drivers/PongMetal/PongMetalPlugin.mm", "patches/mesa/0006-pong-upstream-gmem-bgra-swap.patch"]
 inputs = ["Official GPU adaptation guide", "152 moving color-region report", "152 actual GPU scanout and presentation timings"]
 configuration = ["Pong SM8475/A730, 22H374 arm64/native4KiB; board.toml and pong_ipados18_defconfig; matching per-round kernel/runtime recipes documented in the evidence reference."]
@@ -304,7 +304,7 @@ evidence = [{kind = "source", reported_kind = "host-build", reference = "migrati
 [[area]]
 id = "gpu-real-execution-hotpath155"
 status = "implemented"
-components = ["PongPlatform24"]
+components = ["DitingPlatform24"]
 paths = ["drivers/PongAdreno/submit/NativeAdrenoMemory.cpp", "drivers/PongAdreno/submit/NativeAdrenoVm.cpp", "drivers/PongAdreno/submit/NativeAdrenoPublish.cpp", "patches/mesa/0007-pong-current-main-atomic-batches.patch"]
 inputs = ["153 actual first-IB opcode fault", "154 real908/908 GPU completion with continued user-reported slow UI", "official GPU guide and actual compiled Turnip backend"]
 configuration = ["Pong SM8475/A730, 22H374 arm64/native4KiB; board.toml and pong_ipados18_defconfig; matching per-round kernel/runtime recipes documented in the evidence reference."]
@@ -318,7 +318,7 @@ evidence = [{kind = "source", reported_kind = "device", reference = "migration/i
 [[area]]
 id = "metal-interface-ui-stalls156"
 status = "implemented"
-components = ["PongPlatform24"]
+components = ["DitingPlatform24"]
 paths = ["drivers/PongMetal/NativeBridgeMetalFrontend.mm", "drivers/PongMetal/bridge/NativeMetalObjects.rs", "drivers/PongMetal/PrimeShaders.h", "userland/metal_services18.py"]
 inputs = ["155 slow UI with working GPU", "Native prime journal:184 paths, only1 eligible library", "Native cameracaptured jetsam at27MiB/5s respawn"]
 configuration = ["Pong SM8475/A730, 22H374 arm64/native4KiB; board.toml and pong_ipados18_defconfig; matching per-round kernel/runtime recipes documented in the evidence reference."]
@@ -341,7 +341,7 @@ evidence = [{kind = "source", reference = "migration/ipados18/services159-startu
 [[area]]
 id = "gpu-priority-timing160"
 status = "implemented"
-components = ["PongPlatform24"]
+components = ["DitingPlatform24"]
 paths = ["drivers/PongAdreno/submit/NativeAdrenoSubmit.cpp", "drivers/PongAdreno/submit/NativeAdrenoRing.cpp", "drivers/PongAdreno/submit/NativeAdrenoUserClient.cpp", "patches/mesa/0008-pong-abi1-process-priority.patch", "drivers/PongMetal/NativeBridgeMetalFrontend.mm"]
 inputs = ["official GPU guide", "159 real GPU completion with24-30ms frontend/8-12ms wait and user low-FPS report"]
 configuration = ["Pong SM8475/A730, 22H374 arm64/native4KiB; board.toml and pong_ipados18_defconfig; matching per-round kernel/runtime recipes documented in the evidence reference."]
@@ -355,7 +355,7 @@ evidence = [{kind = "source", reported_kind = "host-build", reference = "migrati
 [[area]]
 id = "audio-wake-active-acquire162"
 status = "implemented"
-components = ["PongPlatform24"]
+components = ["DitingPlatform24"]
 paths = ["drivers/PongPower/PongIOAudio2.h", "drivers/PongPower/PongAudio.cpp", "drivers/PongAdreno/submit/NativeAdrenoUserClient.cpp", "drivers/PongMetal/NativeBridgeMetalFrontend.mm", "patches/mesa/0010-pong-completed-import-acquire.patch"]
 inputs = ["User161 sleep/unlock still silent", "161 actual GPU complete with remaining10-23ms imported completion cache work", "Nothing native TFA9873 B0 state definitions and shutdown order", "Official GPU timing and ownership guide"]
 configuration = ["Pong SM8475/A730, 22H374 arm64/native4KiB; board.toml and pong_ipados18_defconfig; matching per-round kernel/runtime recipes documented in the evidence reference."]
@@ -369,7 +369,7 @@ evidence = [{kind = "source", reference = "migration/ipados18/services162-sleep-
 [[area]]
 id = "audio-prepare-command-stages163"
 status = "implemented"
-components = ["PongPlatform24"]
+components = ["DitingPlatform24"]
 paths = ["drivers/PongPower/PongIOAudio2.h", "drivers/PongPower/PongAudio.cpp", "drivers/PongMetal/NativeBridgeMetalFrontend.mm", "drivers/PongMetal/bridge/NativeMetalObjects.rs", "patches/metal2vulkan/0011-pong-bounded-command-stage-summary.patch"]
 inputs = ["services162 user-confirmed unlock silence", "real PCM/WRITE_DONE/amp engagement", "poster scheduled waits406ms", "official GPU stage guide"]
 configuration = ["Pong SM8475/A730, 22H374 arm64/native4KiB; board.toml and pong_ipados18_defconfig; matching per-round kernel/runtime recipes documented in the evidence reference."]
@@ -383,7 +383,7 @@ evidence = [{kind = "source", reported_kind = "host-build", reference = "migrati
 [[area]]
 id = "lock-sound-admission164"
 status = "implemented"
-components = ["PongPlatform24"]
+components = ["DitingPlatform24"]
 paths = ["drivers/PongPower/PongIOAudio2.h", "patches/mesa/0011-pong-retire-observed-admission-fences.patch"]
 inputs = ["163 runtime scheduled backlog434ms", "163 real restart/PCM/WRITE_DONE but audible unlock recovery not confirmed", "native short-sound StopIO ownership audit"]
 configuration = ["Pong SM8475/A730, 22H374 arm64/native4KiB; board.toml and pong_ipados18_defconfig; matching per-round kernel/runtime recipes documented in the evidence reference."]
@@ -398,7 +398,7 @@ evidence = [{kind = "source", reference = "migration/ipados18/services164-lock-s
 [[area]]
 id = "scheduling-metal-audio-clock165"
 status = "implemented"
-components = ["PongPlatform24"]
+components = ["DitingPlatform24"]
 paths = ["drivers/PongMetal/QueuePriority.h", "drivers/PongMetal/SharedShaderCache.h", "drivers/PongMetal/NativeBridgeMetalFrontend.mm", "drivers/PongAdreno/submit/NativeAdrenoCpu.cpp", "userland/audio_clock18.h"]
 inputs = ["upstream fix/gpu-scheduling-and-metal d6bd3dd complete core merge", "164 poster scheduler2.3s vs CP8.7-14.5ms", "native audio PCM/DSP/TFA normal-looking but unlock silence confirmed"]
 configuration = ["Pong SM8475/A730, 22H374 arm64/native4KiB; board.toml and pong_ipados18_defconfig; matching per-round kernel/runtime recipes documented in the evidence reference."]
@@ -413,7 +413,7 @@ evidence = [{kind = "source", reference = "migration/ipados18/services165-schedu
 [[area]]
 id = "submit-retirement-publication166"
 status = "implemented"
-components = ["PongPlatform24"]
+components = ["DitingPlatform24"]
 paths = ["patches/mesa/0013-pong-atomic-submit-retirement-publication.patch"]
 inputs = ["165-final real nested-IB FSR80000402/FAR0xe0d4100", "kernel-accepted submit precedes user last_fence publication", "BO retirement/cache reuse samples last_fence concurrently"]
 configuration = ["Pong SM8475/A730, 22H374 arm64/native4KiB; board.toml and pong_ipados18_defconfig; matching per-round kernel/runtime recipes documented in the evidence reference."]
@@ -427,7 +427,7 @@ evidence = [{kind = "source", reference = "migration/ipados18/services166-submit
 [[area]]
 id = "frame-ownership-pac167"
 status = "implemented"
-components = ["PongPlatform24"]
+components = ["DitingPlatform24"]
 paths = ["drivers/PongAdreno/submit/NativeAdrenoUserClient.cpp", "drivers/PongMetal/NativeBridgeMetalFrontend.mm", "patches/mesa/0015-pong-batched-host-ownership.patch", "patches/xnu-ipados18/zzzzzzzz-pong-native-pac-keys.patch", "drivers/ArmCpu/ArmCpu.cpp"]
 inputs = ["official GPU,diagnostics and arm64e documents", "core135b0da includes latest main04573c5", "166 native60/180/300s frame links", "backboardd35.890ms command with actual4.617ms CP execution"]
 configuration = ["Pong SM8475/A730, 22H374 arm64/native4KiB; board.toml and pong_ipados18_defconfig; matching per-round kernel/runtime recipes documented in the evidence reference."]
@@ -442,7 +442,7 @@ evidence = [{kind = "source", reported_kind = "host-build", reference = "migrati
 [[area]]
 id = "local-runtime-integration"
 status = "implemented"
-components = ["PongPlatform24"]
+components = ["DitingPlatform24"]
 paths = ["scripts/build-ipados18*", "scripts/build-pong-smmu4k.py", "scripts/make-pong-adt-ipados18.py", "scripts/build-xnu-ipados18.sh", "patches/xnu-ipados18/**", "userland/build-ipados18.py"]
 inputs = ["Pong live Android DT、NothingOSS SM8475源码与匹配22H374 restore"]
 configuration = ["board.toml、pong_ipados18_defconfig 与对应板级配置"]
@@ -457,8 +457,8 @@ evidence = [{kind = "source", reported_kind = "host-build", reference = "migrati
 [[area]]
 id = "cumulative-runtime-pr167"
 status = "implemented"
-components = ["PongPlatform24"]
-paths = ["drivers/**", "userland/**", "patches/**", "kits/PongPlatform24/build-with-runtime.py", "kits/PongPlatform24/build-support/merged-scripts/**", "scripts/prepare-pong-mesa.py"]
+components = ["DitingPlatform24"]
+paths = ["drivers/**", "userland/**", "patches/**", "kits/DitingPlatform24/build-with-runtime.py", "kits/DitingPlatform24/build-support/merged-scripts/**", "scripts/prepare-pong-mesa.py"]
 inputs = ["Remote main aaa2d739 packaging and AppCryptex changes", "All accumulated local board/runtime repairs through167", "Pinned public Mesa and metal2vulkan sources"]
 configuration = ["Pong SM8475/A730, 22H374 arm64/native4KiB; board.toml and pong_ipados18_defconfig; matching per-round kernel/runtime recipes documented in the evidence reference."]
 findings = ["Merged native helper/UI/audio/sleep/Sileo/phone/route binaries, frontend,ArmCpu and changed GPU units compiled. Prepared Mesa source reproduces all25 changed source files; current device results remain separately recorded.", "drivers/ 下 12 个板级驱动拆为 Chengdong-Yu/pong-* submodule；路径名与相对 include 保持不变，package.yml 已有 submodules: recursive。"]

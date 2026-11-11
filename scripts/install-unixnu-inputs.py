@@ -3,7 +3,7 @@
 
 UniXNU resolves board.os_profile as a directory under its own profiles/os/ and every
 [kernel] archives component against its own components.toml. This board's 22H374 profile
-and its PongPlatform24 kit exist only here, so a run installs them into the checkout
+and its DitingPlatform24 kit exist only here, so a run installs them into the checkout
 before resolving (the same arrangement the NX769J port uses for its iOS 16 profile).
 The step is idempotent: an identical file is left alone, a differing one stops the run.
 """

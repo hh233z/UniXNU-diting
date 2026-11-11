@@ -22,7 +22,7 @@
 
 - This is the Diting SM8475 format 2 device repository, targeting iPadOS 18.7.10 / 22H374 / Darwin24. Follow https://unixnu.com/zh/porting/migration and https://unixnu.com/zh/porting/device-repository.
 - Keep the ARM64, SM8475, OS profile and board layers separate. The versioned SM8475 seed is under migration/format2/soc-seed; local overrides belong in ignored local.toml.
-- Preserve community component identity PongPlatform24. Do not label the A730/QCA6490 implementation as the upstream A740/WCN7850 driver.
+- Preserve community component identity DitingPlatform24. Do not label the A730/QCA6490 implementation as the upstream A740/WCN7850 driver.
 - Publish source/configuration/porting records only. Apple restore binaries, generated ABI dumps, firmware, userdata, credentials and build artifacts stay local.
 - Record host build results separately from device results in porting.toml. A successful build or Fastboot command is not evidence of working Wi-Fi, PCM audio or buttons.
 - Keep XNU_PONG_POWER independent of Wi-Fi. Shared RPMh/SMMU locks belong to PongPlatformResources, and Darwin24 links native4K helpers once through libPongSmmu4K.a.
@@ -31,7 +31,7 @@
 # Diting packaging status (2026-11-06)
 
 - Keep scripts/package.sh identical to the UniXNU template and use device driver submodules. The workflow pins the previously used UniXNU revision and installs the device OS profile and component catalog before packaging.
-- The pinned upstream core receives a temporary generic kernel-component patch; board.toml selects PongPlatform24. The workflow uses the CI configuration, native-only kernel staging and the volume-layout artifact from the specified run. This integration has only local tests, not a successful macOS run. The layout must match the userdata image retained from that run. Do not treat the output as device-tested.
+- The pinned upstream core receives a temporary generic kernel-component patch; board.toml selects DitingPlatform24. The workflow uses the CI configuration, native-only kernel staging and the volume-layout artifact from the specified run. This integration has only local tests, not a successful macOS run. The layout must match the userdata image retained from that run. Do not treat the output as device-tested.
 - Pong firmware is a reference, not validated Diting firmware. Record host builds and hardware results separately.
 - The Pong firmware FDF separately embeds `Platforms/Nothing/pongPkg/FdtBlob/sm8475-nothing-pong.dtb`; it identifies Nothing Phone (2), regardless of the Diting DTB generated for the boot image. Do not claim that the firmware itself carries a Diting tree.
 - Pong's firmware region at 0xA7100000–0xA7400000 overlaps the Diting ramoops reservation at 0xA7000000–0xA7400000. Pong firmware is not a Diting boot candidate, even if it compiles; derive and validate a Diting memory map before device testing.
@@ -202,7 +202,7 @@ storage implementation and its integration; the device repository does not follo
 | driver source | `UniXNU/ShengUfs` vendored at `drivers/ShengUfs` (catalog id `ShengUfs`, revision e2b32cc) | `drivers/NativeUfs`, imported by hand from UniXNU-pong |
 | publication module | `RootPublication.h`, `RootWindowRead.h`, `GccUfs.h` | absent |
 | boot argument | `native-ufs-root=1` | not used anywhere in the repository |
-| component selection | `[components] include` contains `ShengUfs`, kernel links `component:ShengUfs` | `include = ["PongPlatform24", "XnuPrelink"]` |
+| component selection | `[components] include` contains `ShengUfs`, kernel links `component:ShengUfs` | `include = ["DitingPlatform24", "XnuPrelink"]` |
 | compatible | `qcom,sm8550-ufshc` (board constant to adapt) | Pong constants `pong,ufs-*` |
 
 Bring-up stage list (`/zh/porting/bring-up`) puts us at **stage 6**: the kernel reaches the platform
@@ -226,10 +226,10 @@ stream 0xe0, SPI 265, UFS compatible `qcom,sm8475-ufshc` — verify against the 
   `compatible = qcom,sm8475-ufshc\0qcom,sm8450-ufshc\0` (make-pong-adt-ipados18.py:244), which is
   exactly what the driver's `compatible()` accepts, so matching is not the blocker.
 - Swapping in the supported ShengUfs component is **not** a board.toml edit: `[kernel]
-  builder_component = PongPlatform24` makes the core skip `build_archives()` entirely, the kit recipe
+  builder_component = DitingPlatform24` makes the core skip `build_archives()` entirely, the kit recipe
   rebuilds `drivers/NativeUfs` unconditionally from `PONG_NATIVE_DRIVER_SOURCE` and unlinks any alias,
   and the archive the kernel links is hard-coded at three sites in the **merged** copy
-  `kits/PongPlatform24/build-support/merged-scripts/build-xnu-ipados18.sh` (the repo copy is not what
+  `kits/DitingPlatform24/build-support/merged-scripts/build-xnu-ipados18.sh` (the repo copy is not what
   runs). A real switch needs a `UFS_DRIVER`/`UFS_ARCHIVE` parameter, a `--driver` option in
   `build-pong-ufs-ipados18-macos.py`, VerifiedRoot/VirtioMmioBlock include paths, and the
   bindings.json producer to keep writing `mac-build/native-ufs/bindings.json` (Adreno platform reads
@@ -754,7 +754,7 @@ work is the boot itself, not the inputs.
   the channel works.
 - Repo identity: README.md was still the Pong / Nothing Phone (2) page. Rewritten for Diting with the
   current stage and the ramoops/QR log note. The AGENTS line "This is the Pong SM8475 ..." was
-  corrected to Diting. Component identity PongPlatform24 stays: the drivers are the community Pong
+  corrected to Diting. Component identity DitingPlatform24 stays: the drivers are the community Pong
   SM8475 implementations, not the upstream A740/WCN7850 source.
 - No device access this round (phone disconnected); nothing was written or booted.
 

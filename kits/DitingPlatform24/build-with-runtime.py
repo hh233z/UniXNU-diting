@@ -46,7 +46,7 @@ def overlay(device, destination):
         if not source.is_file():
             continue
         shutil.copy2(source, scripts / source.name)
-        selected[source.name] = 'kits/PongPlatform24/build-support/merged-scripts/' + source.name
+        selected[source.name] = 'kits/DitingPlatform24/build-support/merged-scripts/' + source.name
     (destination / 'PONG_RECIPE_OVERLAY.json').write_text(json.dumps({
         'device': str(device), 'scripts': selected,
         'source_scripts_modified': False, 'workflow_modified': False,

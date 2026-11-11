@@ -37,6 +37,8 @@ def main():
     sdk = subprocess.check_output(
         ['xcrun', '--sdk', 'iphoneos', '--show-sdk-path'], text=True, env=env).strip()
     obj = out / 'NativeUfs.o'
+    data_enabled = env.get('XNU_OWNER_DATA_UFS') == '1' if 'XNU_OWNER_DATA_UFS' in env else (
+        'CONFIG_XNU_OWNER_DATA_UFS=y' in (DEVICE / 'configs/pong_ipados18_defconfig').read_text().splitlines())
     trace_enabled = env.get('XNU_PONG_EARLY_TRACE') == '1' if 'XNU_PONG_EARLY_TRACE' in env else (
         'CONFIG_XNU_PONG_EARLY_TRACE=y' in (DEVICE / 'configs/pong_ipados18_defconfig').read_text().splitlines())
     command = ['xcrun', '--sdk', 'iphoneos', 'clang++', '-target', 'arm64-apple-ios18.0',
@@ -44,7 +46,7 @@ def main():
         '-fno-rtti', '-fno-stack-check', '-std=gnu++17', '-fblocks', '-O2',
         '-DKERNEL=1', '-DKERNEL_PRIVATE=1', '-DXNU_KERNEL_PRIVATE=1',
         '-DXNU_PONG_EARLY_TRACE=' + str(int(trace_enabled)),
-        '-DXNU_PONG_UFS_DATA=' + str(int('CONFIG_XNU_OWNER_DATA_UFS=y' in (DEVICE/'configs/pong_ipados18_defconfig').read_text().splitlines())),
+        '-DXNU_PONG_UFS_DATA=' + str(int(data_enabled)),
         '-I' + str(DEVICE / 'mac-build/storage-abi18/include'),
         '-I' + str(tree / '.cache/xnu-work/EXTERNAL_HEADERS'),
         '-I' + str(framework / 'PrivateHeaders'), '-I' + str(framework / 'Headers'),
