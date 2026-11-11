@@ -519,9 +519,13 @@ def main():
                         help='write the volume-layout.json these images imply here as well')
     parser.add_argument('--jobs', type=int, default=8, help='parallel ranges for the IPSW download')
     parser.add_argument('--chunk-mib', type=int, default=64, help='IPSW download chunk size')
+    parser.add_argument('--data-mib', type=int, default=DATA_MIB,
+                        help='size of the fresh Data APFS volume in MiB (default: 8 GiB)')
     parser.add_argument('--keep-work', action='store_true',
                         help='keep the downloaded and decrypted intermediates for a post mortem')
     args = parser.parse_args()
+    if args.data_mib < 1024 or args.data_mib % 1024:
+        fail('--data-mib must be a whole number of GiB, at least 1')
 
     rec = Recorder()
     report = rec.report
@@ -769,13 +773,13 @@ def main():
     # diting-ipados18-data.cdr, so this is also converted to a raw disk first.
     rec.stage('data-image')
     data_sparse = work / 'DitingData18.sparseimage'
-    create_apfs_image(rec, data_sparse, DATA_MIB, 'Diting-iPadOS18-Data', 'create Data volume')
+    create_apfs_image(rec, data_sparse, args.data_mib, 'Diting-iPadOS18-Data', 'create Data volume')
     data_raw = work / 'data-template.cdr'
-    rec.require('before-data-convert', work, DATA_MIB * 1024 + 2 * GIB, 'the Data conversion')
+    rec.require('before-data-convert', work, args.data_mib * 1024 + 2 * GIB, 'the Data conversion')
     data_raw_bytes = materialize_raw(rec, data_sparse, data_raw, 'convert Data to raw')
-    if data_raw_bytes != DATA_MIB * 1024:
+    if data_raw_bytes != args.data_mib * 1024:
         fail('the Data image is %d bytes, not the %d a %d KiB APFS volume gives'
-             % (data_raw_bytes, DATA_MIB * 1024, DATA_MIB))
+             % (data_raw_bytes, args.data_mib * 1024, args.data_mib))
     probe_volume(rec, stage, data_raw, 'data', 0x40)
     if not args.keep_work:
         data_sparse.unlink(missing_ok=True)
