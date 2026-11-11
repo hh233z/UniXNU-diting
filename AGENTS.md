@@ -811,3 +811,12 @@ work is the boot itself, not the inputs.
 - Data seed 是 packed_ramdisk DBRDISK1（APFS NXSB），960 GiB 逻辑容量打包后仅 1.28 MB；在 macos-15 runner 上用 seed-data-grow.py 生成。
 - userdata 在 WSL Linux 上用 unixnu build userdata 生成；21H461 无 AEA，udif.py 可直接解码；18.7.10 的 AEA 才需要 macOS。
 - 对 Diting：A 路线（v1 两窗口 + seed、不改 OS）可完全 Linux 化，但需替代 /diting 包装器与 launchd 补丁；B 路线（保留 prepared OS，只重建 6.8 GB OS 窗口）峰值约 14 GB，仍需一台 Mac。先走 B，A 作为目标。
+
+# 2026-11-11 Claude 结论与重建路线
+
+- 选 B：保留 prepared OS，只重建 OS 窗口；SystemOS 与 Data 第一次不动。纯 A（OS 原样、用户态全进内核）需要重写 Diting 的 mini-AMFI + restore launchd + kern.exec_inject 适配，不做。
+- 更正：托管 `macos-15-intel` 可以跑完整 userdata 链（run 42073458178 / job 127407532963，34 分钟，reclaim disk 到 80 GiB，峰值约 37 GiB）。旧 userdata job 在 `425c309` 被删，已恢复为 `.github/workflows/diting-userdata.yml`，只上传 OS 窗口与报告。
+- 新增 `configs/diting_ipados18_bringup_defconfig`：`CONFIG_XNU_OWNER_CRYPTEX_FILES=y`、`CONFIG_XNU_OWNER_UNION_SYSTEMOS=n`；WiFi/Adreno/backlight 保持关。`package.yml` 增加 `defconfig` 输入。
+- 顺序：舞台 1（旧镜像 `cb56ac9d…`）→ userdata job 出 OS 窗口 → bring-up 内核 → TWRP 写 OS 窗口（`sda37`，`seek=1`）→ `fastboot boot` 新镜像 → 逐步开驱动。
+- 写 OS 窗口前核对 `sda37` start=24924160、size=468930520；回退用 `prepared-420734-os.img`。
+- provenance 修正：`porting.toml` 里继承的 “Pong live Android DT” 等历史输入不再改成 Diting。
