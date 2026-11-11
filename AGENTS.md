@@ -18,7 +18,7 @@
 
 # Repository layout
 
-- This is the Pong SM8475 format 2 device repository, targeting iPadOS 18.7.10 / 22H374 / Darwin24. Follow https://unixnu.com/zh/porting/migration and https://unixnu.com/zh/porting/device-repository.
+- This is the Diting SM8475 format 2 device repository, targeting iPadOS 18.7.10 / 22H374 / Darwin24. Follow https://unixnu.com/zh/porting/migration and https://unixnu.com/zh/porting/device-repository.
 - Keep the ARM64, SM8475, OS profile and board layers separate. The versioned SM8475 seed is under migration/format2/soc-seed; local overrides belong in ignored local.toml.
 - Preserve community component identity PongPlatform24. Do not label the A730/QCA6490 implementation as the upstream A740/WCN7850 driver.
 - Publish source/configuration/porting records only. Apple restore binaries, generated ABI dumps, firmware, userdata, credentials and build artifacts stay local.
@@ -627,3 +627,131 @@ persona initialisation runs; that is the next thing to establish from the panel,
 ## 2026-11-11：合并已构建的 Data 骨架与 SystemOS 路径
 
 - 4147d47 的 Data 目录骨架和 ci/systemos-union 的只读根卷合并此前位于不同分支；本次把后者的 CI 配置接入包含骨架的 main，避免新构建回到仅依靠 Cryptex 备用路径的配置。之前照片未完整证明 trampoline 已解决；合并后的挂载、Data 骨架、用户态与界面均待实机验证。
+
+## 2026-11-11：二维码日志实机复核
+
+- 33 使用 `greenI2-log-menu.img` 的 Tools → Advanced Logger 成功通过二维码导出日志到 `C:\Users\nagatoquin\Downloads\Redmi K50 Ultra-20190100-000250(1).log`。二维码导出与固件日志已实机成功，不应再表述成该功能不存在。
+- 导出内容包含 `RAMOOPS: sig=0x1400382E size=0x0 (no xnu log)`；本次未取到上轮 XNU 日志。原因尚待核对复位类型、内存保留和内核写入，不能只凭这一份日志判断所有重启场景。该日志是固件输出，不代表已实现独立落盘日志。
+- 6ec0b96 将已构建的 Data 骨架与已有 SystemOS union CI 配置合并；Action 42877431747 已根据 33 的反馈取消，合并版尚未编译或启动。不要因目录存在而重写 Data 或假称系统可用。
+
+## 2026-11-11 03:55 — prepared userland installed; both window writes verified by sampling
+
+The previous session finished writing the prepared 22H374 OS and Data into their userdata windows
+before it hit the usage limit, and left the phone in the temporary TWRP (`diting-recovery-boot.img`,
+root adb, no dd/gzip process). This round did **no boot and no write**: the user is away and a failed
+`fastboot boot` cannot be power-cycled back to fastboot without them.
+
+Read-only verification (`scripts/verify-ufs-window.py`, added here):
+
+- SHNGROOT v1 at userdata offset 0: 3 windows, `imageBytes=19,411,238,912`, directory checksum ok.
+  OS `0x100000` (6,845,104,128), SystemOS `0x198100000` (3,963,617,280), Data `0x285000000`
+  (8,589,934,592).
+- OS window equals `prepared-420734-os.img` at 7/7 sampled 64 KiB regions from 0 to 6.375 GiB,
+  including the final 64 KiB of the window: the sequential dd reached the end.
+- Data window equals `build-work/windows/Data.img` at 7/7 samples; the 4 KiB block holding
+  `Pong development Data seed for 18.7.10 / 22H374` (image offset 0x184e000) is byte-identical on the
+  device.
+- SystemOS was not rewritten; its first 4 KiB still starts with an APFS `NXSB` object, so the OS
+  stream did not overrun 0x198100000.
+
+The directory still records the previous OS/Data sha256 (`be43bec0…`, `e5bced3f…`); the installed
+content hashes to `45b6344f…` and `1378adfe…`. `RootLayout.h` checks only the 4064-byte directory
+checksum and bounds/names/flags, and `PongUfsTransport.cpp` never compares the per-window digests, so
+the stale record does not block publication — but it must not be quoted as the installed digests.
+
+`scripts/inspect-pong-userland.py` (added here) passes on the installed triple: OS UUID B07DF049,
+`/pong/init` 755, `/pong/etc/var.skel`, `/pong/var-seed`; `/sbin/launchd` is byte-identical to
+`/pong/init` (the Pong static init wrapper) while `/sbin/launchd.ios` is Apple's 560,752-byte launchd
+and carries `PerformInRestore` for `usermanagerd` and `launchd_cache_loader`; Data UUID 337CF716 with
+the seed marker, `keybags 0700`, `mobile 0711`, `db`, `containers`, `preferences`, `tmp 01777`.
+
+Pairing for the next boot: build 42859003034 (4147d47) image `C5D58F80`,
+`build-work/greenI2/.../boot/pong-unixnu-uefi.img`. Its payload args have no `pong_init_path` and do
+carry `pong_ufs_readwrite=1 pong_ufs_stall=1 pong_exec_diag=1 applog=1`; the ADT has B07DF049 /
+4A77BA00 and mounts SystemOS at `/private/preboot`. The PONG init list starts at `/sbin/launchd`,
+which this userland replaces with the wrapper, so the native path runs the Pong init and execs
+`launchd.ios`. No `pong_init_path` and no SystemOS union (6ec0b96) needed — that merged build is still
+unbuilt/unproven and must not be conflated with this pairing.
+
+Still unobserved, therefore not acceptance: kernel-side re-publication of the windows, root binding,
+Data mount at `/private/var` and launchd services with the prepared userland. Those need the next
+manual boot; see `D:\ai\diting\交接-2026-11-11-准备用户态.md` for the exact commands and screen
+criteria.
+
+## 2026-11-11 04:20 — live window UUIDs read from the device
+
+`scripts/read-ufs-window-apfs.py` (added here) reads only the APFS metadata blocks a container needs
+and follows the GPT for the Data window, so the UUID match can be checked while the phone still sits
+in recovery (48–64 device blocks, 192–256 KiB per window, no full-image readback):
+
+- OS `0x100000`: volume `CrystalUpdate22H374.J171J172OS` UUID B07DF049-7AD9-47B5-9F8F-9EE728056398,
+  role 0x1, sealed=False, container xid 442. Matches XNU_OWNER_ROOT_VOLUME_UUID.
+- SystemOS `0x198100000`: volume `CrystalUpdate22H374.J171J172SystemCryptex` UUID
+  4A77BA00-2826-44C4-B883-1FA92AC36880, sealed=True. Matches XNU_OWNER_CACHE_VOLUME_UUID.
+- Data `0x285000000`: GPT with the APFS partition at 0x100000; volume `Data` UUID
+  337CF716-F62B-446B-B959-4A5F12A7701C. Matches XNU_OWNER_DATA_VOLUME_UUID.
+
+The built payload embeds those three strings (plus `/private/preboot` and the DYLD_* environment), and
+the `PONG APFS: writable UFS Data UUID unavailable` literal proves the UFS Data branch is compiled,
+not the md0/RAM fallback. `native_owner_data_prepare` mounts "apfs" at "/private/var" with flags 0
+and then rejects the mount if it is MNT_RDONLY, so `pong_ufs_readwrite=1` is required and present.
+That code does not consult the APFS volume role or volume group; both the OS and Data images carry a
+zero volume group id, so the Data UUID rewrite did not create a group mismatch.
+
+## 2026-11-11 04:30 — file-level identity of the installed windows
+
+`read-ufs-window-apfs.py` grew `--stat/--hash` and `--image`, so the same report runs on the device
+and on the local window source. Against the live windows:
+
+- OS: `/sbin/launchd` is the wrapper (71,392 B, sha256 `a80747bb…`, identical to `/pong/init`),
+  `/sbin/launchd.ios` is Apple's launchd (560,752 B, sha256 `81cefc45…`), `/pong/etc/var.skel`
+  31,219 B. Both file hashes equal the `prepared-420734-os.img` values, and the container UUID/xid
+  (`afc0f9bd…`, 442) match, so the installed OS window carries the prepared image at the file level,
+  not just at the sampled offsets.
+- Data: `/.pong-data-22H374` (48 B, sha256 `defb18e6…`) and
+  `/mobile/Library/Preferences/com.apple.purplebuddy.plist` (146 B, 501:501) match
+  `windows/Data.img`; container `3475eb93…`, xid 2.
+- SystemOS: container `975fa298…`, xid 13, volume 4A77BA00… sealed. The local `SystemOS.dmg` has the
+  same container UUID/xid, but block 926542 is zero in both source and device and the sealed live
+  root tree resolves through it, so the in-tree apfs reader cannot list files on that volume. This is
+  a reader limitation, not a device fault (apfs-fuse listed the same volume earlier); file-level
+  evidence for SystemOS still comes from that mount, not from this reader.
+
+## 2026-11-11 04:40 — boot preflight gate passes end to end
+
+`scripts/preflight-diting-boot.py` (added here) is the single gate before a one-way `fastboot boot`.
+It checks the device is in recovery and reports `diting`, the boot image sha256 (C5D58F80), the
+embedded args (must keep `pong_ufs_readwrite=1`, must not set `pong_init_path`), samples both windows
+against their source images, and reads the three APFS volume UUIDs from the live windows. It writes
+nothing and does not boot. Run today against `9e0c2b55` with the C5D58F80 image and the installed
+windows: all checks passed (window sampling plus the three UUID reads), so the remaining acceptance
+work is the boot itself, not the inputs.
+
+## 2026-11-11 08:15 — C5D58F80 booted again with the prepared userland
+
+- `fastboot getvar`: product=diting, unlocked=yes, current-slot=a. Boot image sha256 checked in full
+  (`C5D58F8088900F6BAB15B177B52FD3A080A94E9CBE6E6ABE4185D13CDB98F833`), then `fastboot boot` reported
+  `Sending 'boot.img' (98820 KB) OKAY` and `Booting OKAY`.
+- 60 s after boot neither adb nor fastboot had a device on USB, so the panel is the only witness.
+  Phase 6 scoring waits for the user's photo; do not treat OKAY as a hardware pass.
+- A screen-line table for that photo now sits in `D:\ai\diting\交接-2026-11-11-准备用户态.md`
+  (strings quoted from `drivers/NativeUfs` and `patches/xnu-ipados18/0001-pong-darwin24.patch`).
+
+## 2026-11-11 09:50 — the cache loader panic; fix was already recorded
+
+- The panel from the 08:15 boot showed `panic: launchd_cache_loader(1) exited -- exit_reason
+  namespace 7 subcode 0x1 description: Failed to verify code directory`. The prepared wrapper did
+  exec `/sbin/launchd.ios`, so this is the restore-mode cache loader, not a storage failure.
+- `migration/ipados18/services.md` already records the fix (services9): the loader supports
+  `launchd_unsecure_cache=1`, which lets the stock loader load the locally adapted cache instead of
+  pairing a modified plist with Apple's old signature. The C5D58F80 payload did not carry it;
+  `board.toml [payload] kernel_args` now does (assembled args line 757 bytes, under the 1023 limit).
+- Logs no longer need a photo: the firmware dumps the `0xA7000000` ramoops ring through
+  Tools -> Advanced Logger on the next boot (see 2026-11-09 03:55 above). The 02:45 export showed
+  `size=0` because it predates a mirror-enabled run; the next export must be checked before claiming
+  the channel works.
+- Repo identity: README.md was still the Pong / Nothing Phone (2) page. Rewritten for Diting with the
+  current stage and the ramoops/QR log note. The AGENTS line "This is the Pong SM8475 ..." was
+  corrected to Diting. Component identity PongPlatform24 stays: the drivers are the community Pong
+  SM8475 implementations, not the upstream A740/WCN7850 source.
+- No device access this round (phone disconnected); nothing was written or booted.

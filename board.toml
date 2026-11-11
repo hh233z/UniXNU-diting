@@ -135,6 +135,7 @@ kernel_args = [
   "ignition_level=1",
   "dyld_flags=0x8",
   "launchd_rd=md0",
+  "launchd_unsecure_cache=1",
   "pong_init_trace=1",
   "pong_exec_diag=1",
   "applog=1",
