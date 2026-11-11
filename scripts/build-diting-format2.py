@@ -46,7 +46,7 @@ def main():
                         '--config-path',report['config_path'],'--hardware-dtb',str(hardware),
                         '--jobs',str(a.jobs)],cwd=ROOT,check=True)
         result['kernel_built']=True
-    (work/'PONG_FORMAT2_RESULT.json').write_text(json.dumps(result,indent=2)+'\n')
+    (work/'DITING_FORMAT2_RESULT.json').write_text(json.dumps(result,indent=2)+'\n')
     print(json.dumps(result,indent=2))
 
 

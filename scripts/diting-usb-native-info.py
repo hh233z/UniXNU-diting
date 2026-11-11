@@ -12,7 +12,7 @@ p.add_argument('--serial',help='defaults to the iOS identity on Pong CDC/Mux USB
 p.add_argument('--socket',default='/var/run/usbmuxd')
 p.add_argument('--identity',action='store_true',help='read the actual native device identity keys')
 a=p.parse_args()
-a.serial=a.serial or native_serial() or 'PONG-SM8475'
+a.serial=a.serial or native_serial() or 'DITING-SM8475'
 
 def receive(s,n):
     data=bytearray()

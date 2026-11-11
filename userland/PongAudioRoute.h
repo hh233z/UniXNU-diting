@@ -13,8 +13,8 @@
 #include <string.h>
 #include <sys/sysctl.h>
 #include <mach-o/dyld.h>
-#ifndef PONG_ROUTE_LOG
-#define PONG_ROUTE_LOG(...) fprintf(stderr,__VA_ARGS__)
+#ifndef DITING_ROUTE_LOG
+#define DITING_ROUTE_LOG(...) fprintf(stderr,__VA_ARGS__)
 #endif
 
 // AudioHardwareBase.h is the shared ASPL header; the iPhone SDK omits
@@ -73,7 +73,7 @@ static void resolveEmbeddedSetter(void) {
             }
         }
     }
-    if(setter){embeddedSetData=setter;PONG_ROUTE_LOG("Pong audio route: native MediaExperience HAL setter selected\n");}
+    if(setter){embeddedSetData=setter;DITING_ROUTE_LOG("Pong audio route: native MediaExperience HAL setter selected\n");}
 }
 static AudioObjectID pluginID(CFStringRef bundle) {
     // 22H374 vaemGetVirtualAudioPlugin uses an AudioValueTranslation
@@ -130,7 +130,7 @@ static AudioObjectID findOutput(void) {
     OSStatus status=getData(PongSystemObject,&p,0,NULL,&bytes,devices);
     if(status || bytes>sizeof(devices)) {
         static unsigned errors;
-        if(errors++<3)PONG_ROUTE_LOG("Pong audio route: device enumeration status=%d bytes=%u UID=%u\n",(int)status,bytes,translated);
+        if(errors++<3)DITING_ROUTE_LOG("Pong audio route: device enumeration status=%d bytes=%u UID=%u\n",(int)status,bytes,translated);
         return 0;
     }
     for(UInt32 i=0;i<bytes/sizeof(devices[0]);++i) {
@@ -161,12 +161,12 @@ static int routePhysicalOutput(AudioObjectID plugin,AudioObjectID vad,AudioObjec
     OSStatus status=getData(plugin,&property,sizeof(portType),&portType,&bytes,&ports);
     if(status || !ports) {
         static unsigned failures;
-        if(failures++<3)PONG_ROUTE_LOG("Pong audio route: native global ports plugin=%u VAD=%u status=%d bytes=%u\n",plugin,vad,(int)status,bytes);
+        if(failures++<3)DITING_ROUTE_LOG("Pong audio route: native global ports plugin=%u VAD=%u status=%d bytes=%u\n",plugin,vad,(int)status,bytes);
         return 1;
     }
     if(bytes!=sizeof(ports) || CFGetTypeID(ports)!=CFArrayGetTypeID() || !CFArrayGetCount(ports)){
         static unsigned empty;
-        if(empty++<3)PONG_ROUTE_LOG("Pong audio route: native global ports plugin=%u VAD=%u returned no output port\n",plugin,vad);
+        if(empty++<3)DITING_ROUTE_LOG("Pong audio route: native global ports plugin=%u VAD=%u returned no output port\n",plugin,vad);
         CFRelease(ports);return 1;
     }
     // prts returns AudioObjectIDs (the stock vaem caller reads CFNumber).
@@ -237,7 +237,7 @@ static int routePhysicalOutput(AudioObjectID plugin,AudioObjectID vad,AudioObjec
             OSStatus (*isSettable)(AudioObjectID,const AudioObjectPropertyAddress *,Boolean *)=
                 dlsym(RTLD_DEFAULT,"AudioObjectIsPropertySettable");
             OSStatus access=isSettable?isSettable(plugin,&property,&writable):kAudioHardwareUnknownPropertyError;
-            PONG_ROUTE_LOG("Pong audio route: rtcf dispatch size-status=%d bytes=%u settable-status=%d writable=%u\n",
+            DITING_ROUTE_LOG("Pong audio route: rtcf dispatch size-status=%d bytes=%u settable-status=%d writable=%u\n",
                 (int)shape,expected,(int)access,writable);
         }
     }
@@ -253,7 +253,7 @@ static int routePhysicalOutput(AudioObjectID plugin,AudioObjectID vad,AudioObjec
     if(!status && !observed && volume && changed){routedPlugin=plugin;routedVAD=vad;routedPhysical=physical;routedPort=selectedPortID;}
     static unsigned reports;
     if(changed || reports++<3 || volume)
-        PONG_ROUTE_LOG("Pong audio route: plugin=%u VAD=%u physical=%u connected ports=%ld route=%d volume status=%d capability=%u\n",
+        DITING_ROUTE_LOG("Pong audio route: plugin=%u VAD=%u physical=%u connected ports=%ld route=%d volume status=%d capability=%u\n",
             plugin,vad,physical,(long)CFArrayGetCount(ports),(int)status,(int)observed,volume);
     if(response)CFRelease(response);
     CFRelease(config);CFRelease(selected);CFRelease(allowed);CFRelease(type);CFRelease(ports);
@@ -261,7 +261,7 @@ static int routePhysicalOutput(AudioObjectID plugin,AudioObjectID vad,AudioObjec
 }
 static int pong_audio_select_native_route(void) {
     void *hal=dlopen("/System/Library/Frameworks/CoreAudio.framework/CoreAudio",RTLD_NOW|RTLD_LOCAL);
-    if(!hal){PONG_ROUTE_LOG("Pong audio route: CoreAudio unavailable\n");return 1;}
+    if(!hal){DITING_ROUTE_LOG("Pong audio route: CoreAudio unavailable\n");return 1;}
     getSize=dlsym(hal,"AudioObjectGetPropertyDataSize");getData=dlsym(hal,"AudioObjectGetPropertyData");
     setData=dlsym(hal,"AudioObjectSetPropertyData");
     if(!getSize||!getData||!setData)return 1;
@@ -276,9 +276,9 @@ static int pong_audio_select_native_route(void) {
             AudioObjectID plugin=pluginID(CFSTR("com.apple.audio.CoreAudio.VirtualAudio"));
             AudioObjectID vad=native?native:(current!=physical?current:0);
             if(plugin && vad && !routePhysicalOutput(plugin,vad,physical))return 0;
-            if(attempt<3 || !(attempt%10))PONG_ROUTE_LOG("Pong audio route: physical=%u current=%u native=%u; waiting for real VAD driver port\n",physical,current,native);
+            if(attempt<3 || !(attempt%10))DITING_ROUTE_LOG("Pong audio route: physical=%u current=%u native=%u; waiting for real VAD driver port\n",physical,current,native);
         }
         usleep(1000000);
     }
-    PONG_ROUTE_LOG("Pong audio route: no native output route confirmed; physical endpoint remains published\n");return 1;
+    DITING_ROUTE_LOG("Pong audio route: no native output route confirmed; physical endpoint remains published\n");return 1;
 }

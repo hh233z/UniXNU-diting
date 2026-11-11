@@ -90,23 +90,23 @@ static unsigned serviceCount (const char *name)
 // that the scheduler and the architectural timer can make forward progress.
 static void registrationReport (void *, wait_result_t)
 {
-  IOLog ("PONG REGISTRY: observer started, waiting for scheduler tick\n");
+  IOLog ("DITING REGISTRY: observer started, waiting for scheduler tick\n");
   PongProbeRecord (1, "timer-scheduler", PongProbeRunning, "waiting for one-second sleep");
   uint64_t before = armcpu_timer_interrupts;
   IOSleep (1000);
   uint64_t after = armcpu_timer_interrupts;
-  IOLog ("PONG REGISTRY: timer IRQ before=%llu after=%llu\n", before, after);
+  IOLog ("DITING REGISTRY: timer IRQ before=%llu after=%llu\n", before, after);
   PongProbeRecord (1, "timer-scheduler", after > before ? PongProbePass : PongProbeFail,
                    after > before ? "sleep returned and timer IRQ advanced" : "sleep returned without timer IRQ growth", after - before);
   unsigned platform = serviceCount ("ArmDTPlatform"), cpu = serviceCount ("ArmCpu");
   unsigned controller = serviceCount ("IOCPUInterruptController"), nvram = serviceCount ("IODTNVRAM");
   unsigned ufs = serviceCount ("NativeUfs"), media = serviceCount ("IOMedia");
-  IOLog ("PONG REGISTRY: platform=%u cpu=%u cpu-intc=%u nvram=%u ufs-probe=%u\n",
+  IOLog ("DITING REGISTRY: platform=%u cpu=%u cpu-intc=%u nvram=%u ufs-probe=%u\n",
          platform, cpu, controller, nvram, ufs);
   PongProbeRecord (2, "core-registry", platform && cpu && controller && nvram ? PongProbePass : PongProbeFail,
                    "platform/cpu/intc/nvram counts packed as bytes",
                    ((uint64_t)platform << 24) | ((uint64_t)cpu << 16) | ((uint64_t)controller << 8) | nvram);
-  IOLog ("PONG REGISTRY: block-device=%u media=%u; diagnostic-only mode skips block transport\n",
+  IOLog ("DITING REGISTRY: block-device=%u media=%u; diagnostic-only mode skips block transport\n",
          serviceCount ("IOBlockStorageDevice"), media);
   PongProbeRecord (3, "root-media", media ? PongProbePass : PongProbeSkip,
                    media ? "published IOMedia observed" : "no block transport; waiting for real root media", media);
@@ -119,7 +119,7 @@ static bool probeFailure (const char *reason, uint64_t detail = 0)
   // Without this driver there is no root media and the boot panics later at IOKitBSDInit
   // with no explanation, so log the failing board property and let pong_ufs_stall hold
   // the console for a photograph.
-  IOLog ("PONG_UFS PROBE FAILED: %s detail=%llx status=%08x\n", reason, detail, native_ufs_status);
+  IOLog ("DITING_UFS PROBE FAILED: %s detail=%llx status=%08x\n", reason, detail, native_ufs_status);
   uint32_t stall = 0;
   if (PE_parse_boot_argn ("pong_ufs_stall", &stall, sizeof (stall)) && stall) { for (;;) IOSleep (1000); }
   return false;
@@ -152,7 +152,7 @@ bool NativeUfs::start (IOService *provider)
   unsigned enabled = 1;
   PE_parse_boot_argn ("native-ufs", &enabled, sizeof (enabled));
   if (!enabled || !compatible (provider)) return false;
-  IOLog("PONG_UFS BUILD smmu-cap-v2: optional-probe=%u; transport=%s\n", mode,
+  IOLog("DITING_UFS BUILD smmu-cap-v2: optional-probe=%u; transport=%s\n", mode,
         mode == 2 ? "disabled by diagnostic mode" : "read-only");
   if (mode == 2) PongProbeRecord (0, "ufs-registers", PongProbeRunning, "validate SM8475 DT and read registers");
   if (!IOService::start (provider)) return probeFailure ("IOService start failed");
@@ -183,7 +183,7 @@ bool NativeUfs::start (IOService *provider)
     memcpy (&observed, value->getBytesNoCopy (), sizeof (observed));
     if (observed != cell.expected) return probeFailure (cell.name, observed);
   }
-  IOLog ("PONG_UFS: matched SM8475, validate firmware clocks\n");
+  IOLog ("DITING_UFS: matched SM8475, validate firmware clocks\n");
   native_ufs_status = 1;
 
   OSSharedPtr<IOMemoryMap> gccMap, hostMap;
@@ -210,7 +210,7 @@ bool NativeUfs::start (IOService *provider)
                (pong_ufs_report[ReportAhb] & 1U) &&
                (pong_ufs_report[ReportAggregate] & 1U);
   if (powered && buses) {
-    IOLog ("PONG_UFS: clocks active, read host state\n");
+    IOLog ("DITING_UFS: clocks active, read host state\n");
     uintptr_t host = mapPhysical (kUfsHost, kUfsHostBytes, hostMap);
     if (!host) return probeFailure ("host map failed");
     native_ufs_status = 3;
@@ -222,7 +222,7 @@ bool NativeUfs::start (IOService *provider)
     native_ufs_status = 4;
   }
 
-  IOLog ("PONG_UFS READ ONLY\n"
+  IOLog ("DITING_UFS READ ONLY\n"
          "gdsc=%08x axi=%08x ahb=%08x aggr=%08x\n"
          "tx=%08x rx0=%08x rx1=%08x unipro=%08x\n"
          "ice=%08x aux=%08x powered=%u buses=%u sid=%x\n"
@@ -250,7 +250,7 @@ bool NativeUfs::start (IOService *provider)
     return true;
   }
   registerService ();
-  IOLog ("PONG_UFS: diagnostic service registered; continue IOKit, no block media published\n");
+  IOLog ("DITING_UFS: diagnostic service registered; continue IOKit, no block media published\n");
   PongProbeRecord (0, "ufs-registers", PongProbePass, "registers read; diagnostic service published", pong_ufs_report[ReportVersion]);
   thread_t thread = nullptr;
   kern_return_t result = kernel_thread_start (registrationReport, nullptr, &thread);

@@ -56,7 +56,7 @@ env=dict(os.environ,DEVELOPER_DIR=str(a.developer_dir),IPHONEOS_DEPLOYMENT_TARGE
 sdk=subprocess.check_output(['xcrun','--sdk','iphoneos','--show-sdk-path'],env=env,text=True).strip()
 frontend=out/'PongMetalFrontend.o'
 cmd=['xcrun','clang++','-target',target,'-isysroot',sdk,
-    *(['-DPONG_GUEST_22H374=1'] if a.guest_build=='22H374' else []),
+    *(['-DDITING_GUEST_22H374=1'] if a.guest_build=='22H374' else []),
     '-std=c++17','-fobjc-arc','-fblocks',('-O3' if a.guest_build=='22H374' else '-Os'),'-Wall','-Wextra','-Werror',
     '-Wno-deprecated-declarations','-I'+str(ROOT/'drivers/PongMetal'),
     '-c',str(ROOT/'drivers/PongMetal/NativeBridgeMetalFrontend.mm'),'-o',str(frontend)]
@@ -72,7 +72,7 @@ manifest.write_text('\n'.join([
 ]))
 env['PATH']=os.pathsep.join(p for p in (str(Path.home()/'.cargo/bin'), diting_paths.extra_path(), env['PATH']) if p)
 scanout=out/'scanout_convert.air'
-subprocess.run([diting_paths.tool('llvm-as','PONG_LLVM_AS',('/opt/local/bin/llvm-as-mp-18',)),str(ROOT/'drivers/PongMetal/shaders/scanout_convert.ll'),'-o',str(scanout)],check=True)
+subprocess.run([diting_paths.tool('llvm-as','DITING_LLVM_AS',('/opt/local/bin/llvm-as-mp-18',)),str(ROOT/'drivers/PongMetal/shaders/scanout_convert.ll'),'-o',str(scanout)],check=True)
 env['NMB_SCANOUT_AIR']=str(scanout)
 env['NMB_RUNTIME_ID']='624bab3918de5b978e1101517abca2b4fa426565-pong22H374-1'
 env['SDKROOT']=sdk

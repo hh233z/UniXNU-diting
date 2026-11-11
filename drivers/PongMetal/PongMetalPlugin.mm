@@ -71,7 +71,7 @@ static bool backend(unsigned port,uint64_t *registryID)
 {
     char version[64]={};size_t length=sizeof(version);
     if(sysctlbyname("kern.osversion",version,&length,NULL,0) || strcmp(version,
-#if PONG_GUEST_22H374
+#if DITING_GUEST_22H374
         "22H374"
 #else
         "20G81"
@@ -95,7 +95,7 @@ static bool backend(unsigned port,uint64_t *registryID)
      */
     if(!propertyTrue(read,port,CFSTR("PongAdrenoCPReady")) ||
        !propertyTrue(read,port,CFSTR(
-#if PONG_GUEST_22H374
+#if DITING_GUEST_22H374
        "PongMetal22H374Enabled"
 #else
        "PongMetal20G81Enabled"
@@ -230,7 +230,7 @@ static bool selectedClient()
         while(fgets(line,sizeof(line),file)) {
             line[strcspn(line,"\r\n")]=0;
             if(!strcmp(line,process)
-#if PONG_GUEST_22H374
+#if DITING_GUEST_22H374
                 || !strcmp(line,"*")
 #endif
             ){selected=true;break;}

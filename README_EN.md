@@ -95,7 +95,7 @@ The concurrency group is `package-${{ github.ref }}` with `cancel-in-progress: t
 Three things differ from the repository defaults on the runner, none of them incidental:
 
 - **defconfig**: `release` always uses the `[package.defconfig]` mapping and there is no command-line override, so the runner repoints that mapping to `pong_ipados18_ci_defconfig`. The shipping configuration's Wi-Fi, backlight and Adreno stages need private firmware that the public repository does not carry, so CI cannot build it. The repository keeps the shipping mapping.
-- **Build tree**: the shared kernel step's tree already has real `drivers/`, `kits/` and `patches/` directories, so the device kernel builder uses a separate tree and copies `mach.development.pong` back to the shared tree's `[kernel.prelink] kernel` path.
+- **Build tree**: the shared kernel step's tree already has real `drivers/`, `kits/` and `patches/` directories, so the device kernel builder uses a separate tree and copies `mach.development.diting` back to the shared tree's `[kernel.prelink] kernel` path.
 - **Volume UUIDs**: the kernel bakes the OS, SystemOS and Data UUIDs in as constants. A run that produced userdata uses that layout; otherwise fixed-namespace uuid5 placeholders keep the object tree reusable, at the cost of an output that only proves it compiles.
 
 ### Matching the local artifacts

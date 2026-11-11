@@ -39,7 +39,7 @@ def main():
         '-fno-exceptions', '-fno-rtti', '-fno-stack-check', '-std=gnu++17',
         '-fblocks', '-O2', '-DKERNEL=1', '-DKERNEL_PRIVATE=1',
         '-DXNU_KERNEL_PRIVATE=1',
-        '-DPONG_RAM_BLOCK_VOLATILE_ONLY=1',
+        '-DDITING_RAM_BLOCK_VOLATILE_ONLY=1',
         '-I' + str(DEVICE / 'mac-build/storage-abi/include'),
         '-I' + str(tree / '.cache/xnu-work/EXTERNAL_HEADERS'),
         '-I' + str(framework / 'PrivateHeaders'), '-I' + str(framework / 'Headers'),

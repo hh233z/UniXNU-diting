@@ -29,7 +29,7 @@ def main():
     p.add_argument('--developer-dir',type=Path,default=diting_paths.developer_dir())
     a=p.parse_args();out=a.output_dir.resolve();out.mkdir(parents=True,exist_ok=True)
     if a.firmware_dir is None:
-        # PONG_ADRENO_FIRMWARE wins. Otherwise the guest's existing output path.
+        # DITING_ADRENO_FIRMWARE wins. Otherwise the guest's existing output path.
         # build-xnu-ipados18.sh does not pass --firmware-dir.
         found=diting_paths.adreno_firmware()
         a.firmware_dir=found if found is not None else ROOT/('out/ipados18' if a.guest_build=='22H374' else 'out')/'firmware/adreno730'
@@ -86,8 +86,8 @@ def main():
     cmd=['xcrun','clang++','-target',target,'-isysroot',sdk,
         '-mkernel','-ffreestanding','-fno-builtin','-fno-stack-protector','-mgeneral-regs-only',
         '-fno-exceptions','-fno-rtti','-fno-stack-check','-std=gnu++17','-fblocks','-Os',
-        '-DKERNEL=1','-DKERNEL_PRIVATE=1','-DXNU_KERNEL_PRIVATE=1','-DARM64_BOARD_CONFIG_PONG=1',
-        *(['-DPONG_GUEST_22H374=1'] if a.guest_build=='22H374' else []),
+        '-DKERNEL=1','-DKERNEL_PRIVATE=1','-DXNU_KERNEL_PRIVATE=1','-DARM64_BOARD_CONFIG_DITING=1',
+        *(['-DDITING_GUEST_22H374=1'] if a.guest_build=='22H374' else []),
         '-I'+str(framework/'PrivateHeaders'),'-I'+str(framework/'Headers'),
         '-I'+str(out),'-I'+str(source),'-I'+str(source/'ArmSmmu4K'),
         '-Wno-deprecated-declarations',
@@ -168,7 +168,7 @@ def main():
         timestamp_gmu_offsets=[0x16220,0x16224],
         gpu_streams=[0,0x400,1,0x401],gmu_streams=[5,0x405],
         smmu_physical='0x03da0000',smmu_context_limits=[21,24],
-        boot_link_status='controlled by CONFIG_XNU_PONG_ADRENO_PLATFORM',
+        boot_link_status='controlled by CONFIG_XNU_DITING_ADRENO_PLATFORM',
         hardware_qualified=False,image_verification='skipped by request')
     (out/'build-report.json').write_text(json.dumps(report,indent=2)+'\n')
     print(archive)

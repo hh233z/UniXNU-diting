@@ -3,8 +3,8 @@
  * Copyright (c) 2026 The NativeDwc3 authors. See LICENSE.
  * No donor board addresses, GCC offsets or PHY constants are used.
  */
-#ifndef PONG_DWC3_REGISTERS_H
-#define PONG_DWC3_REGISTERS_H
+#ifndef DITING_DWC3_REGISTERS_H
+#define DITING_DWC3_REGISTERS_H
 // Register windows inside the block
 #define DWC3_XHCI_REGS_START     0x0000
 #define DWC3_GLOBALS_REGS_START  0xC100

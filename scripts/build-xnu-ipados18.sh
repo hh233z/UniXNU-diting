@@ -5,26 +5,26 @@ ROOT=$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)
 cd "$ROOT"
 # Refuse Wi-Fi and backlight before any XNU compile when their trees are absent.
 # The later builders still refuse on their own; this only moves that refusal forward.
-if [ "${XNU_PONG_WIFI:-0}" = 1 ] || [ "${XNU_PONG_BACKLIGHT:-0}" = 1 ]; then
-  if [ -z "${PONG_NATIVE_DRIVER_SOURCE:-}" ]; then
-    echo 'refusing before compile: PONG_NATIVE_DRIVER_SOURCE is unset, so Wi-Fi and backlight inputs cannot be resolved' >&2
+if [ "${XNU_DITING_WIFI:-0}" = 1 ] || [ "${XNU_DITING_BACKLIGHT:-0}" = 1 ]; then
+  if [ -z "${DITING_NATIVE_DRIVER_SOURCE:-}" ]; then
+    echo 'refusing before compile: DITING_NATIVE_DRIVER_SOURCE is unset, so Wi-Fi and backlight inputs cannot be resolved' >&2
     exit 1
   fi
   python3 - <<'PY'
 import os
 import sys
 from pathlib import Path
-sys.path.insert(0, str(Path(os.environ['PONG_NATIVE_DRIVER_SOURCE']) / 'scripts'))
+sys.path.insert(0, str(Path(os.environ['DITING_NATIVE_DRIVER_SOURCE']) / 'scripts'))
 import diting_paths
-wifi = os.environ.get('XNU_PONG_WIFI') == '1'
-backlight = os.environ.get('XNU_PONG_BACKLIGHT') == '1'
+wifi = os.environ.get('XNU_DITING_WIFI') == '1'
+backlight = os.environ.get('XNU_DITING_BACKLIGHT') == '1'
 if wifi:
-    linux = Path(os.environ['PONG_WIFI_SOURCE']) if os.environ.get('PONG_WIFI_SOURCE') else diting_paths.wifi_source()
+    linux = Path(os.environ['DITING_WIFI_SOURCE']) if os.environ.get('DITING_WIFI_SOURCE') else diting_paths.wifi_source()
     pci = linux / 'drivers/net/wireless/ath/ath11k/pci.c'
     if not pci.is_file():
         raise SystemExit(
-            'refusing XNU_PONG_WIFI=1 before compile: Linux ath11k pci.c is not at '
-            f'{pci}. Set PONG_WIFI_SOURCE to a real Linux tree such as v7.0.14. '
+            'refusing XNU_DITING_WIFI=1 before compile: Linux ath11k pci.c is not at '
+            f'{pci}. Set DITING_WIFI_SOURCE to a real Linux tree such as v7.0.14. '
             'No stub driver was written.')
     sheng = diting_paths.sheng_root()
     for rel in ('drivers/Ath12kWifi/include/nw_abi.h',
@@ -34,19 +34,19 @@ if wifi:
         path = sheng / rel
         if not path.is_file():
             raise SystemExit(
-                'refusing XNU_PONG_WIFI=1 before compile: UniXNU-sheng is missing '
-                f'{path}. Set PONG_SHENG_ROOT. No stub ABI was written.')
+                'refusing XNU_DITING_WIFI=1 before compile: UniXNU-sheng is missing '
+                f'{path}. Set DITING_SHENG_ROOT. No stub ABI was written.')
 if wifi or backlight:
     package = diting_paths.sheng_root() / 'package'
     if not package.is_dir():
         raise SystemExit(
             'refusing before compile: Wi-Fi and backlight need the UniXNU-sheng package at '
-            f'{package}. Set PONG_SHENG_ROOT. No substitute package was written.')
+            f'{package}. Set DITING_SHENG_ROOT. No substitute package was written.')
 print('wifi/backlight inputs present' if wifi or backlight else 'wifi and backlight are off')
 PY
 fi
 # Pong Darwin 24 migration of the successfully returned Mac build script.
-# First console build uses MACHINE_CONFIGS=PONG; preserve the original baseline artifact.
+# First console build uses MACHINE_CONFIGS=DITING; preserve the original baseline artifact.
 XNU_TAG=${UNIXNU_XNU_TAG:-xnu-11417.140.69}
 XNU_COMMIT=${UNIXNU_XNU_COMMIT:-43a90889846e00bfb5cf1d255cdc0a701a1e05a4}
 XNU_DARWIN=${UNIXNU_XNU_DARWIN:-24.6.0}
@@ -193,7 +193,7 @@ python3 - "$BOOT_PROGRESS" <<'PY'
 from pathlib import Path
 import hashlib, sys
 mode = sys.argv[1]
-out = Path('build/xnu/ios-obj/DEVELOPMENT_ARM64_PONG')
+out = Path('build/xnu/ios-obj/DEVELOPMENT_ARM64_DITING')
 stamp = out / '.boot-progress-mode'
 identity = mode + ':' + (hashlib.sha256(Path('build/boot-progress/libBootProgress.a').read_bytes()).hexdigest() if mode == '1' else 'disabled')
 if not stamp.exists() or stamp.read_text() != identity:
@@ -201,7 +201,7 @@ if not stamp.exists() or stamp.read_text() != identity:
                              ('bsd', ['bsd_init','kern_exec','kern_exit']), ('pexpert', ['pe_kprintf'])]:
         for name in names:
             (out / directory / 'DEVELOPMENT' / (name + '.o')).unlink(missing_ok=True)
-    (out / 'mach.development.pong.unstripped.noctf').unlink(missing_ok=True)
+    (out / 'mach.development.diting.unstripped.noctf').unlink(missing_ok=True)
     out.mkdir(parents=True, exist_ok=True)
     stamp.write_text(identity)
 PY
@@ -233,49 +233,49 @@ for header in Path('refer/libdispatch/os').glob('*.h'):
 PY
 if [ ! -f "$KERNEL_SDKROOT/.xnu-$XNU_VERSION-headers" ] || \
    [ .cache/xnu-work/pexpert/pexpert/arm64/board_config.h -nt "$KERNEL_SDKROOT/.xnu-$XNU_VERSION-headers" ] || \
-   [ .cache/xnu-work/pexpert/pexpert/arm64/PONG.h -nt "$KERNEL_SDKROOT/.xnu-$XNU_VERSION-headers" ]; then
+   [ .cache/xnu-work/pexpert/pexpert/arm64/DITING.h -nt "$KERNEL_SDKROOT/.xnu-$XNU_VERSION-headers" ]; then
   make -C .cache/xnu-work installhdrs SDKROOT=macosx ARCH_CONFIGS=ARM64 \
-    MACHINE_CONFIGS=PONG KERNEL_CONFIGS=DEVELOPMENT \
+    MACHINE_CONFIGS=DITING KERNEL_CONFIGS=DEVELOPMENT \
     RC_DARWIN_KERNEL_VERSION="$XNU_DARWIN" RC_ProjectSourceVersion="$XNU_VERSION" \
     MAKEJOBS=-j"${JOBS:-4}" OBJROOT="$ROOT/build/xnu/obj" \
     SYMROOT="$ROOT/build/xnu/sym" DSTROOT="$KERNEL_SDKROOT"
   touch "$KERNEL_SDKROOT/.xnu-$XNU_VERSION-headers"
 fi
-if [ "${XNU_ARM_DT_PLATFORM:-0}" = 1 ] && [ -n "${PONG_NATIVE_DRIVER_SOURCE:-}" ]; then
+if [ "${XNU_ARM_DT_PLATFORM:-0}" = 1 ] && [ -n "${DITING_NATIVE_DRIVER_SOURCE:-}" ]; then
   # These sources live in the active Pong project, not the old baseline's
   # drivers symlink. Build against the same freshly exported machine headers.
-  python3 "$PONG_NATIVE_DRIVER_SOURCE/scripts/build-diting-platform-macos.py" \
+  python3 "$DITING_NATIVE_DRIVER_SOURCE/scripts/build-diting-platform-macos.py" \
     --tree "$ROOT" --skip-image-verification
   if [ "${XNU_ARMCPU:-0}" = 1 ]; then
-    python3 "$PONG_NATIVE_DRIVER_SOURCE/scripts/build-diting-armcpu-macos.py" \
+    python3 "$DITING_NATIVE_DRIVER_SOURCE/scripts/build-diting-armcpu-macos.py" \
       --tree "$ROOT" --skip-image-verification
   fi
 fi
-if [ "${XNU_NATIVE_UFS:-0}" = 1 ] && [ -n "${PONG_NATIVE_DRIVER_SOURCE:-}" ]; then
+if [ "${XNU_NATIVE_UFS:-0}" = 1 ] && [ -n "${DITING_NATIVE_DRIVER_SOURCE:-}" ]; then
   # The transport changes with the selected Data backend. Always compile the
   # active Pong source before linking, rather than reuse an older RAM-era .a.
-  python3 "$PONG_NATIVE_DRIVER_SOURCE/scripts/build-diting-ufs-ipados18-macos.py" \
+  python3 "$DITING_NATIVE_DRIVER_SOURCE/scripts/build-diting-ufs-ipados18-macos.py" \
     --tree "$ROOT" --skip-image-verification
 fi
-if [ "${XNU_PONG_WIFI:-0}" = 1 ]; then
+if [ "${XNU_DITING_WIFI:-0}" = 1 ]; then
   # The Wi-Fi stack needs inputs that are not part of any public restore.
-  # Point PONG_WIFI_SOURCE/PONG_WIFI_BUILD/PONG_WIFI_FIRMWARE (or the flags
+  # Point DITING_WIFI_SOURCE/DITING_WIFI_BUILD/DITING_WIFI_FIRMWARE (or the flags
   # below) at them; refuse rather than silently building without a backend.
-  WIFI_SOURCE=${PONG_WIFI_SOURCE:-/Volumes/Untitled/Pong-iPadOS18/wifi-source-7.0.14}
-  WIFI_BUILD=${PONG_WIFI_BUILD:-/Volumes/Untitled/Pong-iPadOS18/wifi-ath11k-build}
-  python3 "$PONG_NATIVE_DRIVER_SOURCE/scripts/build-diting-ath11k.py" \
+  WIFI_SOURCE=${DITING_WIFI_SOURCE:-/Volumes/Untitled/Pong-iPadOS18/wifi-source-7.0.14}
+  WIFI_BUILD=${DITING_WIFI_BUILD:-/Volumes/Untitled/Pong-iPadOS18/wifi-ath11k-build}
+  python3 "$DITING_NATIVE_DRIVER_SOURCE/scripts/build-diting-ath11k.py" \
     --linux "$WIFI_SOURCE" \
     --output-dir "$WIFI_BUILD"
-  python3 "$PONG_NATIVE_DRIVER_SOURCE/scripts/build-diting-wifi-native.py" --tree "$ROOT" \
+  python3 "$DITING_NATIVE_DRIVER_SOURCE/scripts/build-diting-wifi-native.py" --tree "$ROOT" \
     --ath11k "$WIFI_BUILD/libPongAth11k.a"
 fi
-if [ "${XNU_PONG_WIFI:-0}" = 1 ] || [ "${XNU_PONG_BACKLIGHT:-0}" = 1 ]; then
-  python3 "$PONG_NATIVE_DRIVER_SOURCE/scripts/build-diting-power-native.py" --tree "$ROOT"
+if [ "${XNU_DITING_WIFI:-0}" = 1 ] || [ "${XNU_DITING_BACKLIGHT:-0}" = 1 ]; then
+  python3 "$DITING_NATIVE_DRIVER_SOURCE/scripts/build-diting-power-native.py" --tree "$ROOT"
 elif [ "${XNU_NATIVE_UFS:-0}" = 1 ]; then
   # The UFS transport takes the shared SMMU lease from PongPlatformResources; build that
   # one object when the full power/audio archive is not selected, or the link has no
   # pong_smmu_lease_lock/pong_smmu_lease_unlock.
-  python3 "$PONG_NATIVE_DRIVER_SOURCE/scripts/build-diting-power-native.py" --tree "$ROOT" --resources-only
+  python3 "$DITING_NATIVE_DRIVER_SOURCE/scripts/build-diting-power-native.py" --tree "$ROOT" --resources-only
 fi
 if [ ! -f "$KERNEL_SDKROOT/usr/local/lib/kernel/libfirehose_kernel.a" ]; then
   bash scripts/build-firehose.sh
@@ -300,7 +300,7 @@ if [ "$CRYPTO_BOOTSTRAP_MODE" != source ] && [ "$CRYPTO_BOOTSTRAP_MODE" != preli
   echo 'XNU_CRYPTO_BOOTSTRAP must be source or prelinked' >&2
   exit 1
 fi
-CRYPTO_OBJECT_DIR=$ROOT/build/xnu/ios-obj/DEVELOPMENT_ARM64_PONG/osfmk/DEVELOPMENT
+CRYPTO_OBJECT_DIR=$ROOT/build/xnu/ios-obj/DEVELOPMENT_ARM64_DITING/osfmk/DEVELOPMENT
 if [ -d "$CRYPTO_OBJECT_DIR" ]; then
   if [ "$(cat "$CRYPTO_OBJECT_DIR/.crypto-bootstrap-mode" 2>/dev/null || echo source)" != "$CRYPTO_BOOTSTRAP_MODE" ]; then
     rm -f "$CRYPTO_OBJECT_DIR/prng_random.o"
@@ -337,7 +337,7 @@ if [ "$NATIVE_RAM_BLOCK" != 0 ] && [ "$NATIVE_RAM_BLOCK" != 1 ]; then
   exit 1
 fi
 if [ "$NATIVE_RAM_BLOCK" = 1 ]; then
-  if [ "${XNU_NATIVE_AES:-0}" != 1 ] && [ "${XNU_PONG_APFS_DEBUG:-0}" != 1 ]; then
+  if [ "${XNU_NATIVE_AES:-0}" != 1 ] && [ "${XNU_DITING_APFS_DEBUG:-0}" != 1 ]; then
     echo 'NativeRamBlock requires the qualified original storage/AES prelink closure' >&2
     exit 1
   fi
@@ -366,7 +366,7 @@ if [ -d "$CRYPTO_OBJECT_DIR" ]; then
   fi
   printf '%s\n' "$TRUST_CACHE_MODE" > "$CRYPTO_OBJECT_DIR/.trust-cache-mode"
 fi
-EXTRA_MAKE_ARGS+=("startup.o_CFLAGS_ADD=-DXNU_NATIVE_TRUST_CACHE=$TRUST_CACHE_MODE -DXNU_PONG_EARLY_TRACE=${XNU_PONG_EARLY_TRACE:-0}")
+EXTRA_MAKE_ARGS+=("startup.o_CFLAGS_ADD=-DXNU_NATIVE_TRUST_CACHE=$TRUST_CACHE_MODE -DXNU_DITING_EARLY_TRACE=${XNU_DITING_EARLY_TRACE:-0}")
 MOCKFS_MODE=${XNU_SOURCE_MOCKFS:-0}
 if [ "$MOCKFS_MODE" != 0 ] && [ "$MOCKFS_MODE" != 1 ]; then
   echo 'XNU_SOURCE_MOCKFS must be 0 or 1' >&2
@@ -376,7 +376,7 @@ if [ "$MOCKFS_MODE" = 1 ] && { [ "${XNU_ARMCPU:-0}" != 1 ] || [ "${XNU_SOURCE_PT
   echo 'The offline executable-root fixture requires the real CPU/pthread components' >&2
   exit 1
 fi
-MOCKFS_OBJECT_DIR=$ROOT/build/xnu/ios-obj/DEVELOPMENT_ARM64_PONG/bsd/DEVELOPMENT
+MOCKFS_OBJECT_DIR=$ROOT/build/xnu/ios-obj/DEVELOPMENT_ARM64_DITING/bsd/DEVELOPMENT
 if [ -d "$MOCKFS_OBJECT_DIR" ]; then
   if [ "$(cat "$MOCKFS_OBJECT_DIR/.source-mockfs-mode" 2>/dev/null || echo 0)" != "$MOCKFS_MODE" ]; then
     rm -f "$MOCKFS_OBJECT_DIR/vfs_conf.o"
@@ -402,9 +402,9 @@ if [ "$OWNER_ROOT_PROBE" != 0 ] && [ "$OWNER_ROOT_PROBE" != 1 ]; then
   echo 'XNU_VERIFIED_ROOT_PROBE must be 0 or 1' >&2
   exit 1
 fi
-PONG_APFS_DEBUG=${XNU_PONG_APFS_DEBUG:-0}
-if [ "$PONG_APFS_DEBUG" != 0 ] && [ "$PONG_APFS_DEBUG" != 1 ]; then
-  echo 'XNU_PONG_APFS_DEBUG must be 0 or 1' >&2
+DITING_APFS_DEBUG=${XNU_DITING_APFS_DEBUG:-0}
+if [ "$DITING_APFS_DEBUG" != 0 ] && [ "$DITING_APFS_DEBUG" != 1 ]; then
+  echo 'XNU_DITING_APFS_DEBUG must be 0 or 1' >&2
   exit 1
 fi
 if [ "$OWNER_ROOT_PROBE" = 1 ] && { [ "${XNU_SOURCE_CORECRYPTO14:-0}" != 1 ] || [ "${XNU_CRYPTO_BOOTSTRAP:-source}" != prelinked ]; }; then
@@ -483,9 +483,9 @@ if [ "$SHENG_PMGR" = 1 ] && [ "${XNU_SOURCE_CORECRYPTO14:-0}" != 1 ]; then
   echo 'The sheng PMGR instrument requires the original-component kernel configuration' >&2
   exit 1
 fi
-SHENG_PMGR_STAMP=$ROOT/build/xnu/ios-obj/DEVELOPMENT_ARM64_PONG/.sheng-pmgr-mode
+SHENG_PMGR_STAMP=$ROOT/build/xnu/ios-obj/DEVELOPMENT_ARM64_DITING/.sheng-pmgr-mode
 if [ "$(cat "$SHENG_PMGR_STAMP" 2>/dev/null || echo 0)" != "$SHENG_PMGR" ]; then
-  rm -f "$ROOT/build/xnu/ios-obj/DEVELOPMENT_ARM64_PONG/bsd/DEVELOPMENT/bsd_init.o"
+  rm -f "$ROOT/build/xnu/ios-obj/DEVELOPMENT_ARM64_DITING/bsd/DEVELOPMENT/bsd_init.o"
   printf '%s\n' "$SHENG_PMGR" > "$SHENG_PMGR_STAMP"
 fi
 EXTRA_MAKE_ARGS+=("bsd_init.o_CFLAGS_ADD=-DXNU_SHENG_PMGR=$SHENG_PMGR -DXNU_VERIFIED_ROOT_PROBE=$OWNER_ROOT_PROBE -DXNU_OWNER_ROOT_AUDIT=$OWNER_ROOT_AUDIT -DXNU_OWNER_ROOT_TRUST=$OWNER_ROOT_TRUST -DXNU_ADRENO_FIRMWARE_PROBE=$ADRENO_FIRMWARE_PROBE -DXNU_ADRENO_PM4_PROBE=$ADRENO_PM4_PROBE -DXNU_SMMU4K_PROBE=$SMMU4K_PROBE -DXNU_CONSTANT_UPLOADS_PROBE=$CONSTANT_UPLOADS_PROBE -DXNU_NATIVE_LEGACY_DISPLAY=${XNU_NATIVE_LEGACY_DISPLAY:-0} -DXNU_NATIVE_OFFLINE_GPU=$NATIVE_OFFLINE_GPU")
@@ -500,14 +500,14 @@ if [ "$NATIVE_LEGACY_DISPLAY" != 0 ] && [ "$NATIVE_LEGACY_DISPLAY" != 1 ]; then
   exit 1
 fi
 EXTRA_MAKE_ARGS+=("IOUserClient.cpo_CFLAGS_ADD=-DXNU_NATIVE_MOBILE_DISPLAY=$NATIVE_MOBILE_DISPLAY -DXNU_NATIVE_LEGACY_DISPLAY=$NATIVE_LEGACY_DISPLAY")
-MOBILE_DISPLAY_STAMP=$ROOT/build/xnu/ios-obj/DEVELOPMENT_ARM64_PONG/.native-mobile-display-mode
+MOBILE_DISPLAY_STAMP=$ROOT/build/xnu/ios-obj/DEVELOPMENT_ARM64_DITING/.native-mobile-display-mode
 if [ "$(cat "$MOBILE_DISPLAY_STAMP" 2>/dev/null || echo 0)" != "$NATIVE_MOBILE_DISPLAY:$NATIVE_LEGACY_DISPLAY" ]; then
-  rm -f "$ROOT/build/xnu/ios-obj/DEVELOPMENT_ARM64_PONG/iokit/DEVELOPMENT/IOUserClient.cpo"
+  rm -f "$ROOT/build/xnu/ios-obj/DEVELOPMENT_ARM64_DITING/iokit/DEVELOPMENT/IOUserClient.cpo"
   printf '%s\n' "$NATIVE_MOBILE_DISPLAY:$NATIVE_LEGACY_DISPLAY" > "$MOBILE_DISPLAY_STAMP"
 fi
-OWNER_ROOT_STAMP=$ROOT/build/xnu/ios-obj/DEVELOPMENT_ARM64_PONG/.owner-root-probe-mode
+OWNER_ROOT_STAMP=$ROOT/build/xnu/ios-obj/DEVELOPMENT_ARM64_DITING/.owner-root-probe-mode
 if [ "$(cat "$OWNER_ROOT_STAMP" 2>/dev/null || echo 0:0:0:0:0:0)" != "$OWNER_ROOT_PROBE:$OWNER_ROOT_AUDIT:$OWNER_ROOT_TRUST:$ADRENO_FIRMWARE_PROBE:$ADRENO_PM4_PROBE:$SMMU4K_PROBE:$CONSTANT_UPLOADS_PROBE:$NATIVE_LEGACY_DISPLAY:$NATIVE_OFFLINE_GPU" ]; then
-  rm -f "$ROOT/build/xnu/ios-obj/DEVELOPMENT_ARM64_PONG/bsd/DEVELOPMENT/bsd_init.o"
+  rm -f "$ROOT/build/xnu/ios-obj/DEVELOPMENT_ARM64_DITING/bsd/DEVELOPMENT/bsd_init.o"
   printf '%s\n' "$OWNER_ROOT_PROBE:$OWNER_ROOT_AUDIT:$OWNER_ROOT_TRUST:$ADRENO_FIRMWARE_PROBE:$ADRENO_PM4_PROBE:$SMMU4K_PROBE:$CONSTANT_UPLOADS_PROBE:$NATIVE_LEGACY_DISPLAY:$NATIVE_OFFLINE_GPU" > "$OWNER_ROOT_STAMP"
 fi
 OWNER_CACHE_MOUNT=${XNU_OWNER_CACHE_MOUNT:-0}
@@ -515,7 +515,7 @@ if [ "$OWNER_CACHE_MOUNT" != 0 ] && [ "$OWNER_CACHE_MOUNT" != 1 ]; then
   echo 'XNU_OWNER_CACHE_MOUNT must be 0 or 1' >&2
   exit 1
 fi
-if [ "$OWNER_CACHE_MOUNT" = 1 ] && [ "$OWNER_ROOT_TRUST" != 1 ] && [ "$PONG_APFS_DEBUG" != 1 ]; then
+if [ "$OWNER_CACHE_MOUNT" = 1 ] && [ "$OWNER_ROOT_TRUST" != 1 ] && [ "$DITING_APFS_DEBUG" != 1 ]; then
   echo 'The offline SystemOS mount requires real independent owner root enforcement' >&2
   exit 1
 fi
@@ -538,10 +538,10 @@ if [ "$OWNER_BOOT_MANIFEST" = 1 ] && [ "$OWNER_CACHE_STARTUP" != 1 ]; then
   exit 1
 fi
 EXTRA_MAKE_ARGS+=("IOKitBSDInit.cpo_CFLAGS_ADD=-DXNU_OWNER_BOOT_MANIFEST=$OWNER_BOOT_MANIFEST")
-OWNER_MANIFEST_STAMP=$ROOT/build/xnu/ios-obj/DEVELOPMENT_ARM64_PONG/.owner-boot-manifest-mode
+OWNER_MANIFEST_STAMP=$ROOT/build/xnu/ios-obj/DEVELOPMENT_ARM64_DITING/.owner-boot-manifest-mode
 if [ "$(cat "$OWNER_MANIFEST_STAMP" 2>/dev/null || echo 0)" != "$OWNER_BOOT_MANIFEST" ]; then
-  rm -f "$ROOT/build/xnu/ios-obj/DEVELOPMENT_ARM64_PONG/iokit/DEVELOPMENT/IOKitBSDInit.cpo"
-  rm -f "$ROOT/build/xnu/ios-obj/DEVELOPMENT_ARM64_PONG/bsd/DEVELOPMENT/kern_exec.o"
+  rm -f "$ROOT/build/xnu/ios-obj/DEVELOPMENT_ARM64_DITING/iokit/DEVELOPMENT/IOKitBSDInit.cpo"
+  rm -f "$ROOT/build/xnu/ios-obj/DEVELOPMENT_ARM64_DITING/bsd/DEVELOPMENT/kern_exec.o"
   printf '%s\n' "$OWNER_BOOT_MANIFEST" > "$OWNER_MANIFEST_STAMP"
 fi
 OWNER_DATA_MOUNT=${XNU_OWNER_DATA_MOUNT:-0}
@@ -559,7 +559,7 @@ if [ "$OWNER_DATA_MOUNT" != 0 ] && [ "$OWNER_DATA_MOUNT" != 1 ]; then
   exit 1
 fi
 if [ "$OWNER_DATA_MOUNT" = 1 ] && [ "$OWNER_BOOT_MANIFEST" != 1 ]; then
-  if [ "$PONG_APFS_DEBUG" != 1 ] || [ "$OWNER_CACHE_MOUNT" != 1 ] || { [ "$NATIVE_RAM_BLOCK" != 1 ] && [ "$OWNER_DATA_UFS" != 1 ]; } || {
+  if [ "$DITING_APFS_DEBUG" != 1 ] || [ "$OWNER_CACHE_MOUNT" != 1 ] || { [ "$NATIVE_RAM_BLOCK" != 1 ] && [ "$OWNER_DATA_UFS" != 1 ]; } || {
     [ "${XNU_OWNER_UNION_SYSTEMOS:-0}" != 1 ] && [ "${XNU_OWNER_CRYPTEX_FILES:-0}" != 1 ];
   }; then
     echo 'Data requires Pong development root policy, a selected Data backend and mounted SystemOS startup' >&2
@@ -594,9 +594,9 @@ path.parent.mkdir(parents=True, exist_ok=True)
 if not path.exists() or path.read_text() != text:
     path.write_text(text)
 PY_DATA_UUID
-OWNER_DATA_STAMP=$ROOT/build/xnu/ios-obj/DEVELOPMENT_ARM64_PONG/.owner-data-mount-mode
+OWNER_DATA_STAMP=$ROOT/build/xnu/ios-obj/DEVELOPMENT_ARM64_DITING/.owner-data-mount-mode
 if [ "$(cat "$OWNER_DATA_STAMP" 2>/dev/null || echo 0)" != "$OWNER_DATA_MOUNT:$NATIVE_RAM_BLOCK:$OWNER_DATA_UFS:${XNU_OWNER_CACHE_VOLUME_UUID:-}:${XNU_OWNER_ROOT_VOLUME_UUID:-}:${XNU_OWNER_DATA_VOLUME_UUID:-}" ]; then
-  rm -f "$ROOT/build/xnu/ios-obj/DEVELOPMENT_ARM64_PONG/bsd/DEVELOPMENT/kern_exec.o"
+  rm -f "$ROOT/build/xnu/ios-obj/DEVELOPMENT_ARM64_DITING/bsd/DEVELOPMENT/kern_exec.o"
   printf '%s\n' "$OWNER_DATA_MOUNT:$NATIVE_RAM_BLOCK:$OWNER_DATA_UFS:${XNU_OWNER_CACHE_VOLUME_UUID:-}:${XNU_OWNER_ROOT_VOLUME_UUID:-}:${XNU_OWNER_DATA_VOLUME_UUID:-}" > "$OWNER_DATA_STAMP"
 fi
 OWNER_CRYPTEX_FILES=${XNU_OWNER_CRYPTEX_FILES:-0}
@@ -607,13 +607,13 @@ fi
 # Pong supplies an already mounted cache instead of an ignition-managed graft.
 # dyld-1066.8 still calls ignite() after opening an override directory unless
 # its commpage skipIgnition bit (0x8) is set by the owner startup hook.
-if [ "$OWNER_CRYPTEX_FILES" = 1 ] && [ "$PONG_APFS_DEBUG" = 1 ] && [ "$OWNER_CACHE_STARTUP" != 1 ]; then
+if [ "$OWNER_CRYPTEX_FILES" = 1 ] && [ "$DITING_APFS_DEBUG" = 1 ] && [ "$OWNER_CACHE_STARTUP" != 1 ]; then
   echo 'Pong mounted Cryptex startup requires the dyld skipIgnition commpage flag' >&2
   exit 1
 fi
-OWNER_CRYPTEX_STAMP=$ROOT/build/xnu/ios-obj/DEVELOPMENT_ARM64_PONG/.owner-cryptex-files-mode
+OWNER_CRYPTEX_STAMP=$ROOT/build/xnu/ios-obj/DEVELOPMENT_ARM64_DITING/.owner-cryptex-files-mode
 if [ "$(cat "$OWNER_CRYPTEX_STAMP" 2>/dev/null || echo 0)" != "$OWNER_CRYPTEX_FILES" ]; then
-  rm -f "$ROOT/build/xnu/ios-obj/DEVELOPMENT_ARM64_PONG/bsd/DEVELOPMENT/kern_exec.o"
+  rm -f "$ROOT/build/xnu/ios-obj/DEVELOPMENT_ARM64_DITING/bsd/DEVELOPMENT/kern_exec.o"
   printf '%s\n' "$OWNER_CRYPTEX_FILES" > "$OWNER_CRYPTEX_STAMP"
 fi
 OWNER_UNION_SYSTEMOS=${XNU_OWNER_UNION_SYSTEMOS:-0}
@@ -625,16 +625,16 @@ if [ "$OWNER_UNION_SYSTEMOS" = 1 ] && { [ "$OWNER_CACHE_STARTUP" != 1 ] || [ "$O
   echo 'Owner union composition requires the owner startup path and no fallback-path experiment' >&2
   exit 1
 fi
-if [ "$PONG_APFS_DEBUG" = 1 ] && {
+if [ "$DITING_APFS_DEBUG" = 1 ] && {
   [ "${XNU_NATIVE_UFS:-0}" != 1 ] || [ "$OWNER_CACHE_MOUNT" != 1 ] ||
   { [ "$OWNER_UNION_SYSTEMOS" != 1 ] && [ "$OWNER_CRYPTEX_FILES" != 1 ]; };
 }; then
   echo 'Pong APFS debug handoff requires read-only UFS UUID binding and either SystemOS union or Cryptex files' >&2
   exit 1
 fi
-OWNER_UNION_STAMP=$ROOT/build/xnu/ios-obj/DEVELOPMENT_ARM64_PONG/.owner-union-systemos-mode
+OWNER_UNION_STAMP=$ROOT/build/xnu/ios-obj/DEVELOPMENT_ARM64_DITING/.owner-union-systemos-mode
 if [ "$(cat "$OWNER_UNION_STAMP" 2>/dev/null || echo 0)" != "$OWNER_UNION_SYSTEMOS" ]; then
-  rm -f "$ROOT/build/xnu/ios-obj/DEVELOPMENT_ARM64_PONG/bsd/DEVELOPMENT/kern_exec.o"
+  rm -f "$ROOT/build/xnu/ios-obj/DEVELOPMENT_ARM64_DITING/bsd/DEVELOPMENT/kern_exec.o"
   printf '%s\n' "$OWNER_UNION_SYSTEMOS" > "$OWNER_UNION_STAMP"
 fi
 NATIVE_AIR_INIT=${XNU_NATIVE_AIR_INIT:-0}
@@ -646,16 +646,16 @@ if [ "$NATIVE_AIR_INIT" = 1 ] && { [ "$OWNER_CACHE_MOUNT" != 1 ] || [ "$OWNER_DA
   echo 'Offline AIR init requires the actual owner root, SystemOS and scratch Data path' >&2
   exit 1
 fi
-NATIVE_AIR_STAMP=$ROOT/build/xnu/ios-obj/DEVELOPMENT_ARM64_PONG/.native-air-init-mode
+NATIVE_AIR_STAMP=$ROOT/build/xnu/ios-obj/DEVELOPMENT_ARM64_DITING/.native-air-init-mode
 if [ "$(cat "$NATIVE_AIR_STAMP" 2>/dev/null || echo 0)" != "$NATIVE_AIR_INIT" ]; then
-  rm -f "$ROOT/build/xnu/ios-obj/DEVELOPMENT_ARM64_PONG/bsd/DEVELOPMENT/kern_exec.o"
+  rm -f "$ROOT/build/xnu/ios-obj/DEVELOPMENT_ARM64_DITING/bsd/DEVELOPMENT/kern_exec.o"
   printf '%s\n' "$NATIVE_AIR_INIT" > "$NATIVE_AIR_STAMP"
 fi
-EXTRA_MAKE_ARGS+=("kern_exec.o_CFLAGS_ADD=-DXNU_NATIVE_AIR_INIT=$NATIVE_AIR_INIT -DXNU_PONG_APFS_DEBUG=$PONG_APFS_DEBUG -DXNU_OWNER_CACHE_MOUNT=$OWNER_CACHE_MOUNT -DXNU_OWNER_CACHE_STARTUP=$OWNER_CACHE_STARTUP -DXNU_OWNER_BOOT_MANIFEST=$OWNER_BOOT_MANIFEST -DXNU_OWNER_DATA_MOUNT=$OWNER_DATA_MOUNT -DXNU_OWNER_DATA_UFS=$OWNER_DATA_UFS -DXNU_NATIVE_RAM_BLOCK=$NATIVE_RAM_BLOCK -DXNU_OWNER_CRYPTEX_FILES=$OWNER_CRYPTEX_FILES -DXNU_OWNER_UNION_SYSTEMOS=$OWNER_UNION_SYSTEMOS -include $OWNER_DATA_HEADER")
-OWNER_CACHE_STAMP=$ROOT/build/xnu/ios-obj/DEVELOPMENT_ARM64_PONG/.owner-cache-mount-mode
-if [ "$(cat "$OWNER_CACHE_STAMP" 2>/dev/null || echo 0:0:0)" != "$OWNER_CACHE_MOUNT:$OWNER_CACHE_STARTUP:$PONG_APFS_DEBUG" ]; then
-  rm -f "$ROOT/build/xnu/ios-obj/DEVELOPMENT_ARM64_PONG/bsd/DEVELOPMENT/kern_exec.o"
-  printf '%s\n' "$OWNER_CACHE_MOUNT:$OWNER_CACHE_STARTUP:$PONG_APFS_DEBUG" > "$OWNER_CACHE_STAMP"
+EXTRA_MAKE_ARGS+=("kern_exec.o_CFLAGS_ADD=-DXNU_NATIVE_AIR_INIT=$NATIVE_AIR_INIT -DXNU_DITING_APFS_DEBUG=$DITING_APFS_DEBUG -DXNU_OWNER_CACHE_MOUNT=$OWNER_CACHE_MOUNT -DXNU_OWNER_CACHE_STARTUP=$OWNER_CACHE_STARTUP -DXNU_OWNER_BOOT_MANIFEST=$OWNER_BOOT_MANIFEST -DXNU_OWNER_DATA_MOUNT=$OWNER_DATA_MOUNT -DXNU_OWNER_DATA_UFS=$OWNER_DATA_UFS -DXNU_NATIVE_RAM_BLOCK=$NATIVE_RAM_BLOCK -DXNU_OWNER_CRYPTEX_FILES=$OWNER_CRYPTEX_FILES -DXNU_OWNER_UNION_SYSTEMOS=$OWNER_UNION_SYSTEMOS -include $OWNER_DATA_HEADER")
+OWNER_CACHE_STAMP=$ROOT/build/xnu/ios-obj/DEVELOPMENT_ARM64_DITING/.owner-cache-mount-mode
+if [ "$(cat "$OWNER_CACHE_STAMP" 2>/dev/null || echo 0:0:0)" != "$OWNER_CACHE_MOUNT:$OWNER_CACHE_STARTUP:$DITING_APFS_DEBUG" ]; then
+  rm -f "$ROOT/build/xnu/ios-obj/DEVELOPMENT_ARM64_DITING/bsd/DEVELOPMENT/kern_exec.o"
+  printf '%s\n' "$OWNER_CACHE_MOUNT:$OWNER_CACHE_STARTUP:$DITING_APFS_DEBUG" > "$OWNER_CACHE_STAMP"
 fi
 OWNER_CACHE_CARRIER=${XNU_OWNER_CACHE_CARRIER:-0}
 OWNER_CACHE_CARRIER_WRONG_UUID=${XNU_OWNER_CACHE_CARRIER_WRONG_UUID:-0}
@@ -670,25 +670,25 @@ if { [ "$OWNER_CACHE_CARRIER" = 1 ] && [ "$OWNER_CACHE_STARTUP" != 1 ]; } ||
   exit 1
 fi
 EXTRA_MAKE_ARGS+=("vm_unix.o_CFLAGS_ADD=-DVM_UNSAFE_TYPES -DXNU_OWNER_CACHE_MOUNT=$OWNER_CACHE_MOUNT -DXNU_OWNER_CACHE_CARRIER=$OWNER_CACHE_CARRIER -DXNU_OWNER_CACHE_CARRIER_WRONG_UUID=$OWNER_CACHE_CARRIER_WRONG_UUID -include $OWNER_DATA_HEADER")
-OWNER_CARRIER_STAMP=$ROOT/build/xnu/ios-obj/DEVELOPMENT_ARM64_PONG/.owner-cache-carrier-mode
+OWNER_CARRIER_STAMP=$ROOT/build/xnu/ios-obj/DEVELOPMENT_ARM64_DITING/.owner-cache-carrier-mode
 if [ "$(cat "$OWNER_CARRIER_STAMP" 2>/dev/null || echo 0:0)" != "$OWNER_CACHE_CARRIER:$OWNER_CACHE_CARRIER_WRONG_UUID" ]; then
-  rm -f "$ROOT/build/xnu/ios-obj/DEVELOPMENT_ARM64_PONG/bsd/DEVELOPMENT/vm_unix.o"
+  rm -f "$ROOT/build/xnu/ios-obj/DEVELOPMENT_ARM64_DITING/bsd/DEVELOPMENT/vm_unix.o"
   printf '%s\n' "$OWNER_CACHE_CARRIER:$OWNER_CACHE_CARRIER_WRONG_UUID" > "$OWNER_CARRIER_STAMP"
 fi
 DT_PANIC_REGION=${XNU_DT_PANIC_REGION:-0}
-PONG_VOLATILE_PANIC_LOG=${XNU_PONG_VOLATILE_PANIC_LOG:-0}
+DITING_VOLATILE_PANIC_LOG=${XNU_DITING_VOLATILE_PANIC_LOG:-0}
 if [ "$DT_PANIC_REGION" != 0 ] && [ "$DT_PANIC_REGION" != 1 ]; then
   echo 'XNU_DT_PANIC_REGION must be 0 or 1' >&2
   exit 1
 fi
-if [ "$PONG_VOLATILE_PANIC_LOG" != 0 ] && [ "$PONG_VOLATILE_PANIC_LOG" != 1 ]; then
-  echo 'XNU_PONG_VOLATILE_PANIC_LOG must be 0 or 1' >&2
+if [ "$DITING_VOLATILE_PANIC_LOG" != 0 ] && [ "$DITING_VOLATILE_PANIC_LOG" != 1 ]; then
+  echo 'XNU_DITING_VOLATILE_PANIC_LOG must be 0 or 1' >&2
   exit 1
 fi
-DT_PANIC_STAMP=$ROOT/build/xnu/ios-obj/DEVELOPMENT_ARM64_PONG/.dt-panic-region-mode
-if [ "$(cat "$DT_PANIC_STAMP" 2>/dev/null || echo 0:0)" != "$DT_PANIC_REGION:$PONG_VOLATILE_PANIC_LOG" ]; then
-  rm -f "$ROOT/build/xnu/ios-obj/DEVELOPMENT_ARM64_PONG/pexpert/DEVELOPMENT/pe_init.o"
-  printf '%s\n' "$DT_PANIC_REGION:$PONG_VOLATILE_PANIC_LOG" > "$DT_PANIC_STAMP"
+DT_PANIC_STAMP=$ROOT/build/xnu/ios-obj/DEVELOPMENT_ARM64_DITING/.dt-panic-region-mode
+if [ "$(cat "$DT_PANIC_STAMP" 2>/dev/null || echo 0:0)" != "$DT_PANIC_REGION:$DITING_VOLATILE_PANIC_LOG" ]; then
+  rm -f "$ROOT/build/xnu/ios-obj/DEVELOPMENT_ARM64_DITING/pexpert/DEVELOPMENT/pe_init.o"
+  printf '%s\n' "$DT_PANIC_REGION:$DITING_VOLATILE_PANIC_LOG" > "$DT_PANIC_STAMP"
 fi
 ZONE_PGZ_PROBE=${XNU_ZONE_PGZ_ALIGNMENT_PROBE:-0}
 if [ "$ZONE_PGZ_PROBE" != 0 ] && [ "$ZONE_PGZ_PROBE" != 1 ]; then
@@ -696,9 +696,9 @@ if [ "$ZONE_PGZ_PROBE" != 0 ] && [ "$ZONE_PGZ_PROBE" != 1 ]; then
   exit 1
 fi
 EXTRA_MAKE_ARGS+=("zalloc.o_CFLAGS_ADD=-DXNU_ZONE_PGZ_ALIGNMENT_PROBE=$ZONE_PGZ_PROBE")
-ZONE_PGZ_STAMP=$ROOT/build/xnu/ios-obj/DEVELOPMENT_ARM64_PONG/.zone-pgz-probe-mode
+ZONE_PGZ_STAMP=$ROOT/build/xnu/ios-obj/DEVELOPMENT_ARM64_DITING/.zone-pgz-probe-mode
 if [ "$(cat "$ZONE_PGZ_STAMP" 2>/dev/null || echo 0)" != "$ZONE_PGZ_PROBE" ]; then
-  rm -f "$ROOT/build/xnu/ios-obj/DEVELOPMENT_ARM64_PONG/osfmk/DEVELOPMENT/zalloc.o"
+  rm -f "$ROOT/build/xnu/ios-obj/DEVELOPMENT_ARM64_DITING/osfmk/DEVELOPMENT/zalloc.o"
   printf '%s\n' "$ZONE_PGZ_PROBE" > "$ZONE_PGZ_STAMP"
 fi
 NATIVE_ARCH_TIMER=${XNU_NATIVE_ARCH_TIMER:-${XNU_ARMCPU:-0}}
@@ -710,34 +710,34 @@ if [ "$NATIVE_ARCH_TIMER" = 1 ] && [ "${XNU_ARMCPU:-0}" != 1 ]; then
   echo 'Architectural timer entry requires the actual ArmCpu interrupt provider' >&2
   exit 1
 fi
-PONG_EARLY_TRACE=${XNU_PONG_EARLY_TRACE:-0}
-if [ "$PONG_EARLY_TRACE" != 0 ] && [ "$PONG_EARLY_TRACE" != 1 ]; then
-  echo 'XNU_PONG_EARLY_TRACE must be 0 or 1' >&2
+DITING_EARLY_TRACE=${XNU_DITING_EARLY_TRACE:-0}
+if [ "$DITING_EARLY_TRACE" != 0 ] && [ "$DITING_EARLY_TRACE" != 1 ]; then
+  echo 'XNU_DITING_EARLY_TRACE must be 0 or 1' >&2
   exit 1
 fi
-PONG_RAMOOPS_CONSOLE=${XNU_PONG_RAMOOPS_CONSOLE:-0}
-PONG_RAMOOPS_BASE=${XNU_PONG_RAMOOPS_BASE:-0x85200000}
-if [ "$PONG_RAMOOPS_CONSOLE" != 0 ] && [ "$PONG_RAMOOPS_CONSOLE" != 1 ]; then
-  echo 'XNU_PONG_RAMOOPS_CONSOLE must be 0 or 1' >&2
+DITING_RAMOOPS_CONSOLE=${XNU_DITING_RAMOOPS_CONSOLE:-0}
+DITING_RAMOOPS_BASE=${XNU_DITING_RAMOOPS_BASE:-0x85200000}
+if [ "$DITING_RAMOOPS_CONSOLE" != 0 ] && [ "$DITING_RAMOOPS_CONSOLE" != 1 ]; then
+  echo 'XNU_DITING_RAMOOPS_CONSOLE must be 0 or 1' >&2
   exit 1
 fi
 # The minimal ramoops mirror is independent of the removed framebuffer and
 # exception-vector tracing hooks.
-EXTRA_MAKE_ARGS+=("start.o_SFLAGS_ADD=-DXNU_NATIVE_ARCH_TIMER=$NATIVE_ARCH_TIMER -DXNU_PONG_EARLY_TRACE=$PONG_EARLY_TRACE")
-EXTRA_MAKE_ARGS+=("arm_init.o_CFLAGS_ADD=-DXNU_PONG_EARLY_TRACE=$PONG_EARLY_TRACE -DXNU_PONG_RAMOOPS_CONSOLE=$PONG_RAMOOPS_CONSOLE -DXNU_PONG_RAMOOPS_BASE=$PONG_RAMOOPS_BASE -mstrict-align -mgeneral-regs-only -march=armv8.1-a")
-EXTRA_MAKE_ARGS+=("arm_vm_init.o_CFLAGS_ADD=-DXNU_PONG_EARLY_TRACE=$PONG_EARLY_TRACE")
-EXTRA_MAKE_ARGS+=("machine_routines.o_CFLAGS_ADD=-DXNU_PONG_EARLY_TRACE=$PONG_EARLY_TRACE")
-EXTRA_MAKE_ARGS+=("serial_console.o_CFLAGS_ADD=-DXNU_PONG_EARLY_TRACE=$PONG_EARLY_TRACE -DXNU_PONG_RAMOOPS_CONSOLE=$PONG_RAMOOPS_CONSOLE")
-EXTRA_MAKE_ARGS+=("kern_exit.o_CFLAGS_ADD=-DXNU_PONG_RAMOOPS_CONSOLE=$PONG_RAMOOPS_CONSOLE")
-EXTRA_MAKE_ARGS+=("debug.o_CFLAGS_ADD=-DXNU_PONG_EARLY_TRACE=$PONG_EARLY_TRACE")
-EXTRA_MAKE_ARGS+=("counter_test.o_CFLAGS_ADD=-DXNU_PONG_EARLY_TRACE=$PONG_EARLY_TRACE")
-EXTRA_MAKE_ARGS+=("IOStartIOKit.cpo_CFLAGS_ADD=-DXNU_PONG_EARLY_TRACE=$PONG_EARLY_TRACE")
-EXTRA_MAKE_ARGS+=("OSRuntime.cpo_CFLAGS_ADD=-DXNU_PONG_EARLY_TRACE=$PONG_EARLY_TRACE")
-EXTRA_MAKE_ARGS+=("pe_init.o_CFLAGS_ADD=-DXNU_DT_PANIC_REGION=$DT_PANIC_REGION -DXNU_PONG_VOLATILE_PANIC_LOG=$PONG_VOLATILE_PANIC_LOG -DXNU_PONG_EARLY_TRACE=$PONG_EARLY_TRACE")
-python3 - "$PONG_EARLY_TRACE" "$PONG_RAMOOPS_CONSOLE" "$PONG_RAMOOPS_BASE" <<'PY_TRACE_MODE'
+EXTRA_MAKE_ARGS+=("start.o_SFLAGS_ADD=-DXNU_NATIVE_ARCH_TIMER=$NATIVE_ARCH_TIMER -DXNU_DITING_EARLY_TRACE=$DITING_EARLY_TRACE")
+EXTRA_MAKE_ARGS+=("arm_init.o_CFLAGS_ADD=-DXNU_DITING_EARLY_TRACE=$DITING_EARLY_TRACE -DXNU_DITING_RAMOOPS_CONSOLE=$DITING_RAMOOPS_CONSOLE -DXNU_DITING_RAMOOPS_BASE=$DITING_RAMOOPS_BASE -mstrict-align -mgeneral-regs-only -march=armv8.1-a")
+EXTRA_MAKE_ARGS+=("arm_vm_init.o_CFLAGS_ADD=-DXNU_DITING_EARLY_TRACE=$DITING_EARLY_TRACE")
+EXTRA_MAKE_ARGS+=("machine_routines.o_CFLAGS_ADD=-DXNU_DITING_EARLY_TRACE=$DITING_EARLY_TRACE")
+EXTRA_MAKE_ARGS+=("serial_console.o_CFLAGS_ADD=-DXNU_DITING_EARLY_TRACE=$DITING_EARLY_TRACE -DXNU_DITING_RAMOOPS_CONSOLE=$DITING_RAMOOPS_CONSOLE")
+EXTRA_MAKE_ARGS+=("kern_exit.o_CFLAGS_ADD=-DXNU_DITING_RAMOOPS_CONSOLE=$DITING_RAMOOPS_CONSOLE")
+EXTRA_MAKE_ARGS+=("debug.o_CFLAGS_ADD=-DXNU_DITING_EARLY_TRACE=$DITING_EARLY_TRACE")
+EXTRA_MAKE_ARGS+=("counter_test.o_CFLAGS_ADD=-DXNU_DITING_EARLY_TRACE=$DITING_EARLY_TRACE")
+EXTRA_MAKE_ARGS+=("IOStartIOKit.cpo_CFLAGS_ADD=-DXNU_DITING_EARLY_TRACE=$DITING_EARLY_TRACE")
+EXTRA_MAKE_ARGS+=("OSRuntime.cpo_CFLAGS_ADD=-DXNU_DITING_EARLY_TRACE=$DITING_EARLY_TRACE")
+EXTRA_MAKE_ARGS+=("pe_init.o_CFLAGS_ADD=-DXNU_DT_PANIC_REGION=$DT_PANIC_REGION -DXNU_DITING_VOLATILE_PANIC_LOG=$DITING_VOLATILE_PANIC_LOG -DXNU_DITING_EARLY_TRACE=$DITING_EARLY_TRACE")
+python3 - "$DITING_EARLY_TRACE" "$DITING_RAMOOPS_CONSOLE" "$DITING_RAMOOPS_BASE" <<'PY_TRACE_MODE'
 from pathlib import Path
 import sys
-directory = Path('build/xnu/ios-obj/DEVELOPMENT_ARM64_PONG')
+directory = Path('build/xnu/ios-obj/DEVELOPMENT_ARM64_DITING')
 stamp = directory / '.pong-early-trace-mode'
 mode = ':'.join(sys.argv[1:]) + ':minimal-ramoops-v3'
 if not stamp.exists() or stamp.read_text() != mode:
@@ -750,9 +750,9 @@ if not stamp.exists() or stamp.read_text() != mode:
     (directory / 'pexpert/DEVELOPMENT/pe_init.o').unlink(missing_ok=True)
     stamp.write_text(mode)
 PY_TRACE_MODE
-NATIVE_TIMER_STAMP=$ROOT/build/xnu/ios-obj/DEVELOPMENT_ARM64_PONG/.native-arch-timer-mode
+NATIVE_TIMER_STAMP=$ROOT/build/xnu/ios-obj/DEVELOPMENT_ARM64_DITING/.native-arch-timer-mode
 if [ "$(cat "$NATIVE_TIMER_STAMP" 2>/dev/null || echo 0)" != "$NATIVE_ARCH_TIMER" ]; then
-  rm -f "$ROOT/build/xnu/ios-obj/DEVELOPMENT_ARM64_PONG/osfmk/DEVELOPMENT/start.o"
+  rm -f "$ROOT/build/xnu/ios-obj/DEVELOPMENT_ARM64_DITING/osfmk/DEVELOPMENT/start.o"
   printf '%s\n' "$NATIVE_ARCH_TIMER" > "$NATIVE_TIMER_STAMP"
 fi
 NATIVE_PAN=${XNU_NATIVE_PAN:-0}
@@ -760,12 +760,12 @@ if [ "$NATIVE_PAN" != 0 ] && [ "$NATIVE_PAN" != 1 ]; then
   echo 'XNU_NATIVE_PAN must be 0 or 1' >&2
   exit 1
 fi
-PONG_LEGACY_UACCESS=${XNU_PONG_LEGACY_UACCESS:-0}
-if [ "$PONG_LEGACY_UACCESS" != 0 ] && [ "$PONG_LEGACY_UACCESS" != 1 ]; then
-  echo 'XNU_PONG_LEGACY_UACCESS must be 0 or 1' >&2
+DITING_LEGACY_UACCESS=${XNU_DITING_LEGACY_UACCESS:-0}
+if [ "$DITING_LEGACY_UACCESS" != 0 ] && [ "$DITING_LEGACY_UACCESS" != 1 ]; then
+  echo 'XNU_DITING_LEGACY_UACCESS must be 0 or 1' >&2
   exit 1
 fi
-EXTRA_CFLAGS="$EXTRA_CFLAGS -DXNU_NATIVE_PAN=$NATIVE_PAN -DXNU_PONG_LEGACY_UACCESS=$PONG_LEGACY_UACCESS"
+EXTRA_CFLAGS="$EXTRA_CFLAGS -DXNU_NATIVE_PAN=$NATIVE_PAN -DXNU_DITING_LEGACY_UACCESS=$DITING_LEGACY_UACCESS"
 if [ "$NATIVE_PAN" = 1 ]; then
   EXTRA_MAKE_ARGS+=("copyio.o_CFLAGS_ADD=-march=armv8.1-a")
   EXTRA_MAKE_ARGS+=("pcb.o_CFLAGS_ADD=-march=armv8.1-a")
@@ -961,13 +961,13 @@ PY_BINDINGS
 fi
 # The generic platform is independent of the old source-corecrypto14 recipe.
 # Its crypto provider comes from the separately prelinked matching 22H374 component.
-PONG_ADRENO_PLATFORM=${XNU_PONG_ADRENO_PLATFORM:-0}
-if [ "$PONG_ADRENO_PLATFORM" != 0 ] && [ "$PONG_ADRENO_PLATFORM" != 1 ]; then
-  echo 'XNU_PONG_ADRENO_PLATFORM must be 0 or 1' >&2
+DITING_ADRENO_PLATFORM=${XNU_DITING_ADRENO_PLATFORM:-0}
+if [ "$DITING_ADRENO_PLATFORM" != 0 ] && [ "$DITING_ADRENO_PLATFORM" != 1 ]; then
+  echo 'XNU_DITING_ADRENO_PLATFORM must be 0 or 1' >&2
   exit 1
 fi
-if [ "$PONG_ADRENO_PLATFORM" = 1 ]; then
-  python3 "$PONG_NATIVE_DRIVER_SOURCE/scripts/build-diting-adreno-platform.py" \
+if [ "$DITING_ADRENO_PLATFORM" = 1 ]; then
+  python3 "$DITING_NATIVE_DRIVER_SOURCE/scripts/build-diting-adreno-platform.py" \
     --guest-build 22H374 --tree "$ROOT" --output-dir "$ROOT/build/pong-adreno"
   test -f "$ROOT/build/pong-adreno/libPongAdrenoPlatform.a"
 fi
@@ -1006,17 +1006,17 @@ PY_RAM_BLOCK_BINDINGS
     fi
     PLATFORM_DEPENDENCIES="$PLATFORM_DEPENDENCIES $RAM_BLOCK_ARCHIVE"
   fi
-  if [ "$PONG_ADRENO_PLATFORM" = 1 ]; then
+  if [ "$DITING_ADRENO_PLATFORM" = 1 ]; then
     PLATFORM_ARCHIVES="$PLATFORM_ARCHIVES -Wl,-force_load,$ROOT/build/pong-adreno/libPongAdrenoPlatform.a"
     PLATFORM_DEPENDENCIES="$PLATFORM_DEPENDENCIES $ROOT/build/pong-adreno/libPongAdrenoPlatform.a"
   fi
-  if [ "${XNU_PONG_WIFI:-0}" = 1 ] || [ "${XNU_PONG_BACKLIGHT:-0}" = 1 ] || [ "${XNU_NATIVE_UFS:-0}" = 1 ]; then
+  if [ "${XNU_DITING_WIFI:-0}" = 1 ] || [ "${XNU_DITING_BACKLIGHT:-0}" = 1 ] || [ "${XNU_NATIVE_UFS:-0}" = 1 ]; then
     POWER_ARCHIVE=$ROOT/build/pong-power/libPongPower.a
     test -f "$POWER_ARCHIVE"
     PLATFORM_ARCHIVES="$PLATFORM_ARCHIVES -Wl,-force_load,$POWER_ARCHIVE"
     PLATFORM_DEPENDENCIES="$PLATFORM_DEPENDENCIES $POWER_ARCHIVE"
   fi
-  if [ "${XNU_PONG_WIFI:-0}" = 1 ]; then
+  if [ "${XNU_DITING_WIFI:-0}" = 1 ]; then
     WIFI_ARCHIVE=$ROOT/build/pong-wifi/libPongWifiNative.a
     test -f "$WIFI_ARCHIVE"
     PLATFORM_ARCHIVES="$PLATFORM_ARCHIVES -Wl,-force_load,$WIFI_ARCHIVE"
@@ -1038,39 +1038,39 @@ python3 - "${XNU_NATIVE_AES:-0}" "${XNU_NATIVE_AES_ARCHIVE:-$ROOT/build/native-a
   "$SHENG_PMGR" "$ROOT/build/sheng-platform-power/libShengPlatformPower.a" \
   "${XNU_NATIVE_UFS:-0}" "$ROOT/build/native-ufs/libNativeUfs.a" \
   "${XNU_NATIVE_ADRENO:-0}" "$ROOT/build/native-adreno/libNativeAdreno.a" \
-  "$PONG_ADRENO_PLATFORM" "$ROOT/build/pong-adreno/libPongAdrenoPlatform.a" <<'PY'
+  "$DITING_ADRENO_PLATFORM" "$ROOT/build/pong-adreno/libPongAdrenoPlatform.a" <<'PY'
 from pathlib import Path
 import sys
-directory = Path('build/xnu/ios-obj/DEVELOPMENT_ARM64_PONG')
+directory = Path('build/xnu/ios-obj/DEVELOPMENT_ARM64_DITING')
 stamp = directory / '.native-aes-link-input'
 identity = '|'.join(mode + ':' + (str(Path(archive).stat().st_mtime_ns) if mode == '1' else 'disabled')
                     for mode, archive in zip(sys.argv[1::2], sys.argv[2::2]))
 if not stamp.exists() or stamp.read_text() != identity:
     # Make does not track selection of an older alternative external archive.
     # Rebuild the conditional personality and relink when this input changes.
-    for relative in ('mach.development.pong.unstripped.noctf',
+    for relative in ('mach.development.diting.unstripped.noctf',
                      'iokit/DEVELOPMENT/KernelConfigTables.cpo'):
         (directory / relative).unlink(missing_ok=True)
     directory.mkdir(parents=True, exist_ok=True)
     stamp.write_text(identity)
 PY
-PONG_BACKLIGHT=${XNU_PONG_BACKLIGHT:-0}
-if [ "$PONG_BACKLIGHT" != 0 ] && [ "$PONG_BACKLIGHT" != 1 ]; then
-  echo 'XNU_PONG_BACKLIGHT must be 0 or 1' >&2
+DITING_BACKLIGHT=${XNU_DITING_BACKLIGHT:-0}
+if [ "$DITING_BACKLIGHT" != 0 ] && [ "$DITING_BACKLIGHT" != 1 ]; then
+  echo 'XNU_DITING_BACKLIGHT must be 0 or 1' >&2
   exit 1
 fi
 # XNU's C++ suffix is .cpo. A .o_CFLAGS_ADD setting is silently ignored.
 # Make does not track per-file flag changes, so rebuild this owned object
 # when the selected backlight configuration changes.
-PONG_IOKIT_OBJ=$ROOT/build/xnu/ios-obj/DEVELOPMENT_ARM64_PONG/iokit/DEVELOPMENT
-if [ -d "$PONG_IOKIT_OBJ" ]; then
-  if [ "$(cat "$PONG_IOKIT_OBJ/.pong-backlight-mode" 2>/dev/null || echo unset)" != "$PONG_BACKLIGHT" ]; then
-    rm -f "$PONG_IOKIT_OBJ/MiniIOMobileFramebuffer.cpo"
+DITING_IOKIT_OBJ=$ROOT/build/xnu/ios-obj/DEVELOPMENT_ARM64_DITING/iokit/DEVELOPMENT
+if [ -d "$DITING_IOKIT_OBJ" ]; then
+  if [ "$(cat "$DITING_IOKIT_OBJ/.pong-backlight-mode" 2>/dev/null || echo unset)" != "$DITING_BACKLIGHT" ]; then
+    rm -f "$DITING_IOKIT_OBJ/MiniIOMobileFramebuffer.cpo"
   fi
-  printf '%s\n' "$PONG_BACKLIGHT" > "$PONG_IOKIT_OBJ/.pong-backlight-mode"
+  printf '%s\n' "$DITING_BACKLIGHT" > "$DITING_IOKIT_OBJ/.pong-backlight-mode"
 fi
-EXTRA_MAKE_ARGS+=("MiniIOMobileFramebuffer.cpo_CFLAGS_ADD=-DXNU_PONG_BACKLIGHT=$PONG_BACKLIGHT")
-EXTRA_CFLAGS="$EXTRA_CFLAGS -DXNU_BOOT_PROGRESS=$BOOT_PROGRESS -DXNU_PONG_ADRENO_PLATFORM=$PONG_ADRENO_PLATFORM"
+EXTRA_MAKE_ARGS+=("MiniIOMobileFramebuffer.cpo_CFLAGS_ADD=-DXNU_DITING_BACKLIGHT=$DITING_BACKLIGHT")
+EXTRA_CFLAGS="$EXTRA_CFLAGS -DXNU_BOOT_PROGRESS=$BOOT_PROGRESS -DXNU_DITING_ADRENO_PLATFORM=$DITING_ADRENO_PLATFORM"
 # Darwin 24 consumes RC_NONARCH_CFLAGS through OTHER_CFLAGS in both CFLAGS
 # and SFLAGS. CFLAGS_EXTRA is not read by its makefiles: passing that name
 # silently omitted PAN/uaccess policy from C, C++ and assembly alike.
@@ -1078,7 +1078,7 @@ python3 - "$EXTRA_CFLAGS" <<'PY_GLOBAL_FLAGS'
 from pathlib import Path
 import json
 import sys
-directory = Path('build/xnu/ios-obj/DEVELOPMENT_ARM64_PONG')
+directory = Path('build/xnu/ios-obj/DEVELOPMENT_ARM64_DITING')
 directory.mkdir(parents=True, exist_ok=True)
 stamp = directory / '.pong-global-compiler-flags'
 identity = 'RC_NONARCH_CFLAGS-v1\n' + sys.argv[1] + '\n'
@@ -1088,7 +1088,7 @@ if not stamp.exists() or stamp.read_text() != identity:
     for pattern in ('*.o', '*.cpo'):
         for path in directory.rglob(pattern):
             path.unlink()
-    for path in directory.glob('mach.development.pong*'):
+    for path in directory.glob('mach.development.diting*'):
         if path.is_file():
             path.unlink()
     stamp.write_text(identity)
@@ -1109,7 +1109,7 @@ for argument in sys.argv[1:]:
         seen.add(key)
 PY_OBJECT_FLAGS
 make -C .cache/xnu-work "${XNU_BUILD_TARGET:-build}" SDKROOT="${XNU_SDKROOT:-iphoneos}" ARCH_CONFIGS=ARM64 \
-  MACHINE_CONFIGS=PONG KERNEL_CONFIGS=DEVELOPMENT \
+  MACHINE_CONFIGS=DITING KERNEL_CONFIGS=DEVELOPMENT \
   ARCH_STRING_FOR_CURRENT_MACHINE_CONFIG=arm64 LARGE_MEMORY_DEFINE=-UARM_LARGE_MEMORY \
   ARM64_LINK_ADDR=0xfffffff007004000 ARM64_PLKSEG_ADDR=0xfffffff004004000 \
   DEPLOYMENT_TARGET_FLAGS="-miphoneos-version-min=${UNIXNU_IOS_TARGET:-18.0} -DXNU_TARGET_OS_IOS" \
@@ -1120,5 +1120,5 @@ make -C .cache/xnu-work "${XNU_BUILD_TARGET:-build}" SDKROOT="${XNU_SDKROOT:-iph
   OBJROOT="$ROOT/build/xnu/ios-obj" SYMROOT="$ROOT/build/xnu/ios-sym" DSTROOT="$ROOT/build/xnu/ios-dst"
 if [ "${XNU_SOURCE_CORECRYPTO14:-0}" = 1 ] && [ "$CRYPTO_BOOTSTRAP_MODE" = source ]; then
   python3 scripts/seal-source-crypto-kernel.py \
-    build/xnu/ios-obj/DEVELOPMENT_ARM64_PONG/mach.development.pong.unstripped.noctf
+    build/xnu/ios-obj/DEVELOPMENT_ARM64_DITING/mach.development.diting.unstripped.noctf
 fi

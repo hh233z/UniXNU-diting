@@ -151,7 +151,7 @@ static unsigned stringDescriptor(unsigned index,unsigned char *out) {
  char serial[64];const bool native=muxEnabled&&pong_usb_mux_serial(serial,sizeof serial);
  const char *value=index==1?(iphoneIdentity?"Apple Inc.":"UniXNU Pong"):
   index==2?(iphoneIdentity?"iPhone":muxEnabled?"Pong iOS USB + console":"Pong XNU console"):
-  index==3?(native?serial:"PONG-SM8475"):index==4?"Pong XNU console":"";
+  index==3?(native?serial:"DITING-SM8475"):index==4?"Pong XNU console":"";
  unsigned length=(unsigned)strlen(value);if(length>63)length=63;
  out[0]=uint8_t(2+2*length);out[1]=3;for(unsigned i=0;i<length;i++){out[2+2*i]=uint8_t(value[i]);out[3+2*i]=0;}return out[0];
 }

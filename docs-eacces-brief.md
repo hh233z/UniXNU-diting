@@ -31,8 +31,8 @@ IOBlockStorageDevice/IOMedia；Data 窗口只有在块设备 `PongWritable` 且 
 
 已经达成：
 
-- 根卷按 UUID 匹配并挂载：`PONG_UFS: OS root binding UUID b07df049-… bound to OS UFS window /dev/disk2s1`
-  之后 `PONG: APFS: diting`；
+- 根卷按 UUID 匹配并挂载：`DITING_UFS: OS root binding UUID b07df049-… bound to OS UFS window /dev/disk2s1`
+  之后 `DITING: APFS: diting`；
 - 内核走正常 `load_init_program` 路径执行 `/sbin/launchd`，**launchd 正常运行**并在拉起服务；
 - `xpcproxy` 能创建进程（日志出现 pid 2045/2062/2063 等），说明从该卷执行程序本身是允许的。
 
@@ -64,12 +64,12 @@ Unable to find persona with type 4
 启动早期与存储相关的日志（readwrite=0 那一轮）：
 
 ```
-PONG APFS: Data prepare emit
-PONG APFS: Data UFS window ... timeout=5s
-PONG APFS: Data UUID appears valid
-PONG APFS: UUID candidate ... accepted
-PONG APFS: vwindow media ...
-PONG APFS: vwindow UFS Data UUID unavailable
+DITING APFS: Data prepare emit
+DITING APFS: Data UFS window ... timeout=5s
+DITING APFS: Data UUID appears valid
+DITING APFS: UUID candidate ... accepted
+DITING APFS: vwindow media ...
+DITING APFS: vwindow UFS Data UUID unavailable
 UUID candidate ... accepted=0 window=Data
 UUID lookup MISS
 writable UFS Data UUID unavailable
@@ -97,7 +97,7 @@ scratch Data mount SKIP error=6 step=0        ← error 6 = ENXIO
 
 ## 7. 我们的内核环境（供分析）
 
-- 内核补丁在 `patches/xnu-ipados18/`（`0001-pong-darwin24.patch` 等），构建时打到 XNU 源码上；
+- 内核补丁在 `patches/xnu-ipados18/`（`0001-diting-darwin24.patch` 等），构建时打到 XNU 源码上；
   panic 里出现的 `kern_exec.c:7863` 之类行号是打补丁后的树。
 - 当前启动参数（`board.toml` 的 `kernel_args`）：
 

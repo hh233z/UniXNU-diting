@@ -144,8 +144,8 @@ def main():
         parser.error('userdata first and last LBA must be provided together')
     if args.userdata_first_lba is not None and not (0 < args.userdata_first_lba <= args.userdata_last_lba < 2**64):
         parser.error('invalid userdata LBA range')
-    if os.environ.get('PONG_HARDWARE_DTB'):
-        load_format2_hardware(os.environ['PONG_HARDWARE_DTB'])
+    if os.environ.get('DITING_HARDWARE_DTB'):
+        load_format2_hardware(os.environ['DITING_HARDWARE_DTB'])
     if args.root_match_volume_uuid:
         try:
             args.root_match_volume_uuid = str(uuid.UUID(args.root_match_volume_uuid))

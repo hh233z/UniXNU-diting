@@ -49,7 +49,7 @@
 +                | PixelFormat::RGBA8Unorm | PixelFormat::RGBA8UnormSRGB)
 +            && texels.layout.slices == 1
 +            && texels.layout.row_pitch >= texels.layout.row_bytes
-+            && std::env::var_os("PONG_IOSURFACE_PADDING").as_deref()
++            && std::env::var_os("DITING_IOSURFACE_PADDING").as_deref()
 +                == Some(std::ffi::OsStr::new("1"));
 +        if holds.is_err() && native_surface {
 +            holds = Ok(Holds::Padding);

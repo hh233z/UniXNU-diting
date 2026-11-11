@@ -11,6 +11,6 @@ a=p.parse_args();root=ROOT
 revision=subprocess.check_output(['git','rev-parse','HEAD'],cwd=a.source,text=True).strip()
 if revision!='43a90889846e00bfb5cf1d255cdc0a701a1e05a4':raise SystemExit('Wrong source revision; expected xnu-11417.140.69')
 subprocess.run(['git','add','-u'],cwd=a.source,check=True)
-out=root/'patches/xnu-ipados18/0001-pong-darwin24.patch'
+out=root/'patches/xnu-ipados18/0001-diting-darwin24.patch'
 with out.open('wb') as f:subprocess.run(['git','diff','--binary','HEAD'],cwd=a.source,stdout=f,check=True)
 print(out)

@@ -36,7 +36,7 @@ env=dict(os.environ,DEVELOPER_DIR=str(a.developer_dir))
 sdk=subprocess.check_output(['xcrun','--sdk','iphoneos','--show-sdk-path'],env=env,text=True).strip()
 minimum='18.0' if a.guest_build=='22H374' else '16.6.1'
 command=['xcrun','clang++','-target','arm64-apple-ios'+minimum,'-isysroot',sdk,
-    *(['-DPONG_GUEST_22H374=1'] if a.guest_build=='22H374' else []),
+    *(['-DDITING_GUEST_22H374=1'] if a.guest_build=='22H374' else []),
     '-std=c++17','-fobjc-arc','-fblocks','-Os','-Wall','-Wextra','-Werror',
     '-Wno-deprecated-declarations','-I'+str(ROOT/'drivers/PongMetal'),
     '-I'+str(ROOT/'drivers/PongAdreno/submit'),

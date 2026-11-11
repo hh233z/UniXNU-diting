@@ -17,9 +17,9 @@
 #include <unistd.h>
 #include <syslog.h>
 #include "ShengAudioAbi.h"
-#define PONG_ROUTE_LOG(...) syslog(LOG_NOTICE,__VA_ARGS__)
+#define DITING_ROUTE_LOG(...) syslog(LOG_NOTICE,__VA_ARGS__)
 #include "PongAudioRoute.h"
-#undef PONG_ROUTE_LOG
+#undef DITING_ROUTE_LOG
 
 enum {kPlugIn = kAudioObjectPlugInObject, kDevice = 2, kOutStream = 3, kInStream = 4, kVolume = 5, kMute = 6};
 #define kPlugInBundleID "org.unixnu.pong.audio"

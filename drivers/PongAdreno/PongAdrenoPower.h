@@ -1,6 +1,6 @@
 /* SPDX-License-Identifier: BSD-2-Clause-Patent */
-#ifndef PONG_ADRENO_POWER_H
-#define PONG_ADRENO_POWER_H
+#ifndef DITING_ADRENO_POWER_H
+#define DITING_ADRENO_POWER_H
 #include <stddef.h>
 #include <stdint.h>
 #ifdef __cplusplus

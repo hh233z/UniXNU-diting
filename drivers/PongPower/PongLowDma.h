@@ -3,8 +3,8 @@
  * pong-audio-dma 64 KiB contract intact. USB needs an independent reservation
  * and a quiesced-controller handoff; a clock status bit is not ownership.
  */
-#ifndef PONG_LOW_DMA_H
-#define PONG_LOW_DMA_H
+#ifndef DITING_LOW_DMA_H
+#define DITING_LOW_DMA_H
 #include <IOKit/IODeviceTreeSupport.h>
 #include <IOKit/IOLib.h>
 #include <libkern/c++/OSData.h>

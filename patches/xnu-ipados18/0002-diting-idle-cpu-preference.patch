@@ -5,7 +5,7 @@ diff --git a/osfmk/kern/sched_prim.c b/osfmk/kern/sched_prim.c
  
  	assert(thread->sched_pri <= MAXPRI);
  
-+#if defined(ARM64_BOARD_CONFIG_PONG)
++#if defined(ARM64_BOARD_CONFIG_DITING)
 +	/* The board supplies only a ranking of currently idle eligible cores.
 +	 * Keep native RT deadlines, explicit binding, recommendation and pset
 +	 * ownership intact. CPU0's warm-cache hint must not hide an idle X2.

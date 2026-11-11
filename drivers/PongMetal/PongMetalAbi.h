@@ -11,7 +11,7 @@
  */
 static bool PongMetalDeviceAbiAvailable(Class base)
 {
-#if PONG_GUEST_22H374
+#if DITING_GUEST_22H374
     constexpr size_t extent=600; // actual 22H374 _MTLDevice metadata
 #else
     constexpr size_t extent=528; // actual 20G81 metadata

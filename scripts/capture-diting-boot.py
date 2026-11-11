@@ -99,7 +99,7 @@ def main():
         # Check text provenance, not storage images. Preserve old/partial
         # pstore on mismatch and do not report a stale boot as this run.
         sources=list((a.out/'pstore').glob('*'))
-        marker=('PONG CAPTURE: id='+a.boot_id+' ').encode()
+        marker=('DITING CAPTURE: id='+a.boot_id+' ').encode()
         matching=[f.name for f in sources if f.is_file() and marker in f.read_bytes()]
         if not matching:raise RuntimeError('pstore lacks this capture boot ID; raw files retained')
         text=b'\n'.join(f.read_bytes() for f in sources if f.is_file())

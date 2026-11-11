@@ -1,4 +1,4 @@
-# iOS 16 PONG continuation
+# iOS 16 DITING continuation
 
 这两个工具从保留的 UniXNU 基线复制到设备目录，避免修改共享工具。它们只生成和静态检查候选。原输入 Apple 20G81 corecrypto 12.0 为普通 ARM64。iOS 16 的 sparse-index 源码补丁来自原工具的已有实现，已在固定 XNU 8796.141.3 上无 fuzz 应用。
 

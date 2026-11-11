@@ -20,7 +20,7 @@ if previous.get('state')!='complete':raise SystemExit('The previous installation
 old=previous.get('layout',previous.get('new_layout'))
 if old is None:raise SystemExit('The previous installation has no completed layout')
 windows={w['name']:w for w in new['windows']};before={w['name']:w for w in old['windows']}
-report=json.loads((a.boot_image.parent/'PONG_BUILD_RESULT.json').read_text())
+report=json.loads((a.boot_image.parent/'DITING_BUILD_RESULT.json').read_text())
 if not a.boot_image.is_file() or not report['build_complete'] or report['profile']!='Pong-iPadOS18-22H374-Darwin24' or report['settings']['XNU_OWNER_CACHE_VOLUME_UUID']!=windows['SystemOS']['volume_uuid']:raise SystemExit('Build the matching SystemOS boot package first')
 if old['windows'][0]!=new['windows'][0] or before['Data']['size']!=windows['Data']['size'] or before['Data']['volume_uuid']!=windows['Data']['volume_uuid']:raise SystemExit('OS and Data identity must be preserved')
 system=windows['SystemOS'];src=before['Data'];dst=windows['Data'];target='/dev/block/by-name/userdata'
@@ -75,7 +75,7 @@ with Path(system['image']).open('rb',buffering=0) as f:
   # exec-in uses the raw exec service: its process return code does not
   # provide shell-v2's remote command status. Use binary-safe shell-v2 and
   # require a device-side completion receipt after both pipeline stages.
-  receipt=f'PONG_SYSTEMOS_WRITE_DONE_{offset}_{amount}'
+  receipt=f'DITING_SYSTEMOS_WRITE_DONE_{offset}_{amount}'
   device_write+=' && printf "%s\\n" '+receipt
   proc=subprocess.Popen(cmd+['shell','-T',device_write],stdin=subprocess.PIPE,stdout=subprocess.PIPE,stderr=subprocess.PIPE)
   try:

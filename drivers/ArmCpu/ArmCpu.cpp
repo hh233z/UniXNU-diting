@@ -9,7 +9,7 @@
 #include <libkern/c++/OSSymbol.h>
 #include <machine/machine_routines.h>
 #include <pexpert/pexpert.h>
-#if PONG_DARWIN_MAJOR >= 24
+#if DITING_DARWIN_MAJOR >= 24
 #include "PongCpuPolicy.h"
 #endif
 
@@ -19,7 +19,7 @@ extern "C" kern_return_t psci_smp_start_cpu(int);
 extern "C" void psci_smp_cpu_running(void);
 extern "C" void psci_smp_cpu_off(void) __attribute__((noreturn));
 extern "C" void pong_cpu_startup_finished(IOCPUInterruptController *);
-#if PONG_DARWIN_MAJOR >= 24
+#if DITING_DARWIN_MAJOR >= 24
 extern "C" void pong_cpu_first_boot(processor_t);
 extern "C" void pong_cpu_first_boot_wait(processor_t);
 #endif
@@ -34,7 +34,7 @@ volatile uint64_t armcpu_cntv_state[5];
 volatile uint64_t armcpu_pac_features[8][3];
 }
 
-#if PONG_DARWIN_MAJOR >= 24
+#if DITING_DARWIN_MAJOR >= 24
 /* Pure scheduler hint: logical IDs follow the selected Pong DT's sorted
  * MPIDRs. Keep the 4+3+1 board knowledge out of the generic scheduler.
  * An occupied/offline/unrecommended core is absent from the supplied map;
@@ -354,7 +354,7 @@ bool ArmCpu::start(IOService *provider)
                                       &ArmCpu::dispatch, nullptr) != kIOReturnSuccess)
       panic("ArmCpu: IRQ handler registration failed for CPU %u", i);
   }
-#if PONG_DARWIN_MAJOR >= 24
+#if DITING_DARWIN_MAJOR >= 24
   // Darwin 24 separates first boot from processor_start(), and invokes
   // initCPU() during processor_boot(). All vectors must exist beforehand.
   psci_smp_init();
@@ -399,7 +399,7 @@ bool ArmCpu::start(IOService *provider)
   armcpu_cntv_state[4] = daif;
   IOLog("ArmCpu: boot CPU running with GICv3/CNTV ctl=%#llx cval=%#llx now=%#llx freq=%#llx daif=%#llx irq=%llu\n",
       ctl, cval, now, frequency, daif, armcpu_timer_interrupts);
-#if PONG_DARWIN_MAJOR >= 24
+#if DITING_DARWIN_MAJOR >= 24
   PongCpuPolicy::start();
   IOLog("ArmCpu: all registered CPUs available; idle preference X2, A710, A510 (no affinity binding)\n");
 #endif

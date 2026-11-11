@@ -8,7 +8,7 @@ prepared on macOS. Only directory metadata is emitted - no file contents.
 
 Usage:
     gen-var-skeleton.py --source <mounted OS root>/private/var [--depth 2] [--exclude staged_apps]
-        [--out table.c] [--insert-into patches/xnu-ipados18/0001-pong-darwin24.patch]
+        [--out table.c] [--insert-into patches/xnu-ipados18/0001-diting-darwin24.patch]
 
 The code is inserted into the base patch (not a follow-up patch) because line numbers shift as the
 series applies and a follow-up hunk cannot be anchored reliably.
@@ -71,7 +71,7 @@ def replacement(entries, indent='\t\t'):
         indent + '\tchown(p, &owner, &result);',
         indent + '\tcreated++;',
         indent + '}',
-        indent + 'printf("PONG APFS: var skeleton created=%d failed=%d\\n", created, failed);',
+        indent + 'printf("DITING APFS: var skeleton created=%d failed=%d\\n", created, failed);',
         '\t}',
     ]
     return lines

@@ -1,7 +1,7 @@
 /* SPDX-License-Identifier: GPL-2.0-only */
 /* Generated from the matching NothingOSS SM8475 gen7 sources. */
-#ifndef PONG_ADRENO_CP_PROFILE_H
-#define PONG_ADRENO_CP_PROFILE_H
+#ifndef DITING_ADRENO_CP_PROFILE_H
+#define DITING_ADRENO_CP_PROFILE_H
 #include <stdint.h>
 #define GEN7_6_0_RSCC_SEQ_MEM_0_DRV0 0x154u
 #define GEN7_6_0_RSCC_TCS0_DRV0_STATUS 0x34au

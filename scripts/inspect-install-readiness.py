@@ -14,7 +14,7 @@ ROOT = Path(__file__).resolve().parents[2]
 
 def resolve_fastboot():
     """fastboot from the environment, then the Android SDK, then PATH."""
-    configured = os.environ.get('PONG_FASTBOOT')
+    configured = os.environ.get('DITING_FASTBOOT')
     if configured:
         return Path(configured)
     for base in (os.environ.get('ANDROID_SDK_ROOT'), os.environ.get('ANDROID_HOME')):

@@ -36,13 +36,13 @@ def main():
     sdk = subprocess.check_output(
         ['xcrun', '--sdk', 'iphoneos', '--show-sdk-path'], text=True, env=env).strip()
     obj = out / 'NativeUfs.o'
-    trace_enabled = 'CONFIG_XNU_PONG_EARLY_TRACE=y' in (DEVICE / 'configs/diting_ipados18_defconfig').read_text().splitlines()
+    trace_enabled = 'CONFIG_XNU_DITING_EARLY_TRACE=y' in (DEVICE / 'configs/diting_ipados18_defconfig').read_text().splitlines()
     command = ['xcrun', '--sdk', 'iphoneos', 'clang++', '-target', 'arm64-apple-ios18.0',
         '-isysroot', sdk, '-mkernel', '-ffreestanding', '-fno-builtin', '-fno-exceptions',
         '-fno-rtti', '-fno-stack-check', '-std=gnu++17', '-fblocks', '-O2',
         '-DKERNEL=1', '-DKERNEL_PRIVATE=1', '-DXNU_KERNEL_PRIVATE=1',
-        '-DXNU_PONG_EARLY_TRACE=' + str(int(trace_enabled)),
-        '-DXNU_PONG_UFS_DATA=' + str(int('CONFIG_XNU_OWNER_DATA_UFS=y' in (DEVICE/'configs/diting_ipados18_defconfig').read_text().splitlines())),
+        '-DXNU_DITING_EARLY_TRACE=' + str(int(trace_enabled)),
+        '-DXNU_DITING_UFS_DATA=' + str(int('CONFIG_XNU_OWNER_DATA_UFS=y' in (DEVICE/'configs/diting_ipados18_defconfig').read_text().splitlines())),
         '-I' + str(DEVICE / 'mac-build/storage-abi18/include'),
         '-I' + str(tree / '.cache/xnu-work/EXTERNAL_HEADERS'),
         '-I' + str(framework / 'PrivateHeaders'), '-I' + str(framework / 'Headers'),

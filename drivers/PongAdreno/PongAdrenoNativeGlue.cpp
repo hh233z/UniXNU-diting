@@ -28,7 +28,7 @@ bool PongAdrenoConfigureService(IOService *service)
     service->setProperty("PongNativePageBytes",4096,32);
     unsigned metal=0;
     const bool enabled=PE_parse_boot_argn("pong_metal",&metal,sizeof(metal)) && metal==1;
-    #if PONG_GUEST_22H374
+    #if DITING_GUEST_22H374
     service->setProperty("PongMetal22H374Enabled",enabled);
     unsigned global=0;
     if(enabled && PE_parse_boot_argn("pong_metal_global",&global,sizeof(global)) && global==1)
@@ -38,7 +38,7 @@ bool PongAdrenoConfigureService(IOService *service)
 #endif
     if(enabled)service->setProperty("NativeSandboxGrantProcess",
         "backboardd,SpringBoard,CollectionsPoster,WidgetRenderer_Default,PosterBoard,Weather,WeatherPoster,GradientPosterExtension"
-#if PONG_GUEST_22H374
+#if DITING_GUEST_22H374
         ",Preferences,LegacyPoster,MercuryPosterExtension,Unity2025Poster,PridePosterExtension"
 #endif
     );
@@ -56,7 +56,7 @@ bool PongAdrenoPublishClient(PongCpBackend *device)
     if(PE_parse_boot_argn("pong_metal",&metal,sizeof(metal)) && metal==1) {
         const IOReturn status=PongAdrenoPublishMetalAccelerator();
         char line[160];const int n=snprintf(line,sizeof(line),
-            "PONG METAL: NativeAdreno complete runtime publication status=0x%x\n",status);
+            "DITING METAL: NativeAdreno complete runtime publication status=0x%x\n",status);
         IOLog("%s",line);pong_ramoops_diagnostic_write(line,n);
         if(status)return false;
     }

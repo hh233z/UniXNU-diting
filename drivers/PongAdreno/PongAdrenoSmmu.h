@@ -1,6 +1,6 @@
 /* SPDX-License-Identifier: BSD-2-Clause-Patent */
-#ifndef PONG_ADRENO_SMMU_H
-#define PONG_ADRENO_SMMU_H
+#ifndef DITING_ADRENO_SMMU_H
+#define DITING_ADRENO_SMMU_H
 #include "ArmSmmu4K/ArmSmmu4KAudit.h"
 #include "ArmSmmu4K/ArmSmmu4KStreams.h"
 #ifdef __cplusplus

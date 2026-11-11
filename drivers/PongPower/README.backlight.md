@@ -23,7 +23,7 @@ services61 实际 panic 证明 AppleARMPlatform 随后会注册 `AppleARMBacklig
 
 ## 构建接入
 
-- `CONFIG_XNU_PONG_BACKLIGHT=y` 单独控制链接，与 Wi‑Fi 是否启用无关。
+- `CONFIG_XNU_DITING_BACKLIGHT=y` 单独控制链接，与 Wi‑Fi 是否启用无关。
 - `build-pong-power-native.py` 构建类，并将其静态初始化放到 IOKit 后期注册路径。
 - `MiniIOMobileFramebufferStart` 仅在显示启动成功后调用亮度初始化。
 - 打包器显式加入 `pong_backlight=1`；设为 0 可暂时保留固件亮度。

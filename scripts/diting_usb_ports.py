@@ -29,7 +29,7 @@ def phone_usb_nodes():
     return found
 
 def serial_ports():
-    ports=glob.glob('/dev/cu.usbmodemPONG_SM8475*')
+    ports=glob.glob('/dev/cu.usbmodemDITING_SM8475*')
     for node in phone_usb_nodes():
         for item in _nodes(node):
             port=item.get('IOCalloutDevice')

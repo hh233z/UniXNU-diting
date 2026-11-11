@@ -16,7 +16,7 @@ def array(text,name):
     return re.search(r'\b'+name+r'\[\]\s*=\s*\{(.*?)\n\};',text,re.S).group(1)
 lines=['/* SPDX-License-Identifier: GPL-2.0-only */',
        '/* Register tables from the matching NothingOSS SM8475 gen7 sources. */',
-       '#ifndef PONG_ADRENO_CP_PROFILE_H','#define PONG_ADRENO_CP_PROFILE_H',
+       '#ifndef DITING_ADRENO_CP_PROFILE_H','#define DITING_ADRENO_CP_PROFILE_H',
        '#include <stdint.h>']
 lines += [f'#define {k} 0x{v:x}u' for k,v in sorted(values.items())]
 for name,vendor in [('PongCpHwcg','gen7_0_0_hwcg_regs'),('PongCpGbif','gen7_0_0_gbif_regs')]:

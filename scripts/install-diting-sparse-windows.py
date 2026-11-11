@@ -20,7 +20,7 @@ p.add_argument('--stream-compression',choices=('none','gzip'),default='none')
 p.add_argument('--os-delta',type=Path,help='tracked OS bands from prepare-ipados18-os-delta.py')
 a=p.parse_args()
 if not a.boot_image.is_file():raise SystemExit('Build the iPadOS18 boot image before installing its system windows')
-boot_result=a.boot_image.parent/'PONG_BUILD_RESULT.json'
+boot_result=a.boot_image.parent/'DITING_BUILD_RESULT.json'
 boot_manifest=a.boot_image.parent/'stage/EFI/UniXNU/pong-boot-manifest.json'
 if not boot_result.is_file() or not boot_manifest.is_file():raise SystemExit('A completed iPadOS18 boot package is required before writing')
 boot=json.loads(boot_result.read_text());manifest=json.loads(boot_manifest.read_text())
@@ -103,7 +103,7 @@ for w in layout['windows']:
     # Stream only the chosen logical range, retaining raw-image support.
     offset=w['offset']+range_offset+done
     if offset%(1<<20):raise RuntimeError('A streaming chunk must start on a MiB boundary')
-    receipt=f'PONG_WINDOW_WRITE_DONE_{offset}_{amount}'
+    receipt=f'DITING_WINDOW_WRITE_DONE_{offset}_{amount}'
     device_write=f'dd of={target} bs=1048576 seek={offset//(1<<20)} conv=notrunc,fsync status=none'
     codec=zlib.compressobj(level=1,wbits=31) if a.stream_compression=='gzip' else None
     if codec:device_write='set -o pipefail; gzip -dc | '+device_write

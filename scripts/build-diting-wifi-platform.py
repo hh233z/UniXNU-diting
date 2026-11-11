@@ -33,7 +33,7 @@ def main():
     command = ['xcrun', 'clang++', '-target', 'arm64-apple-ios18.0', '-isysroot', sdk,
         '-mkernel', '-ffreestanding', '-fno-builtin', '-fno-exceptions', '-fno-rtti',
         '-fno-stack-protector', '-mgeneral-regs-only', '-std=gnu++17', '-fblocks', '-Os',
-        '-DKERNEL=1', '-DKERNEL_PRIVATE=1', '-DXNU_KERNEL_PRIVATE=1', '-DARM64_BOARD_CONFIG_PONG=1',
+        '-DKERNEL=1', '-DKERNEL_PRIVATE=1', '-DXNU_KERNEL_PRIVATE=1', '-DARM64_BOARD_CONFIG_DITING=1',
         '-I' + str(framework / 'PrivateHeaders'), '-I' + str(framework / 'Headers'),
         '-Wno-deprecated-declarations', '-Wall', '-Wextra',
         '-c', str(source), '-o', str(out / 'PongWifiPci.o')]

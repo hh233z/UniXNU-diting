@@ -1,6 +1,6 @@
 /* SPDX-License-Identifier: BSD-2-Clause-Patent */
-#ifndef PONG_WIFI_PCI_H
-#define PONG_WIFI_PCI_H
+#ifndef DITING_WIFI_PCI_H
+#define DITING_WIFI_PCI_H
 #include <stddef.h>
 #include <stdint.h>
 

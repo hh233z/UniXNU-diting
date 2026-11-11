@@ -16,7 +16,7 @@ efi = stage / 'EFI/UniXNU'
 efi.mkdir(parents=True, exist_ok=True)
 binary = ROOT / 'Mu-Silicium/Build/pongPkg/RELEASE_CLANGPDB/AARCH64/PongPayloadProbe.efi'
 shutil.copyfile(binary, efi / 'PongPayloadProbe.efi')
-(stage / 'PONG-PROBE.TXT').write_bytes(b'PONG-INITRD-PROBE-20261020')
+(stage / 'DITING-PROBE.TXT').write_bytes(b'DITING-INITRD-PROBE-20261020')
 (efi / 'unixnu.toml').write_text('''version = 1
 [boot]
 timeout = 3
@@ -34,13 +34,13 @@ for path in [stage, *stage.rglob('*')]:
 fat = out / 'payload-fat.img'
 fat.unlink(missing_ok=True)
 env = dict(os.environ, MTOOLS_SKIP_CHECK='1', TZ='UTC')
-subprocess.run(['mformat', '-C', '-T', '16384', '-v', 'PONGPROBE', '-N', '504f4e47', '-i', str(fat), '::'], check=True, env=env)
+subprocess.run(['mformat', '-C', '-T', '16384', '-v', 'DITINGPROBE', '-N', '504f4e47', '-i', str(fat), '::'], check=True, env=env)
 for entry in sorted(stage.iterdir()):
     subprocess.run(['mcopy', '-i', str(fat), '-s', '-Q', '-m', str(entry), '::/'], check=True, env=env)
 raw = fat.read_bytes()
 if len(raw) != 8 * 1024 * 1024 or raw[510:512] != b'\x55\xaa':
     raise ValueError('Unexpected FAT image')
-subprocess.run(['mtype', '-i', str(fat), '::/PONG-PROBE.TXT'], check=True, env=env, stdout=subprocess.PIPE)
+subprocess.run(['mtype', '-i', str(fat), '::/DITING-PROBE.TXT'], check=True, env=env, stdout=subprocess.PIPE)
 header = bytearray(4096)
 struct.pack_into('<8sIIQII', header, 0, b'PONGFAT1', 1, 4096, len(raw), zlib.crc32(raw), 0)
 container = out / 'payload.ramdisk'

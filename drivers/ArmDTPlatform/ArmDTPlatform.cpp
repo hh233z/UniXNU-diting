@@ -23,13 +23,13 @@
 #include <uuid/uuid.h>
 
 extern "C" bool pong_cpu_start(IOService *platform);
-#if XNU_PONG_WIFI
+#if XNU_DITING_WIFI
 extern "C" void pong_wifi_start_optional(void);
 #endif
-#if XNU_PONG_POWER
+#if XNU_DITING_POWER
 extern "C" void pong_power_start_optional(void);
 #endif
-#if XNU_PONG_ADRENO_PLATFORM
+#if XNU_DITING_ADRENO_PLATFORM
 extern "C" void pong_adreno_start_optional(void);
 #endif
 
@@ -240,16 +240,16 @@ bool ArmDTPlatform::configure (IOService *provider)
     return false;
   }
   armdt_platform_configured = 1;
-#if XNU_PONG_POWER
+#if XNU_DITING_POWER
   pong_power_start_optional();
 #endif
-#if XNU_PONG_WIFI
+#if XNU_DITING_WIFI
   pong_wifi_start_optional();
 #endif
   IOLog ("ArmDTPlatform: registered platform cpus=%u arm-io=%u devices=%u nvram-proxy=%u\n",
          cpuCount, busCount, armdt_platform_device_count, armdt_platform_nvram_proxy);
   registerService ();
-#if XNU_PONG_ADRENO_PLATFORM
+#if XNU_DITING_ADRENO_PLATFORM
   pong_adreno_start_optional();
 #endif
   return true;

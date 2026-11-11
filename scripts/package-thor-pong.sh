@@ -4,13 +4,13 @@
 #
 # Why this exists: `unixnu release` runs the shared kernel step, which hard-codes
 # scripts/build-xnu-4k-baseline.sh and its MACHINE_CONFIGS=BCM2837 (a Raspberry Pi
-# machine config). This board's XNU patches only provide config/MASTER.arm64.pong
-# (MACHINE_CONFIGS=PONG), so the shared step dies at `make installhdrs` with
+# machine config). This board's XNU patches only provide config/MASTER.arm64.diting
+# (MACHINE_CONFIGS=DITING), so the shared step dies at `make installhdrs` with
 # "Unsupported CURRENT_MACHINE_CONFIG BCM2837".
 #
 # The correct builder is the PongPlatform24 component recipe
 # (kits/PongPlatform24/build-with-runtime.py -> build-kernel.py -> build-xnu-ipados18.sh,
-# MACHINE_CONFIGS=PONG). `release` only ever runs that recipe inside build_archives(),
+# MACHINE_CONFIGS=DITING). `release` only ever runs that recipe inside build_archives(),
 # which is gated behind XNU_BUILD_ARCHIVES and, more fundamentally, runs *after* the
 # hard-coded baseline.sh bootstrap has already failed. So this script reproduces the
 # fixed `release` steps (deps, preflight, patches, build, pack) but swaps the kernel
@@ -19,7 +19,7 @@
 #
 # This mirrors the "Folding that into the shared step is open" note in board.toml
 # [kernel] and porting.toml's packaging area. It is expected to be replaced once the
-# shared kernel step learns to select PONG for this board.
+# shared kernel step learns to select DITING for this board.
 set -euo pipefail
 
 DEVICE=$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)
@@ -36,7 +36,7 @@ OS_PROFILE="${OS_PROFILE:-ipados-18.7.10-22H374}"
 # [package.defconfig] to the ci defconfig, which drops the Wi-Fi/backlight/Adreno
 # stages the public repository does not carry.
 BOARD=$(python3 -c "import sys,tomllib;print(tomllib.load(open(sys.argv[1],'rb'))['board']['name'])" "$DEVICE/board.toml")
-CONFIG_NAME="${PONG_CONFIG_NAME:-${BOARD}_ipados18_ci_defconfig}"
+CONFIG_NAME="${DITING_CONFIG_NAME:-${BOARD}_ipados18_ci_defconfig}"
 UEFI="${UNIXNU_UEFI:-$DEVICE/../uefi-pong}"
 JOBS="${JOBS:-3}"
 
@@ -60,12 +60,12 @@ u defconfig "$CONFIG_NAME"
 echo "=== step patches (assemble the build tree; applies the patch series) ==="
 u tree
 
-echo "=== step build: kernel (Pong component recipe, MACHINE_CONFIGS=PONG) ==="
+echo "=== step build: kernel (Pong component recipe, MACHINE_CONFIGS=DITING) ==="
 # The component catalog's build line for PongPlatform24 is:
 #   {component}/build-with-runtime.py --artifact-dir {out}/kernel --tree {tree}
 # {component} resolves to this repository's kits/PongPlatform24. build-with-runtime.py
 # builds in a source-only overlay and stages the aggregate at
-# $TREE/build/xnu/ios-obj/DEVELOPMENT_ARM64_PONG/mach.development.pong, which is exactly
+# $TREE/build/xnu/ios-obj/DEVELOPMENT_ARM64_DITING/mach.development.diting, which is exactly
 # the path [kernel.prelink] kernel names.
 python3 "$DEVICE/kits/PongPlatform24/build-with-runtime.py" \
   --artifact-dir "$WORK/kernel" \
@@ -92,7 +92,7 @@ echo "=== step pack: ADT via the local generator, flashable v4 image ==="
 # repacks the ADT (pong,ufs-*, touch, PMIC) and turns the payload into the PONGFAT1 envelope
 # the firmware accepts. finalize-pong-adt.py writes boot/pong-xnu-initial.img.
 FINALIZE_ARGS=(--work-dir "$WORK" --uefi "$UEFI" --unique-chip-id "${UNIXNU_UNIQUE_CHIP_ID:?}")
-if [ -n "${PONG_VOLUME_LAYOUT:-}" ]; then FINALIZE_ARGS+=(--volume-layout "$PONG_VOLUME_LAYOUT"); fi
+if [ -n "${DITING_VOLUME_LAYOUT:-}" ]; then FINALIZE_ARGS+=(--volume-layout "$DITING_VOLUME_LAYOUT"); fi
 python3 "$DEVICE/scripts/finalize-pong-adt.py" "${FINALIZE_ARGS[@]}"
 
 echo "=== packaging complete; products under $WORK ==="

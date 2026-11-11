@@ -187,7 +187,7 @@ jobs:
         with:
           # Fork of UniXNU at c96b299 with one added commit: the shared kernel step takes
           # MACHINE_CONFIGS from board.toml [kernel] machine_config instead of hardcoding
-          # BCM2837, which this board cannot build (its patches add MASTER.arm64.pong).
+          # BCM2837, which this board cannot build (its patches add MASTER.arm64.diting).
           # c96b299 is used rather than main because main HEAD points drivers/ArmCpu at
           # 2e11cda, which the submodule remote does not serve.
           repository: nagatoquin33/UniXNU
@@ -330,16 +330,16 @@ jobs:
       - name: preflight Wi-Fi compile
         env:
           UNIXNU_DEVICE: ${{ github.workspace }}/device
-          PONG_WIFI_SOURCE: ${{ github.workspace }}/linux
-          PONG_WIFI_SHARED: ${{ github.workspace }}/sheng/drivers/Ath12kWifi
-          PONG_WIFI_FIRMWARE: ${{ github.workspace }}/device/platform-firmware/wifi
-          PONG_HARDWARE_DTB: ${{ runner.temp }}/diting-live.dtb
+          DITING_WIFI_SOURCE: ${{ github.workspace }}/linux
+          DITING_WIFI_SHARED: ${{ github.workspace }}/sheng/drivers/Ath12kWifi
+          DITING_WIFI_FIRMWARE: ${{ github.workspace }}/device/platform-firmware/wifi
+          DITING_HARDWARE_DTB: ${{ runner.temp }}/diting-live.dtb
           # docs/guide/debugging: colour bars under the green DarwinBoot bar tell us how
           # far the kernel got; a reset once the MMU is on proves it passed that point.
           # 入口探针在这个内核上还没安装成功：patch-xnu-entry-probe.py 需要的填充区
           # (0xfffffff0074a6518) 在我们的核心里已被占用，脚本直接退出。
           # 先用 0 保持构建可用，等换到空闲段或改用串口再打开。
-          PONG_ENTRY_PROBE: "0"
+          DITING_ENTRY_PROBE: "0"
         run: |
           set -euo pipefail
           export PATH="/usr/local/opt/llvm/bin:/usr/local/opt/lld/bin:$PATH"
@@ -359,17 +359,17 @@ jobs:
         env:
           UNIXNU_UNIQUE_CHIP_ID: ${{ secrets.UNIXNU_UNIQUE_CHIP_ID }}
           GITHUB_TOKEN: ${{ github.token }}
-          PONG_ADRENO_FIRMWARE: ${{ runner.temp }}/adreno730
-          PONG_VOLUME_LAYOUT: ${{ runner.temp }}/volume-layout.json
+          DITING_ADRENO_FIRMWARE: ${{ runner.temp }}/adreno730
+          DITING_VOLUME_LAYOUT: ${{ runner.temp }}/volume-layout.json
           # The UFS storage imports are read from the decompressed 22H374 kernelcache the
           # deps step extracts; the device script's default is a workstation path.
-          PONG_KERNELCACHE: ${{ github.workspace }}/UniXNU/out/ipsw/22H374/kernelcache.decompressed
-          PONG_WIFI_FIRMWARE: ${{ github.workspace }}/device/platform-firmware/wifi
-          PONG_HARDWARE_DTB: ${{ runner.temp }}/diting-live.dtb
-          PONG_WIFI_SOURCE: ${{ github.workspace }}/linux
-          PONG_SHENG_ROOT: ${{ github.workspace }}/sheng
+          DITING_KERNELCACHE: ${{ github.workspace }}/UniXNU/out/ipsw/22H374/kernelcache.decompressed
+          DITING_WIFI_FIRMWARE: ${{ github.workspace }}/device/platform-firmware/wifi
+          DITING_HARDWARE_DTB: ${{ runner.temp }}/diting-live.dtb
+          DITING_WIFI_SOURCE: ${{ github.workspace }}/linux
+          DITING_SHENG_ROOT: ${{ github.workspace }}/sheng
           # the recipes resolve the shared ABI through diting_native_inputs, not sheng_root
-          PONG_WIFI_SHARED: ${{ github.workspace }}/sheng/drivers/Ath12kWifi
+          DITING_WIFI_SHARED: ${{ github.workspace }}/sheng/drivers/Ath12kWifi
         run: scripts/package.sh --os "${{ inputs.os }}" --uefi ../uefi-pong
       - name: v4 container
         # docs/porting/packaging.md stops at boot/boot.img (header v0). The flashable image the

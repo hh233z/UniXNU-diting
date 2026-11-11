@@ -6,12 +6,12 @@
  extern "C" bool pong_scanout_quarantined(void);
 +extern "C" void pong_scanout_idle(void);
  #endif
- #if XNU_PONG_BACKLIGHT
+ #if XNU_DITING_BACKLIGHT
  extern "C" void pong_backlight_start(IOService *display);
 @@ -1038,6 +1039,8 @@
  	 * No CPU writes may race an outstanding GPU copy after a timeout. */
  	bool gpuFrame=false;
- #if XNU_PONG_ADRENO_PLATFORM
+ #if XNU_DITING_ADRENO_PLATFORM
 +	if(!swapWord(swap,SWAP_SURFACE(0)) && !swapWord(swap,SWAP_SURFACE(1)) &&
 +	   !swapWord(swap,SWAP_SURFACE(2)) && !swapWord(swap,SWAP_SURFACE(3)))pong_scanout_idle();
  	if(pong_scanout_quarantined()){IOLockUnlock(fLock);return kIOReturnNotReady;}

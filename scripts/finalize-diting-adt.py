@@ -196,7 +196,7 @@ def main():
         command += ['--userdata-first-lba', hex(first), '--userdata-last-lba', hex(last)]
     if root_uuid:
         command += ['--root-match-volume-uuid', root_uuid]
-    environment = dict(os.environ, PONG_HARDWARE_DTB=str(dtb))
+    environment = dict(os.environ, DITING_HARDWARE_DTB=str(dtb))
     if args.uefi:
         environment['UNIXNU_UEFI'] = str(args.uefi.resolve())
     subprocess.run(command, cwd=device, check=True, env=environment)

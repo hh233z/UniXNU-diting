@@ -42,7 +42,7 @@ static unsigned parents_ready,attempted;
 static void record(const char *phase,unsigned result,uint64_t a=0,uint64_t b=0)
 {
     char text[240];int n=snprintf(text,sizeof(text),
-        "PONG ADRENO: %s result=%u a=0x%llx b=0x%llx\n",phase,result,a,b);
+        "DITING ADRENO: %s result=%u a=0x%llx b=0x%llx\n",phase,result,a,b);
     if(n>0){IOLog("%s",text);pong_ramoops_diagnostic_write(text,n<(int)sizeof(text)?n:(int)sizeof(text)-1);}
 }
 static bool map(Mapping &m,uint64_t physical,size_t bytes)
@@ -331,7 +331,7 @@ static int cp_write(void *,uint32_t reg,uint32_t value)
 }
 static void run(void *,wait_result_t)
 {
-#if defined(PONG_GUEST_22H374)
+#if defined(DITING_GUEST_22H374)
     unsigned power_level=0; // Pong DT maximum: 900 MHz, paired DDR level11.
 #else
     unsigned power_level=PongAdrenoBootPowerLevel;

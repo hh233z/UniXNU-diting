@@ -7,8 +7,8 @@ the file it writes as the kernel to prelink.
 
 Two things the shared step cannot do for this board:
 
-* Machine config. The aggregate is compiled with MACHINE_CONFIGS=PONG
-  (config/MASTER.arm64.pong, added by patches/xnu-ipados18); the shared step
+* Machine config. The aggregate is compiled with MACHINE_CONFIGS=DITING
+  (config/MASTER.arm64.diting, added by patches/xnu-ipados18); the shared step
   compiles the arch profile's BCM2837 machine config.
 * Build tree. The device builder links drivers/, kits/ and package/ into the
   tree it builds in, and the shared step's tree already has real directories
@@ -26,7 +26,7 @@ from pathlib import Path
 import tomllib
 
 HERE = Path(__file__).resolve().parent
-KERNEL_RELATIVE = Path('build/xnu/ios-obj/DEVELOPMENT_ARM64_PONG/mach.development.pong')
+KERNEL_RELATIVE = Path('build/xnu/ios-obj/DEVELOPMENT_ARM64_DITING/mach.development.diting')
 
 
 def local_inputs(device):
@@ -128,7 +128,7 @@ def main():
         shared.parent / 'device-tree' if shared else device / 'build/device-tree')
     tree.mkdir(parents=True, exist_ok=True)
     dtb = hardware_dtb(device, tree, args.hardware_dtb)
-    env = dict(os.environ, PONG_BUILD_TREE=str(tree), PONG_HARDWARE_DTB=str(dtb),
+    env = dict(os.environ, DITING_BUILD_TREE=str(tree), DITING_HARDWARE_DTB=str(dtb),
                UNIXNU_DEVICE=str(device))
     command = [sys.executable, str(device / 'scripts/build-diting-profile-kernel.py'),
                '--source', str(device), '--artifact-dir', str(args.artifact_dir.resolve()),
@@ -151,19 +151,19 @@ def main():
         staged = target
     else:
         staged = produced
-    if os.environ.get('PONG_ENTRY_PROBE', '0') == '1':
+    if os.environ.get('DITING_ENTRY_PROBE', '0') == '1':
         # docs/guide/debugging: a patched kernel colours the screen under the green
         # DarwinBoot bar (blue = kernel entry with the MMU off, magenta = just before it
         # is enabled) and can reset once the MMU is on, so a hang past the handoff still
         # tells us how far execution got.
         probe = device / 'scripts/patch-xnu-entry-probe.py'
         if not probe.is_file():
-            raise SystemExit(f'{probe} missing: PONG_ENTRY_PROBE needs the entry probe script')
+            raise SystemExit(f'{probe} missing: DITING_ENTRY_PROBE needs the entry probe script')
         probe_args = ['--panic-screen']
-        if os.environ.get('PONG_ENTRY_PROBE_NO_RESET', '0') == '1':
+        if os.environ.get('DITING_ENTRY_PROBE_NO_RESET', '0') == '1':
             probe_args.append('--no-reset')
         else:
-            probe_args += ['--reset-delay', os.environ.get('PONG_ENTRY_PROBE_RESET_DELAY', '6')]
+            probe_args += ['--reset-delay', os.environ.get('DITING_ENTRY_PROBE_RESET_DELAY', '6')]
         print(json.dumps({'entry_probe': str(staged)}), flush=True)
         subprocess.run([sys.executable, str(probe), str(staged), *probe_args], check=True)
     print(json.dumps({'aggregate': str(produced), 'staged': str(staged),

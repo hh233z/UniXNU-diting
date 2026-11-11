@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Stage the audited PONG Mach-O with DarwinBoot24 in the qualified boot image.
+"""Stage the audited DITING Mach-O with DarwinBoot24 in the qualified boot image.
 
 This creates an initial XNU bring-up image, without Apple prelink or a root OS.
 It never calls adb or fastboot and does not modify the template firmware.
@@ -26,8 +26,8 @@ import diting_paths
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--cpus', type=int, choices=range(1, 9), default=1)
-    parser.add_argument('--kernel', type=Path, default=DEVICE / 'out/ipados18/kernel/mach.development.pong')
-    parser.add_argument('--result', type=Path, default=DEVICE / 'out/ipados18/kernel/PONG_BUILD_RESULT.json')
+    parser.add_argument('--kernel', type=Path, default=DEVICE / 'out/ipados18/kernel/mach.development.diting')
+    parser.add_argument('--result', type=Path, default=DEVICE / 'out/ipados18/kernel/DITING_BUILD_RESULT.json')
     parser.add_argument('--loader', type=Path, default=DEVICE / 'mac-build/darwinboot24/DarwinBoot24.efi')
     parser.add_argument('--template', type=Path, default=diting_paths.boot_template())
     parser.add_argument('--output-dir', type=Path, default=DEVICE / 'out/ipados18/boot')
@@ -74,10 +74,10 @@ def main():
             recorded_sha = recorded.get('sha256')
             if recorded_sha and recorded_sha != hashlib.sha256(kernel).hexdigest():
                 raise ValueError('Kernel sha256 does not match the Darwin 24 build result')
-        elif (report.get('machine_config') != 'PONG' or
+        elif (report.get('machine_config') != 'DITING' or
                 (report.get('kernel') or {}).get('sha256') != hashlib.sha256(kernel).hexdigest() or
                 (report.get('unstripped_kernel') or {}).get('raspberry_pi_hardware_symbols')):
-            raise ValueError('Kernel does not match the audited PONG result')
+            raise ValueError('Kernel does not match the audited DITING result')
     if args.root_match_volume_uuid and not args.skip_image_verification:
         prelink = report.get('prelink')
         if not prelink:
@@ -158,7 +158,7 @@ def main():
         'type = "xnu"\npath = "kernel.macho"\n' + initrd_line + 'args = "' + boot_args + '"\n')
     fat = out / 'payload-fat.img'
     env = dict(os.environ, MTOOLS_SKIP_CHECK='1', TZ='UTC')
-    subprocess.run(['mformat', '-C', '-T', str(args.fat_mib * 2048), '-v', 'PONGXNU18', '-i', str(fat), '::'], check=True, env=env)
+    subprocess.run(['mformat', '-C', '-T', str(args.fat_mib * 2048), '-v', 'DITINGXNU18', '-i', str(fat), '::'], check=True, env=env)
     subprocess.run(['mcopy', '-i', str(fat), '-s', str(out / 'stage/EFI'), '::/'], check=True, env=env)
     raw = fat.read_bytes()
     header = bytearray(4096)

@@ -38,7 +38,7 @@ Pong 是 TFA98xx 双功放（I2C `a94000`，地址 `34/35`）及 WCD938x，不�
 
 `scripts/build-pong-power-native.py` 产生 `libPongPower.a`，由主构建脚本 force-load，`ArmDTPlatform` 在 CPU nubs 已发布后调用。电池 metaclass 延后注册，避免 prelink 静态初始化顺序依赖。
 
-`CONFIG_XNU_PONG_POWER`独立编译和启动电源/ADSP/音频。打包器只在该开关启用时添加 `pong_adsp=2`、`pong_audio=2`。HAL由 `refresh_runtime --enable-audio-hal` 或 `refresh_ui --enable-audio-hal` 安装为现代 `.driver`；工厂提供真实接口，实际端点Ready后才枚举设备。内核仅提供control/output两个内存类型和输出start/stop，不创建capture环。本机 `adsp.mbn` 通过 `refresh_runtime --power-firmware DIR` 放入 `/pong/firmware/adsp.mbn`，也可用 `pong_adsp-fw=/absolute/directory` 选择显式目录；固件不放入Git。
+`CONFIG_XNU_DITING_POWER`独立编译和启动电源/ADSP/音频。打包器只在该开关启用时添加 `pong_adsp=2`、`pong_audio=2`。HAL由 `refresh_runtime --enable-audio-hal` 或 `refresh_ui --enable-audio-hal` 安装为现代 `.driver`；工厂提供真实接口，实际端点Ready后才枚举设备。内核仅提供control/output两个内存类型和输出start/stop，不创建capture环。本机 `adsp.mbn` 通过 `refresh_runtime --power-firmware DIR` 放入 `/pong/firmware/adsp.mbn`，也可用 `pong_adsp-fw=/absolute/directory` 选择显式目录；固件不放入Git。
 
 RPMh和APPSSMMU lease由独立 `PongPlatformResources` 提供，不再定义在无线对象内。GPU/Wi-Fi/音频共享唯一 `libPongSmmu4K.a`；SID1801使用与其他客户端相同的禁用context编程、回读和TLBSYNC顺序。公开来源及私有输入路径见 `configs/pong-native-sources.toml` 和 `local.toml.example`。详见[源码审计](https://github.com/Chengdong-Yu/UniXNU-pong/blob/main/migration/ipados18/services74-source-audit.md)；HAL加载和服务发布仍不是实际PCM发声证据。
 

@@ -105,7 +105,7 @@ def main():
         result = subprocess.run(command, env=env, stdout=log, stderr=subprocess.STDOUT)
     if result.returncode:
         raise SystemExit('Turnip configure failed: '+str(out/'configure.log'))
-    build = [diting_paths.tool('ninja', 'PONG_NINJA', ('/opt/local/bin/ninja',)), '-C', str(out), '-j6']
+    build = [diting_paths.tool('ninja', 'DITING_NINJA', ('/opt/local/bin/ninja',)), '-C', str(out), '-j6']
     with (out/'build.log').open('w') as log:
         result = subprocess.run(build, env=env, stdout=log, stderr=subprocess.STDOUT)
     if result.returncode:

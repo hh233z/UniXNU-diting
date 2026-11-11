@@ -56,7 +56,7 @@ with LogicalImage(a.bundle) as source:
  for i in bands:
   if i in state['completed_bands']:continue
   relative=i*block;amount=min(block,size-relative);source.seek(relative)
-  marker=f'PONG_DATA_BAND_{i}_{amount}'
+  marker=f'DITING_DATA_BAND_{i}_{amount}'
   command=f'set -o pipefail; gzip -dc | dd of=/dev/block/by-name/userdata bs=4096 seek={(a.offset+relative)//4096} conv=notrunc,fsync status=none && printf "%s\\n" {marker}'
   writer=subprocess.Popen(cmd+['shell','-T',command],stdin=subprocess.PIPE,stdout=subprocess.PIPE,stderr=subprocess.PIPE)
   try:

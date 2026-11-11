@@ -31,7 +31,7 @@ def main():
     source = DEVICE / 'drivers/ArmCpu/ArmCpu.cpp'
     framework = tree / '.cache/fakeroot/System/Library/Frameworks/Kernel.framework/Versions/A'
     if not (framework / 'PrivateHeaders/IOKit/IOPlatformExpert.h').exists():
-        raise SystemExit('First build the native PONG kernel SDK')
+        raise SystemExit('First build the native DITING kernel SDK')
     env = dict(os.environ, DEVELOPER_DIR=str(DEVELOPER))
     sdk = subprocess.check_output(['xcrun', '--sdk', 'iphoneos', '--show-sdk-path'], text=True, env=env).strip()
     target = 'arm64-apple-ios' + os.environ.get('UNIXNU_IOS_TARGET', '18.0')
@@ -41,7 +41,7 @@ def main():
         '-isysroot', sdk, '-mkernel', '-ffreestanding', '-fno-builtin', '-fno-exceptions',
         '-fno-rtti', '-fno-stack-check', '-std=gnu++17', '-fblocks', '-O2',
         '-DKERNEL=1', '-DKERNEL_PRIVATE=1', '-DXNU_KERNEL_PRIVATE=1',
-        '-DARM64_BOARD_CONFIG_PONG=1', '-DPONG_DARWIN_MAJOR=' + darwin, '-Xclang', '-target-feature', '-Xclang', '+pan',
+        '-DARM64_BOARD_CONFIG_DITING=1', '-DDITING_DARWIN_MAJOR=' + darwin, '-Xclang', '-target-feature', '-Xclang', '+pan',
         '-I' + str(framework / 'PrivateHeaders'), '-I' + str(framework / 'Headers'),
         '-Wno-deprecated-declarations', '-c', str(source), '-o', str(obj)]
     result = subprocess.run(command, capture_output=True, text=True, env=env)

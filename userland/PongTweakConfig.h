@@ -5,15 +5,15 @@
  * Caller provides POSIX stat/open/read/close and string declarations.
  */
 #pragma once
-#define PONG_TWEAK_LIBRARY "/usr/lib/ellekit/libinjector.dylib"
-#define PONG_TWEAK_RULE "; " PONG_TWEAK_LIBRARY
+#define DITING_TWEAK_LIBRARY "/usr/lib/ellekit/libinjector.dylib"
+#define DITING_TWEAK_RULE "; " DITING_TWEAK_LIBRARY
 static int pong_tweak_config(char *out,size_t capacity,const char *base)
 {
     size_t used=strlen(base);
     if(used>=capacity)return -1;
     memcpy(out,base,used+1);
     struct stat st;
-    if(stat(PONG_TWEAK_LIBRARY,&st) || (st.st_mode&S_IFMT)!=S_IFREG || st.st_uid || (st.st_mode&022))return 0;
+    if(stat(DITING_TWEAK_LIBRARY,&st) || (st.st_mode&S_IFMT)!=S_IFREG || st.st_uid || (st.st_mode&022))return 0;
     // Recovery switch disables only third-party tweaks, preserving the
     // board's UI/runtime adapters. ElleKit also honors its native safe mode.
     if(!stat("/var/mobile/.eksafemode",&st) || !stat("/var/.pong-disable-tweaks",&st))return 0;
@@ -23,7 +23,7 @@ static int pong_tweak_config(char *out,size_t capacity,const char *base)
     if(fstat(fd,&st) || (st.st_mode&S_IFMT)!=S_IFREG || st.st_uid || (st.st_mode&022) || st.st_size<=0 || st.st_size>255){close(fd);return -1;}
     ssize_t n=read(fd,text,sizeof(text)-1);close(fd);
     if(n!=st.st_size)return -1;text[n]=0;
-    const char rule[]=PONG_TWEAK_RULE;
+    const char rule[]=DITING_TWEAK_RULE;
     if(used+sizeof(rule)>=capacity)return -1;
     memcpy(out+used,rule,sizeof(rule));used+=sizeof(rule)-1;
     unsigned count=0;

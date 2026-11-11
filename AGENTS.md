@@ -25,7 +25,7 @@
 - Preserve community component identity DitingPlatform24. Do not label the A730/QCA6490 implementation as the upstream A740/WCN7850 driver.
 - Publish source/configuration/porting records only. Apple restore binaries, generated ABI dumps, firmware, userdata, credentials and build artifacts stay local.
 - Record host build results separately from device results in porting.toml. A successful build or Fastboot command is not evidence of working Wi-Fi, PCM audio or buttons.
-- Keep XNU_PONG_POWER independent of Wi-Fi. Shared RPMh/SMMU locks belong to PongPlatformResources, and Darwin24 links native4K helpers once through libPongSmmu4K.a.
+- Keep XNU_DITING_POWER independent of Wi-Fi. Shared RPMh/SMMU locks belong to PongPlatformResources, and Darwin24 links native4K helpers once through libPongSmmu4K.a.
 - Native public prerequisites are pinned in configs/diting-native-sources.toml. Use scripts/fetch-diting-native-sources.py and ignored local.toml paths; do not reintroduce host volume paths into recipes.
 
 # Diting packaging status (2026-11-06)
@@ -67,10 +67,10 @@
 ## Target
 - Device: Redmi K50 Ultra `diting`, SM8475 (Cape family), Android 16, bootloader **unlocked**
   (`fastboot getvar unlocked` = yes; the `ro.boot.flash.locked=1` property is spoofed), active slot `_a`.
-- Target OS: iPadOS 18.7.10 / 22H374 / Darwin 24, built as `DEVELOPMENT_ARM64_PONG` (MACHINE_CONFIGS=PONG).
+- Target OS: iPadOS 18.7.10 / 22H374 / Darwin 24, built as `DEVELOPMENT_ARM64_DITING` (MACHINE_CONFIGS=DITING).
 
 ## What is proven
-- CI `package` runs green end to end: kernel links (`mach.development.pong` ~17.8 MB), payload, three containers.
+- CI `package` runs green end to end: kernel links (`mach.development.diting` ~17.8 MB), payload, three containers.
 - Diting's own UEFI (`ditingPkg`, RELEASE, 3,145,728 B `SILICIUM_UEFI.fd`) builds in a Linux job and is packed
   into `boot/pong-unixnu-uefi.img` (kernel slot = gzip(112 B BootShim + FD) + DTB, ramdisk = PONGFAT1 envelope).
 - On hardware, `fastboot boot` of that image reaches the UniXNU menu, renders at 1220x2712, finds block IO
@@ -81,7 +81,7 @@
    Next: firmware log via `Tools -> Advanced Logger` (QR, OneSend) and/or a real UART.
 2. Wi-Fi: sources compile locally (`libPongAth11k.a`, 2,981 symbols) but CI stops in
    `build-diting-wifi-native.py` because the build reads `device-tree/build/pong/hardware.dtb`, not
-   `PONG_HARDWARE_DTB`. The live tree (`/sys/firmware/fdt`) plus `platform-firmware/dtb-fixups/apply.py`
+   `DITING_HARDWARE_DTB`. The live tree (`/sys/firmware/fdt`) plus `platform-firmware/dtb-fixups/apply.py`
    provides PCIe/PHY/GPIO; the refgen clock is at `freq[10]` with `clock_names[8]` = `pcie_phy_refgen_clk`.
 3. Wi-Fi firmware is checked in under `platform-firmware/wifi/` (amss.bin 5,470,128, amss20.bin 5,296,128,
    m3.bin 266,684, regdb.bin 24,278), pulled from `/vendor/firmware_mnt/image/qca6490` on the device.
@@ -91,7 +91,7 @@
   SILICIUM_UEFI.fd + BootShim.bin + mkbootimg.py + diting.toml) and `package` (macos-15-intel, needs firmware).
 - Before pushing, run `scripts/precheck-workflow.py` (bash -n on every run block, duplicate env keys,
   and every `--flag` against the script it targets). Both mistakes that broke earlier runs would be caught.
-- `PONG_HARDWARE_DTB` is only meaningful for the Wi-Fi step; the kernel still uses the device-tree component's
+- `DITING_HARDWARE_DTB` is only meaningful for the Wi-Fi step; the kernel still uses the device-tree component's
   `hardware.dtb`.
 
 ## Artifacts
@@ -227,7 +227,7 @@ stream 0xe0, SPI 265, UFS compatible `qcom,sm8475-ufshc` — verify against the 
   exactly what the driver's `compatible()` accepts, so matching is not the blocker.
 - Swapping in the supported ShengUfs component is **not** a board.toml edit: `[kernel]
   builder_component = DitingPlatform24` makes the core skip `build_archives()` entirely, the kit recipe
-  rebuilds `drivers/NativeUfs` unconditionally from `PONG_NATIVE_DRIVER_SOURCE` and unlinks any alias,
+  rebuilds `drivers/NativeUfs` unconditionally from `DITING_NATIVE_DRIVER_SOURCE` and unlinks any alias,
   and the archive the kernel links is hard-coded at three sites in the **merged** copy
   `kits/DitingPlatform24/build-support/merged-scripts/build-xnu-ipados18.sh` (the repo copy is not what
   runs). A real switch needs a `UFS_DRIVER`/`UFS_ARCHIVE` parameter, a `--driver` option in
@@ -251,9 +251,9 @@ stream 0xe0, SPI 265, UFS compatible `qcom,sm8475-ufshc` — verify against the 
 - The image booted is `pong-unixnu-uefi.img` from run 42509554099 (sha256 F2EDDF7F…, 101,191,680 B),
   built from 1c04458. It contains `pong_ufs_stall=1`.
 - Expected panel states and what each means:
-  * a `PONG_UFS ...` report with gdsc/axi/ahb/cap/ver/hcs/hce lines and the boot stops → the driver
+  * a `DITING_UFS ...` report with gdsc/axi/ahb/cap/ver/hcs/hce lines and the boot stops → the driver
     matched but the transport or the power/clocks gate failed; the values name the failing gate;
-  * `PONG_UFS PROBE FAILED: <property> ...` → a board property check failed, the name is the answer;
+  * `DITING_UFS PROBE FAILED: <property> ...` → a board property check failed, the name is the answer;
   * no stall and the root-mount panic returns → the transport succeeded and the failure moved to the
     root volume (UUID or manifest), which is a different problem;
   * the menu again → the payload never handed off.
@@ -308,11 +308,11 @@ uint32 size
 ```
 
 The kernel side is `osfmk/arm64/pong_ramoops_console.h` from `patches/xnu-ipados18`:
-`pong_ramoops_console_init()` maps `CONFIG_XNU_PONG_RAMOOPS_BASE` (0xa7000000 in both diting
-defconfigs) plus 4 MiB, writes the magic and a `PONG DIAGNOSTIC v92` line, and every later console
+`pong_ramoops_console_init()` maps `CONFIG_XNU_DITING_RAMOOPS_BASE` (0xa7000000 in both diting
+defconfigs) plus 4 MiB, writes the magic and a `DITING DIAGNOSTIC v92` line, and every later console
 write is mirrored into the ring.
 
-Consequence: the console of a hung boot — including every `PONG_UFS` line — should survive in DRAM
+Consequence: the console of a hung boot — including every `DITING_UFS` line — should survive in DRAM
 and be readable from the firmware on the **next** boot, without a screen and without a QR scan of the
 panic screen. The one observation so far (`RAMOOPS: sig=0x1400382E size=0x0`) predates any kernel run
 that had the mirror enabled, so the channel is untested rather than broken.
@@ -395,7 +395,7 @@ The panel from the stall run reported:
 ```
 GPT/read lba=2f8a00 userdata=2f8a00..3adf3fa magic=474e4853 544f4f52 manifest=3
 WINDOWS found=0 prepared=0 published=0 bytes=0 policies=0 verify=ffffffff
-PONG_UFS: no media published; continue boot
+DITING_UFS: no media published; continue boot
 ```
 
 So the UFS path itself works: GPT parsed, the first userdata block was read, and its `SHNGROOT` magic
@@ -438,12 +438,12 @@ Data 8 GiB GPT+APFS at 0x285000000; image 19,411,238,912 bytes) written from the
 Panel evidence:
 
 ```
-PONG_UFS: OS root binding UUID b07df049-7ad9-47b5-9f8f-9ee728056398 bound to OS UFS window /dev/disk2s1
-PONG: APFS: diting
-PONG_UFS: wait for SystemOS UUID D44F8E57-4171-4C6B-B21A-1808F6EF2E20, timeout=5s
-PONG_UFS: SystemOS UUID wait timed out
-PONG_UFS: SystemOS media identity published on /dev/disk2s1
-PONG DEVELOPMENT: scratch Data mount SKIP error=-6 stage=0
+DITING_UFS: OS root binding UUID b07df049-7ad9-47b5-9f8f-9ee728056398 bound to OS UFS window /dev/disk2s1
+DITING: APFS: diting
+DITING_UFS: wait for SystemOS UUID D44F8E57-4171-4C6B-B21A-1808F6EF2E20, timeout=5s
+DITING_UFS: SystemOS UUID wait timed out
+DITING_UFS: SystemOS media identity published on /dev/disk2s1
+DITING DEVELOPMENT: scratch Data mount SKIP error=-6 stage=0
 Pong init: Loading helper /pong/init
 Pong init: helper exec result=2
 panic: Pong init helper exec failed, errno 2 @kern_exec.c:7067
@@ -484,7 +484,7 @@ root tree really lacks the file or the exec is rejected for another reason.
 
 ## 2026-11-09 23:55 — the init path whitelist, and the Data mount is SKIP not panic
 
-`patches/xnu-ipados18/0001-pong-darwin24.patch` (load_init_program):
+`patches/xnu-ipados18/0001-diting-darwin24.patch` (load_init_program):
 
 ```c
 if (PE_parse_boot_argn("pong_init_path", pong_init_path, sizeof(pong_init_path))) {
@@ -546,7 +546,7 @@ only the Data window writable.
 window only when the block reports `PongWritable` **and** the IOMedia reports writable, so this flag is
 exactly the gate that produced `writable UFS Data UUID unavailable` with the read-only build.
 
-Watching for: `PONG APFS: UUID ... bound to Data UFS window`, `scratch Data mount` no longer SKIP, and
+Watching for: `DITING APFS: UUID ... bound to Data UFS window`, `scratch Data mount` no longer SKIP, and
 whether the `posix_spawn(...) error 0xd - Permission denied` loop stops.
 
 ## 2026-11-10：服务启动权限诊断
@@ -589,20 +589,20 @@ The first attempt shipped the skeleton as its own follow-up patch
 patch shifts the line numbers, and `git apply` only searches a short distance from the hint. A second
 attempt anchored at line 1 failed the same way.
 
-Fix: `scripts/gen-var-skeleton.py --insert-into patches/xnu-ipados18/0001-pong-darwin24.patch` inserts the
+Fix: `scripts/gen-var-skeleton.py --insert-into patches/xnu-ipados18/0001-diting-darwin24.patch` inserts the
 generated table and loop into the base patch itself, where the context is guaranteed to match, and
 `scripts/recount-patch.py` recomputes every hunk header from its body afterwards. Build 42859003034
 (4147d47) is green, so the kernel compiles with the new code.
 
 The code creates the 87 directories at depth 2 (app bundles excluded) right after the Data volume is
 mounted at `/private/var`, using the `mkdir`/`chmod`/`chown` syscall wrappers already proven by the Data
-tmp experiment, and prints `PONG APFS: var skeleton created=%d failed=%d`.
+tmp experiment, and prints `DITING APFS: var skeleton created=%d failed=%d`.
 
 ## 2026-11-11 02:15 — skeleton build booted (verification pending)
 
 Build 42859003034 (4147d47) produced image sha C5D58F80; `fastboot boot` OKAY on 9e0c2b55 and the phone
 left adb/fastboot, i.e. the payload is running. The panel is the only witness so far: the expected line
-is `PONG APFS: var skeleton created=87 failed=0`, and the next questions are whether the `/tmp` ENOENT
+is `DITING APFS: var skeleton created=87 failed=0`, and the next questions are whether the `/tmp` ENOENT
 and the persona/usermanagerd failures changed.
 
 ## 2026-11-11 02:20 — launchd boot task inspected (read-only)
@@ -670,7 +670,7 @@ the seed marker, `keybags 0700`, `mobile 0711`, `db`, `containers`, `preferences
 Pairing for the next boot: build 42859003034 (4147d47) image `C5D58F80`,
 `build-work/greenI2/.../boot/pong-unixnu-uefi.img`. Its payload args have no `pong_init_path` and do
 carry `pong_ufs_readwrite=1 pong_ufs_stall=1 pong_exec_diag=1 applog=1`; the ADT has B07DF049 /
-4A77BA00 and mounts SystemOS at `/private/preboot`. The PONG init list starts at `/sbin/launchd`,
+4A77BA00 and mounts SystemOS at `/private/preboot`. The DITING init list starts at `/sbin/launchd`,
 which this userland replaces with the wrapper, so the native path runs the Pong init and execs
 `launchd.ios`. No `pong_init_path` and no SystemOS union (6ec0b96) needed — that merged build is still
 unbuilt/unproven and must not be conflated with this pairing.
@@ -694,7 +694,7 @@ in recovery (48–64 device blocks, 192–256 KiB per window, no full-image read
   337CF716-F62B-446B-B959-4A5F12A7701C. Matches XNU_OWNER_DATA_VOLUME_UUID.
 
 The built payload embeds those three strings (plus `/private/preboot` and the DYLD_* environment), and
-the `PONG APFS: writable UFS Data UUID unavailable` literal proves the UFS Data branch is compiled,
+the `DITING APFS: writable UFS Data UUID unavailable` literal proves the UFS Data branch is compiled,
 not the md0/RAM fallback. `native_owner_data_prepare` mounts "apfs" at "/private/var" with flags 0
 and then rejects the mount if it is MNT_RDONLY, so `pong_ufs_readwrite=1` is required and present.
 That code does not consult the APFS volume role or volume group; both the OS and Data images carry a
@@ -737,7 +737,7 @@ work is the boot itself, not the inputs.
 - 60 s after boot neither adb nor fastboot had a device on USB, so the panel is the only witness.
   Phase 6 scoring waits for the user's photo; do not treat OKAY as a hardware pass.
 - A screen-line table for that photo now sits in `D:\ai\diting\交接-2026-11-11-准备用户态.md`
-  (strings quoted from `drivers/NativeUfs` and `patches/xnu-ipados18/0001-pong-darwin24.patch`).
+  (strings quoted from `drivers/NativeUfs` and `patches/xnu-ipados18/0001-diting-darwin24.patch`).
 
 ## 2026-11-11 09:50 — the cache loader panic; fix was already recorded
 

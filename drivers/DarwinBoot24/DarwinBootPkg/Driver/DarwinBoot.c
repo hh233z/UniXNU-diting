@@ -199,10 +199,10 @@ ParseKernel (CONST UINT8 *Data, UINTN Size, KERNEL *Kernel)
 
 STATIC UINTN mAudioDmaOffset = MAX_UINTN;
 #include "UsbOwnership.h"
-#define PONG_RAM_MAX 64
-#define PONG_RAM_WIRE_SIZE (32 + PONG_RAM_MAX * 16)
+#define DITING_RAM_MAX 64
+#define DITING_RAM_WIRE_SIZE (32 + DITING_RAM_MAX * 16)
 STATIC UINTN mRamWireOffset = MAX_UINTN, mRamAllowedOffset = MAX_UINTN, mRamAllowedCount;
-typedef struct { UINT64 Start, Size; } PONG_RAM_BANK;
+typedef struct { UINT64 Start, Size; } DITING_RAM_BANK;
 
 STATIC
 BOOLEAN
@@ -253,11 +253,11 @@ AdtNode (CONST UINT8 *Data, UINTN Size, UINTN *Offset, UINTN Depth, UINTN Parent
       Candidate = *Offset;
     }
     if (AsciiStrCmp ((CONST CHAR8 *)(Data + *Offset - 36), "darwinboot-memory-ranges") == 0) {
-      if ((mRamWireOffset != MAX_UINTN) || (RamCandidate != MAX_UINTN) || (Length != PONG_RAM_WIRE_SIZE)) { return FALSE; }
+      if ((mRamWireOffset != MAX_UINTN) || (RamCandidate != MAX_UINTN) || (Length != DITING_RAM_WIRE_SIZE)) { return FALSE; }
       RamCandidate = *Offset;
     }
     if (AsciiStrCmp ((CONST CHAR8 *)(Data + *Offset - 36), "pong-allocatable-ram") == 0) {
-      if ((mRamAllowedOffset != MAX_UINTN) || (AllowedCandidate != MAX_UINTN) || !Length || Length % 16 || Length / 16 > PONG_RAM_MAX) { return FALSE; }
+      if ((mRamAllowedOffset != MAX_UINTN) || (AllowedCandidate != MAX_UINTN) || !Length || Length % 16 || Length / 16 > DITING_RAM_MAX) { return FALSE; }
       AllowedCandidate = *Offset;
       AllowedCount = Length / 16;
     }
@@ -509,7 +509,7 @@ AllocateWindow (KERNEL *Kernel, UINT64 WindowSize, EFI_PHYSICAL_ADDRESS *Address
 STATIC
 EFI_STATUS
 ClaimPongRam (CONST UINT8 *Tree, EFI_MEMORY_DESCRIPTOR *Map, UINTN MapSize, UINTN Stride,
-              PONG_RAM_BANK *Owned, UINTN *Count, CONST UINT64 Video[6])
+              DITING_RAM_BANK *Owned, UINTN *Count, CONST UINT64 Video[6])
 {
   UINTN Offset, I, J;
   UINT64 PoolStart = 0, PoolEnd = 0, Largest = 0;
@@ -568,14 +568,14 @@ ClaimPongRam (CONST UINT8 *Tree, EFI_MEMORY_DESCRIPTOR *Map, UINTN MapSize, UINT
       }
       while (Start < Stop) {
         UINT64 Address = Start, BytesNow = MIN (Stop - Start, SIZE_1GB);
-        if (*Count >= PONG_RAM_MAX) { Skipped++; break; }
+        if (*Count >= DITING_RAM_MAX) { Skipped++; break; }
         Status = gBS->AllocatePages (AllocateAddress, EfiLoaderData, EFI_SIZE_TO_PAGES (BytesNow), &Address);
         if (EFI_ERROR (Status)) { Skipped++; break; }
         // Coalesce adjacent leases without changing the primary bank. Keep
         // firmware calls bounded even when one descriptor exceeds 4 GiB.
         if (*Count > 1 && Owned[*Count - 1].Start + Owned[*Count - 1].Size == Address) {
           Owned[*Count - 1].Size += BytesNow;
-        } else { Owned[(*Count)++] = (PONG_RAM_BANK){Address, BytesNow}; }
+        } else { Owned[(*Count)++] = (DITING_RAM_BANK){Address, BytesNow}; }
         Start += BytesNow;
       }
     }
@@ -585,11 +585,11 @@ ClaimPongRam (CONST UINT8 *Tree, EFI_MEMORY_DESCRIPTOR *Map, UINTN MapSize, UINT
 }
 STATIC
 UINT64
-WritePongRam (UINT64 TreeAddress, PONG_RAM_BANK *Owned, UINTN Count)
+WritePongRam (UINT64 TreeAddress, DITING_RAM_BANK *Owned, UINTN Count)
 {
   UINT64 Total = 0;
   UINT8 *Wire = (UINT8 *)(UINTN)(TreeAddress + mRamWireOffset);
-  ZeroMem (Wire, PONG_RAM_WIRE_SIZE);
+  ZeroMem (Wire, DITING_RAM_WIRE_SIZE);
   WriteUnaligned64 ((UINT64 *)Wire, 1);
   WriteUnaligned64 ((UINT64 *)(Wire + 8), Count);
   for (UINTN I = 0; I < Count; I++) {
@@ -651,7 +651,7 @@ Boot (
   UINTN                           Attempt;
   CHAR8                           CommandLine[DARWIN_BOOT_LINE_LENGTH];
   UINT64                          Video[6];
-  PONG_RAM_BANK                   Owned[PONG_RAM_MAX];
+  DITING_RAM_BANK                   Owned[DITING_RAM_MAX];
   UINTN                           OwnedCount = 0;
   CONST CHAR16                    *Stage = L"REQUEST";
   CHAR16                          Failure[96];
@@ -828,7 +828,7 @@ Boot (
   if (mRamWireOffset != MAX_UINTN && AsciiStrStr (CommandLine, "pong_ram_banks=0") == NULL) {
     Stage = L"EXTRA RAM";
     DiagDrawVideo (Stage, 0, Video);
-    Owned[0] = (PONG_RAM_BANK){Address, WindowSize}; OwnedCount = 1;
+    Owned[0] = (DITING_RAM_BANK){Address, WindowSize}; OwnedCount = 1;
     Status = ClaimPongRam ((CONST UINT8 *)(UINTN)TreeAddress, Map, MapSize, Stride, Owned, &OwnedCount, Video);
     if (EFI_ERROR (Status)) {
       // Contract validation precedes all extra allocations. A malformed

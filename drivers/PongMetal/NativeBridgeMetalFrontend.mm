@@ -761,7 +761,7 @@ static std::string quartzCoreCallers();
   handler(function,error);
  }});
 }
-#if PONG_GUEST_22H374
+#if DITING_GUEST_22H374
 // 22H374 Core Image uses the private pipeline-library entry, whose native
 // _MTLLibrary implementation forwards the library's functionCache. These
 // are compilation caches, not another shader library. Compile the requested
@@ -1447,7 +1447,7 @@ static char kUserDictionaryKey;
 
 - (id<MTLCommandQueue>)commandQueue {return (id<MTLCommandQueue>)_queue;}
 - (BOOL)retainedReferences {return YES;}
-#if PONG_GUEST_22H374
+#if DITING_GUEST_22H374
 // Actual 22H374 Metal encoding: v28@0:8r^I16I24, not NSUInteger count.
 - (void)setResponsibleTaskIDs:(const uint32_t *)identities count:(uint32_t)count {
  if(self.committed || (count && !identities) || count>4096) {
@@ -2432,7 +2432,7 @@ extern "C" id native_bridge_metal_open(const char *loader,const char *cache,uint
  // Normal UI draws must not unwind QuartzCore stacks, open/close an APFS
  // log and serialize every successful shader/pipeline creation. Keep all
  // failures; full journals remain available for a targeted capture.
- const char *trace=getenv("PONG_METAL_PIPELINE_TRACE");
+ const char *trace=getenv("DITING_METAL_PIPELINE_TRACE");
  gJournalVerbose=trace && !strcmp(trace,"1");
  char name[128]={};nmb_device_name(gDevice,name,sizeof name);gName=[NSString stringWithUTF8String:name];gRegistryID=registryID;
  // Report unmet reference-family rows; supportsFamily keeps the runtime's actual answer.

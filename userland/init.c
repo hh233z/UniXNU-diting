@@ -4,20 +4,20 @@
  */
 #include "mini.h"
 #include "PongTweakConfig.h"
-#ifndef PONG_NATIVE_APFS18
+#ifndef DITING_NATIVE_APFS18
 #error This init belongs to the native Darwin24 APFS recipe
 #endif
-#ifndef PONG_SYSTEM_VERSION
-#define PONG_SYSTEM_VERSION "18.7.10"
+#ifndef DITING_SYSTEM_VERSION
+#define DITING_SYSTEM_VERSION "18.7.10"
 #endif
-#ifndef PONG_SYSTEM_BUILD
-#define PONG_SYSTEM_BUILD "22H374"
+#ifndef DITING_SYSTEM_BUILD
+#define DITING_SYSTEM_BUILD "22H374"
 #endif
-#ifndef PONG_UI_LIBRARY_PATH
-#define PONG_UI_LIBRARY_PATH "/pong/libpong-ui18.dylib"
+#ifndef DITING_UI_LIBRARY_PATH
+#define DITING_UI_LIBRARY_PATH "/pong/libpong-ui18.dylib"
 #endif
-#ifndef PONG_UI_EXTRA_PROCESSES
-#define PONG_UI_EXTRA_PROCESSES ""
+#ifndef DITING_UI_EXTRA_PROCESSES
+#define DITING_UI_EXTRA_PROCESSES ""
 #endif
 
 /* Apple clang may lower zero-initialized aggregates to bzero even freestanding. */
@@ -398,10 +398,10 @@ prepare_device_identity(void)
 static void
 configure_ui_library(void)
 {
-    const char *path=PONG_UI_LIBRARY_PATH;
+    const char *path=DITING_UI_LIBRARY_PATH;
     /* 22H374 has audiomxd and no mediaserverd job. Keep its codec adapter
      * separate from the UI hooks and their framework dependencies. */
-    const char *base=PONG_UI_LIBRARY_PATH " SpringBoard backboardd InputUI containermanagerd containermanagerd_system Preferences MobilePhone Sileo contextstored SBRendererService PowerUIAgent wifid" PONG_UI_EXTRA_PROCESSES;
+    const char *base=DITING_UI_LIBRARY_PATH " SpringBoard backboardd InputUI containermanagerd containermanagerd_system Preferences MobilePhone Sileo contextstored SBRendererService PowerUIAgent wifid" DITING_UI_EXTRA_PROCESSES;
     struct stat st;
     if (stat(path,&st)!=0 || (st.st_mode&S_IFMT)!=S_IFREG || st.st_uid!=0) {
         puts("Pong init: UI compatibility library absent; SKIP");return;
@@ -450,11 +450,11 @@ main(int argc, char **argv, char **envp)
         dup2(fd, 0); dup2(fd, 1); dup2(fd, 2);
         if (fd > 2) close(fd);
     }
-    boot_stage("static " PONG_SYSTEM_BUILD " helper entered; console open returned");
+    boot_stage("static " DITING_SYSTEM_BUILD " helper entered; console open returned");
     /* Upstream init does this before handing the console to non-root jobs. */
     (void)chmod("/dev/console", 0666);
     (void)chdir("/");
-    puts("Pong init: userland adapter / " PONG_SYSTEM_VERSION " " PONG_SYSTEM_BUILD " / static arm64");
+    puts("Pong init: userland adapter / " DITING_SYSTEM_VERSION " " DITING_SYSTEM_BUILD " / static arm64");
     /* maxvnodes tuning is optional; the owner mount hook already publishes
      * skipIgnition in the commpage and exec apple strings before this helper. */
     boot_stage("preparing writable Data seed");
@@ -475,7 +475,7 @@ main(int argc, char **argv, char **envp)
         "DYLD_FALLBACK_LIBRARY_PATH=/private/preboot/usr/lib",
         NULL
     };
-    puts("Pong init: exec original " PONG_SYSTEM_BUILD " launchd; stdin/stdout -> /dev/null, stderr -> /dev/console");
+    puts("Pong init: exec original " DITING_SYSTEM_BUILD " launchd; stdin/stdout -> /dev/null, stderr -> /dev/console");
     boot_stage("exec original /sbin/launchd.ios");
     /* launchd requires a non-interactive stdout before its PID 1 setup.
      * Keep diagnostics on fd 2; fd 1 must not inherit this helper's console. */

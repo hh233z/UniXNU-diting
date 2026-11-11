@@ -147,7 +147,7 @@ void ieee80211_queue_work(struct ieee80211_hw *hw, struct work_struct *work) { i
     archive = out / 'libPongAth11k.a'
     linked = out / 'ath11k-combined.o'
     subprocess.run(['xcrun', 'ld', '-r', '-arch', 'arm64', *[str(o) for _, o, _ in jobs], '-o', str(linked)], env=env, check=True)
-    nm = diting_paths.tool('llvm-nm', 'PONG_LLVM_NM', ('/opt/local/bin/llvm-nm-mp-18',))
+    nm = diting_paths.tool('llvm-nm', 'DITING_LLVM_NM', ('/opt/local/bin/llvm-nm-mp-18',))
     undefined = subprocess.check_output([nm, '-u', '-j', str(linked)], text=True).splitlines()
     (out / 'undefined-symbols.txt').write_text('\n'.join(undefined) + '\n')
     allowed = {'_PongWifiRandom','_bzero','_memcmp','_memcpy','_memmove','_memset','_snprintf','_strchr','_strcmp','_strlen','_strncmp','_strncpy','_strtoul','_vsnprintf'}
@@ -159,7 +159,7 @@ void ieee80211_queue_work(struct ieee80211_hw *hw, struct work_struct *work) { i
     renames = {n: '_pong11_' + n[1:] for n in defined if not n.startswith('_nw_wifi_') and n not in exports}
     mapping = out / 'symbol-map.txt'; mapping.write_text(''.join(k + ' ' + v + '\n' for k, v in renames.items()))
     namespaced = out / 'PongAth11k-linked.o'
-    subprocess.run([diting_paths.tool('llvm-objcopy', 'PONG_LLVM_OBJCOPY',
+    subprocess.run([diting_paths.tool('llvm-objcopy', 'DITING_LLVM_OBJCOPY',
                                     ('/opt/local/bin/llvm-objcopy-mp-18',)),
                     '--redefine-syms=' + str(mapping), str(linked), str(namespaced)], check=True)
     archive.unlink(missing_ok=True)

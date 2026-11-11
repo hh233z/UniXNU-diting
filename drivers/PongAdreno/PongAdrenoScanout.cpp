@@ -35,7 +35,7 @@ struct Pending {bool offered=false,delivered=false,done=false;uint64_t id=0;
     uint32_t stride=0;Source *source=nullptr;} pending;
 void note(const char *phase,uint64_t id,unsigned status)
 {
-    char text[180];int n=snprintf(text,sizeof(text),"PONG SCANOUT: %s sequence=%llu status=0x%x\n",phase,id,status);
+    char text[180];int n=snprintf(text,sizeof(text),"DITING SCANOUT: %s sequence=%llu status=0x%x\n",phase,id,status);
     if(n>0){IOLog("%s",text);pong_ramoops_diagnostic_write(text,n);}
 }
 uint64_t deadline(unsigned ms){uint64_t d;clock_interval_to_deadline(ms,kMillisecondScale,&d);return d;}

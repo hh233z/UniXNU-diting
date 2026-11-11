@@ -45,8 +45,8 @@ def stage_adapter(root, runtime, soc_serial, usb_serial, platform_uuid):
     alphabet = '0123456789ABCDEFGHJKLMNPQRSTUVWXYZ'
     def software_id(key, length):
         old = prior.get(key)
-        return old if isinstance(old, str) and old.startswith('PONG') and len(old) == length else \
-            'PONG' + ''.join(secrets.choice(alphabet) for _ in range(length - 4))
+        return old if isinstance(old, str) and old.startswith('DITING') and len(old) == length else \
+            'DITING' + ''.join(secrets.choice(alphabet) for _ in range(length - 4))
     values['MLBSerialNumber'] = software_id('MLBSerialNumber', 17)
     def component_id(key, length):
         old = prior.get(key)

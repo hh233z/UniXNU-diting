@@ -27,25 +27,25 @@ def _env(*names):
 
 def input_root():
     """Root of the fetched Apple content and other large local inputs."""
-    return _env('PONG_INPUTS', 'PONG_INPUT_ROOT') or Path('/Volumes/Untitled/Pong-iPadOS18')
+    return _env('DITING_INPUTS', 'DITING_INPUT_ROOT') or Path('/Volumes/Untitled/Pong-iPadOS18')
 
 
 def work_root():
     """Root of the local build scratch space."""
-    return _env('PONG_WORK', 'PONG_WORK_ROOT') or _env('PONG_ROOT') or Path('/Volumes/PongDev')
+    return _env('DITING_WORK', 'DITING_WORK_ROOT') or _env('DITING_ROOT') or Path('/Volumes/PongDev')
 
 
 def build_tree(explicit=None, name='Pong-iPadOS18-native'):
     if explicit:
         return Path(explicit).expanduser()
-    return _env('PONG_BUILD_TREE') or work_root() / 'build' / name / 'tree'
+    return _env('DITING_BUILD_TREE') or work_root() / 'build' / name / 'tree'
 
 
 def developer_dir(explicit=None):
     """Xcode developer directory: flag, then env, then the active toolchain."""
     if explicit:
         return Path(explicit).expanduser()
-    found = _env('PONG_DEVELOPER_DIR', 'DEVELOPER_DIR')
+    found = _env('DITING_DEVELOPER_DIR', 'DEVELOPER_DIR')
     if found:
         return found
     try:
@@ -60,37 +60,37 @@ def developer_dir(explicit=None):
 def volume_layout(explicit=None):
     if explicit:
         return Path(explicit).expanduser()
-    return _env('PONG_VOLUME_LAYOUT') or work_root() / 'build/Pong-iPadOS18-inputs/volume-layout.json'
+    return _env('DITING_VOLUME_LAYOUT') or work_root() / 'build/Pong-iPadOS18-inputs/volume-layout.json'
 
 
 def prepared_userland(explicit=None):
     if explicit:
         return Path(explicit).expanduser()
-    return _env('PONG_PREPARED_USERLAND') or input_root() / '22H374/prepared'
+    return _env('DITING_PREPARED_USERLAND') or input_root() / '22H374/prepared'
 
 
 def wifi_source(explicit=None):
     if explicit:
         return Path(explicit).expanduser()
-    return _env('PONG_WIFI_SOURCE') or input_root() / 'wifi-source-7.0.14'
+    return _env('DITING_WIFI_SOURCE') or input_root() / 'wifi-source-7.0.14'
 
 
 def wifi_build(explicit=None):
     if explicit:
         return Path(explicit).expanduser()
-    return _env('PONG_WIFI_BUILD') or input_root() / 'wifi-ath11k-build'
+    return _env('DITING_WIFI_BUILD') or input_root() / 'wifi-ath11k-build'
 
 
 def wifi_firmware(explicit=None):
     if explicit:
         return Path(explicit).expanduser()
-    return _env('PONG_WIFI_FIRMWARE') or input_root() / 'pong-wifi-firmware'
+    return _env('DITING_WIFI_FIRMWARE') or input_root() / 'pong-wifi-firmware'
 
 
 def audio_inputs(explicit=None):
     if explicit:
         return Path(explicit).expanduser()
-    return _env('PONG_AUDIO_INPUTS') or input_root() / 'pong-audio-inputs'
+    return _env('DITING_AUDIO_INPUTS') or input_root() / 'pong-audio-inputs'
 
 
 def adreno_firmware(explicit=None):
@@ -101,14 +101,14 @@ def adreno_firmware(explicit=None):
     """
     if explicit:
         return Path(explicit).expanduser()
-    return _env('PONG_ADRENO_FIRMWARE')
+    return _env('DITING_ADRENO_FIRMWARE')
 
 
 def sheng_root(explicit=None):
     """Shared UniXNU-sheng sources; falls back to the sibling checkout."""
     if explicit:
         return Path(explicit).expanduser()
-    found = _env('PONG_SHENG_ROOT', 'UNIXNU_SHENG_ROOT')
+    found = _env('DITING_SHENG_ROOT', 'UNIXNU_SHENG_ROOT')
     if found:
         return found
     for candidate in (ROOT / 'UniXNU-sheng', work_root() / 'upstream/UniXNU-sheng'):
@@ -121,7 +121,7 @@ def adb(explicit=None):
     """adb binary: flag, then the Android SDK layout, then PATH."""
     if explicit:
         return Path(explicit).expanduser()
-    found = _env('PONG_ADB')
+    found = _env('DITING_ADB')
     if found:
         return found
     for base in (os.environ.get('ANDROID_SDK_ROOT'), os.environ.get('ANDROID_HOME')):
@@ -144,28 +144,28 @@ def handoff_root(explicit=None):
     """A handoff bundle of prebuilt local images."""
     if explicit:
         return Path(explicit).expanduser()
-    return _env('PONG_HANDOFF') or work_root() / 'handoffs/Pong-iOS16-Mac-Next-20261020'
+    return _env('DITING_HANDOFF') or work_root() / 'handoffs/Pong-iOS16-Mac-Next-20261020'
 
 
 def boot_template(explicit=None):
     """Boot image template that the local boot packagers stage into."""
     if explicit:
         return Path(explicit).expanduser()
-    return _env('PONG_BOOT_TEMPLATE') or handoff_root() / 'images/pong-window-vectors.img'
+    return _env('DITING_BOOT_TEMPLATE') or handoff_root() / 'images/pong-window-vectors.img'
 
 
 def mu_basecore(explicit=None):
     """EDK2 Mu_Basecore checkout used by the DarwinBoot loaders."""
     if explicit:
         return Path(explicit).expanduser()
-    return _env('PONG_EDK2') or work_root() / 'source/Mu_Basecore'
+    return _env('DITING_EDK2') or work_root() / 'source/Mu_Basecore'
 
 
 def unixnu_package(explicit=None):
     """UniXNU package tree that the DarwinBoot loaders build against."""
     if explicit:
         return Path(explicit).expanduser()
-    found = _env('PONG_UNIXNU_PACKAGE')
+    found = _env('DITING_UNIXNU_PACKAGE')
     if found:
         return found
     local = ROOT / 'package'
@@ -176,7 +176,7 @@ def llvm_toolchain(explicit=None):
     """LLVM bin directory for the EDK2 loaders; empty means use the host one."""
     if explicit:
         return Path(explicit).expanduser()
-    found = _env('PONG_LLVM')
+    found = _env('DITING_LLVM')
     if found:
         return found
     ports = Path('/opt/local/libexec/llvm-18/bin')
@@ -185,14 +185,14 @@ def llvm_toolchain(explicit=None):
 
 def extra_path():
     """Optional extra PATH entries, colon separated; absent by default."""
-    return os.environ.get('PONG_EXTRA_PATH', '')
+    return os.environ.get('DITING_EXTRA_PATH', '')
 
 
 def kernelcache(explicit=None):
     """Decompressed 22H374 kernelcache the storage imports are read from."""
     if explicit:
         return Path(explicit).expanduser()
-    found = _env('PONG_KERNELCACHE')
+    found = _env('DITING_KERNELCACHE')
     if found:
         return Path(found)
     return DEVICE / 'apple/ipados18-22H374/components/kernelcache.release.ipad7c.decompressed/kernelcache.release.ipad7c.decompressed'
@@ -201,7 +201,7 @@ def storage_headers(explicit=None):
     """Apple IOStorageFamily checkout that supplies the storage ABI headers."""
     if explicit:
         return Path(explicit).expanduser()
-    return _env('PONG_STORAGE_HEADERS') or DEVICE / 'refer/ipados18/IOStorageFamily-323'
+    return _env('DITING_STORAGE_HEADERS') or DEVICE / 'refer/ipados18/IOStorageFamily-323'
 
 
 def xnu_work(tree):

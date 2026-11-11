@@ -1,6 +1,6 @@
 /* SPDX-License-Identifier: BSD-2-Clause-Patent */
-#ifndef PONG_ATH11K_DMI_H
-#define PONG_ATH11K_DMI_H
+#ifndef DITING_ATH11K_DMI_H
+#define DITING_ATH11K_DMI_H
 #include "lx_ath.h"
 /* ARM Pong has no x86 DMI board table. Keep laptop-specific quirks unmatched. */
 enum { DMI_NONE, DMI_BIOS_VENDOR, DMI_BIOS_VERSION, DMI_BOARD_VENDOR, DMI_BOARD_NAME,

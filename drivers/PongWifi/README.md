@@ -29,7 +29,7 @@ Pong 专属实现；`ath11k/` 是 Linux v7.0.14 ath11k 的 PCI/MHI/QMI 部分，
 - `PongWifiNet.cpp`：Darwin 24 ifnet、Apple80211 ioctl、RX/TX 和网络事件。
 - `scripts/build-pong-ath11k.py`：编译实际驱动；内部链接拒绝缺失实现，将 Linux shim 符号隔离。
 - `scripts/build-pong-wifi-native.py`：编译板级/网络代码，合并归档并延后注册网络类。
-- `CONFIG_XNU_PONG_WIFI=y`：构建并链接归档；`pong_wifi=1` 启动板级工作线程。
+- `CONFIG_XNU_DITING_WIFI=y`：构建并链接归档；`pong_wifi=1` 启动板级工作线程。
 
 APSS DRV2 使用 Pong DT 的 active TCS4，保留 GPU 的 TCS3。使用 SM8475 GCC
 `0x7bxxx`、真实 PHY 表和 cmd-db `SN7` 带宽投票。CPU 和 SMMU 的 DMA 环使用

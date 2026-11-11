@@ -18,4 +18,4 @@ source_files = ["drivers/ArmCpu/ArmCpu.cpp", "drivers/PongWifi/PongWifiPlatform.
 runtime_identifiers = ["NativeAdreno", "PongAudioService", "PongAudioUserClient", "PongUfsBlock", "DarwinBoot24.efi"]
 build_stage = "kernel"
 build = ["{component}/build-with-runtime.py", "--artifact-dir", "{out}/kernel", "--tree", "{tree}"]
-outputs = ["kernel/mach.development.pong"]
+outputs = ["kernel/mach.development.diting"]

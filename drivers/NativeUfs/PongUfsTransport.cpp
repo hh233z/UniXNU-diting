@@ -116,14 +116,14 @@ static bool transportFailure(const char *why) {
   // No panic, reset, retry or DMA release after a timeout. The controller
   // may still own the allocation. Preserve evidence and let BSD continue.
   char text[2400];
-  formatUfsRootDiagnostics(text, sizeof(text), gRootDiagnostic, why, "PONG_UFS TRANSPORT");
-  IOLog("%s\nPONG_UFS: no media published; continue boot\n", text);
+  formatUfsRootDiagnostics(text, sizeof(text), gRootDiagnostic, why, "DITING_UFS TRANSPORT");
+  IOLog("%s\nDITING_UFS: no media published; continue boot\n", text);
   // The panic screen cannot show these lines and this kernel has no other console,
   // so with pong_ufs_stall=1 hold the CPU so the last console lines on the panel are the
   // transport report and can be photographed. Off by default.
   { uint32_t stall = 0;
     if (PE_parse_boot_argn("pong_ufs_stall", &stall, sizeof(stall)) && stall) {
-      IOLog("PONG_UFS: stalled for capture; the line above is the transport state\n");
+      IOLog("DITING_UFS: stalled for capture; the line above is the transport state\n");
       for (;;) IOSleep(1000);
     } }
   PongProbeRecord(4, "ufs-transport", PongProbeFail, why, gRootDiagnostic.result);
@@ -140,7 +140,7 @@ static bool hostBringUp() {
   uint32_t requestWrites = 0;
   gHost.writable = PE_parse_boot_argn("pong_ufs_readwrite", &requestWrites, sizeof(requestWrites)) &&
       requestWrites == 1;
-  IOLog("PONG_UFS: storage write path %s by pong_ufs_readwrite boot-arg\n",
+  IOLog("DITING_UFS: storage write path %s by pong_ufs_readwrite boot-arg\n",
         gHost.writable ? "enabled" : "disabled");
   gRootDiagnostic.stage = "controller map";
   gHost.hc = mapPhys(0x01d84000, 0x3000, gHost.hcMap);
@@ -183,11 +183,11 @@ static bool hostBringUp() {
   gRootDiagnostic.smmuId1 = read(0x24); gRootDiagnostic.smmuId2 = read(0x28);
   gRootDiagnostic.smmuSlot = plan.slot; gRootDiagnostic.smr = plan.smr; gRootDiagnostic.s2cr = plan.s2cr;
   unsigned rawBanks = gRootDiagnostic.smmuId1 & 255, rawGroups = read(0x20) & 255;
-  IOLog("PONG_UFS: SMMU id0=%08x id1=%08x id2=%08x HW banks=%u groups=%u effective banks=%u groups=%u\n",
+  IOLog("DITING_UFS: SMMU id0=%08x id1=%08x id2=%08x HW banks=%u groups=%u effective banks=%u groups=%u\n",
         read(0x20), gRootDiagnostic.smmuId1, gRootDiagnostic.smmuId2, rawBanks, rawGroups,
         rawBanks < 78 ? rawBanks : 78, rawGroups < 120 ? rawGroups : 120);
   if (plan.error) return transportFailure(plan.error);
-  IOLog("PONG_UFS: SID e0 slot=%u firmware-bank=%u target-bank=%u action=%s\n",
+  IOLog("DITING_UFS: SID e0 slot=%u firmware-bank=%u target-bank=%u action=%s\n",
         plan.slot, plan.previousBank, plan.bank,
         plan.migrate ? "migrate exact firmware mapping" : plan.reuse ? "reuse bypass" : "install exact mapping");
   gHost.cb = gHost.smmu + (plan.pages + plan.bank) * 4096;
@@ -225,7 +225,7 @@ static bool hostBringUp() {
   uint32_t last = loadBe32(gHost.virt + kDataOffset), blockSize = loadBe32(gHost.virt + kDataOffset + 4);
   if (!last || last == 0xffffffff || blockSize != 4096) return transportFailure("unsupported LUN geometry");
   gHost.blocks = uint64_t(last) + 1;
-  IOLog("PONG_UFS: transport ready LUN=0 block=4096 blocks=%llu; WRITE(10) FUA=%s; writes stay inside declared SHNGROOT windows\n",
+  IOLog("DITING_UFS: transport ready LUN=0 block=4096 blocks=%llu; WRITE(10) FUA=%s; writes stay inside declared SHNGROOT windows\n",
         gHost.blocks, gHost.writable ? "enabled" : "disabled");
   __atomic_store_n(&gWifiUfsReady,1,__ATOMIC_RELEASE);
   return true;
@@ -275,7 +275,7 @@ static unsigned native_pong_log_ufs_window_media(const char *windowKey) {
   OSIterator *iterator = matching ? IOService::getMatchingServices(matching) : nullptr;
   OSSafeReleaseNULL(matching);
   if (!iterator) {
-    IOLog("PONG APFS: window media enumeration unavailable window=%s\n", windowKey);
+    IOLog("DITING APFS: window media enumeration unavailable window=%s\n", windowKey);
     return 0;
   }
 
@@ -302,12 +302,12 @@ static unsigned native_pong_log_ufs_window_media(const char *windowKey) {
     ++candidates;
     OSString *uuid = OSDynamicCast(OSString, media->getProperty("UUID"));
     OSString *name = OSDynamicCast(OSString, media->getProperty(kIOBSDNameKey));
-    IOLog("PONG APFS: window media uuid=%s bsd=%s readonly=%d writable=%d depth=%u\n",
+    IOLog("DITING APFS: window media uuid=%s bsd=%s readonly=%d writable=%d depth=%u\n",
           uuid ? uuid->getCStringNoCopy() : "?",
           name ? name->getCStringNoCopy() : "?", readOnlyWindow, writableWindow, depth);
   }
   iterator->release();
-  IOLog("PONG APFS: window media count=%u window=%s\n", candidates, windowKey);
+  IOLog("DITING APFS: window media count=%u window=%s\n", candidates, windowKey);
   return candidates;
 }
 
@@ -337,20 +337,20 @@ extern "C" int native_pong_ufs_volume_device(const char *uuid, int kind,
   properties->release();
   OSIterator *iterator = nullptr;
   if (ready && kind) {
-    IOLog("PONG APFS: wait for %s UUID %.36s, timeout=5s\n", windowName,uuid);
+    IOLog("DITING APFS: wait for %s UUID %.36s, timeout=5s\n", windowName,uuid);
     auto published = IOService::waitForMatchingService(matching, 5ULL * 1000000000ULL);
     if (published) {
-      IOLog("PONG APFS: %s UUID appeared; rechecking IOMedia\n",windowName);
+      IOLog("DITING APFS: %s UUID appeared; rechecking IOMedia\n",windowName);
       iterator = IOService::getMatchingServices(matching);
     } else {
-      IOLog("PONG APFS: %s UUID wait timed out\n",windowName);
+      IOLog("DITING APFS: %s UUID wait timed out\n",windowName);
     }
   } else if (ready) {
     iterator = IOService::getMatchingServices(matching);
   }
   matching->release();
   if (!iterator) {
-    IOLog("PONG APFS: UUID lookup unavailable uuid=%.36s window=%s\n", uuid,
+    IOLog("DITING APFS: UUID lookup unavailable uuid=%.36s window=%s\n", uuid,
           windowName);
     if (kind) native_pong_log_ufs_window_media(windowKey);
     return 0;
@@ -374,7 +374,7 @@ extern "C" int native_pong_ufs_volume_device(const char *uuid, int kind,
         !name->getLength() || name->getLength() >= sizeof(selectedPath) - 6 ||
         name->getLength() >= pathSize - 6 || major->unsigned64BitValue() > 255 ||
         minor->unsigned64BitValue() > 0xffffff) {
-      IOLog("PONG APFS: UUID candidate malformed uuid=%.36s identity=%d bsd=%d major=%d minor=%d\n",
+      IOLog("DITING APFS: UUID candidate malformed uuid=%.36s identity=%d bsd=%d major=%d minor=%d\n",
             uuid, identity != nullptr, name != nullptr, major != nullptr, minor != nullptr);
       continue;
     }
@@ -396,7 +396,7 @@ extern "C" int native_pong_ufs_volume_device(const char *uuid, int kind,
       break;
     }
     if (!validWindow) {
-      IOLog("PONG APFS: UUID candidate rejected uuid=%.36s bsd=%s ufs-window=%d depth=%u window=%s\n",
+      IOLog("DITING APFS: UUID candidate rejected uuid=%.36s bsd=%s ufs-window=%d depth=%u window=%s\n",
             uuid, name->getCStringNoCopy(), foundUfsWindow, depth,
             windowName);
       continue;
@@ -409,7 +409,7 @@ extern "C" int native_pong_ufs_volume_device(const char *uuid, int kind,
   }
   iterator->release();
   if (!accepted || matches != 1) {
-    IOLog("PONG APFS: UUID lookup miss wanted=%.36s matches=%u accepted=%d window=%s\n",
+    IOLog("DITING APFS: UUID lookup miss wanted=%.36s matches=%u accepted=%d window=%s\n",
           uuid, matches, accepted, windowName);
     if (kind) native_pong_log_ufs_window_media(windowKey);
     OSSafeReleaseNULL(rootIdentity);
@@ -420,12 +420,12 @@ extern "C" int native_pong_ufs_volume_device(const char *uuid, int kind,
     // platform service. UUID, BSD identity, unique match and UFS OS ancestry
     // have all been checked before publishing the standard root marker.
     rootIdentity->setProperty("EmbeddedDeviceTypeRoot", true);
-    IOLog("PONG APFS: root media identity published on %s\n", selectedPath);
+    IOLog("DITING APFS: root media identity published on %s\n", selectedPath);
     rootIdentity->release();
   }
   *device = selected;
   strlcpy(path, selectedPath, pathSize);
-  IOLog("PONG APFS: UUID %.36s bound to %s UFS window %s\n", uuid,
+  IOLog("DITING APFS: UUID %.36s bound to %s UFS window %s\n", uuid,
         windowName, selectedPath);
   return 1;
 }
@@ -462,7 +462,7 @@ bool PongUfsBlock::start(IOService *provider) {
   if (!expected && !rawApfsRoot) {
     // Invalid filesystem contents belong to this window, not to the shared
     // UFS controller. Do not invalidate already published OS/SystemOS disks.
-    IOLog("PONG_UFS: %s window has no supported filesystem header base=%llx bytes=%llx; media not published\n",
+    IOLog("DITING_UFS: %s window has no supported filesystem header base=%llx bytes=%llx; media not published\n",
           window.name, window.baseByte, window.size);
     char detail[96];
     snprintf(detail, sizeof(detail), "%s filesystem header invalid", window.name);
@@ -471,7 +471,7 @@ bool PongUfsBlock::start(IOService *provider) {
   }
   gRootDiagnostic.windowBytes = window.size;
   const bool writableWindow = gHost.writable && !(window.baseByte & 4095) && !(window.size & 4095);
-  IOLog("PONG_UFS: SHNGROOT %s first read complete signature=1 base=%llx bytes=%llx; publish 512-byte %s disk\n",
+  IOLog("DITING_UFS: SHNGROOT %s first read complete signature=1 base=%llx bytes=%llx; publish 512-byte %s disk\n",
         window.name, window.baseByte, window.size, writableWindow ? "read-write" : "read-only");
   setProperty("PongReadOnly", !writableWindow);
   setProperty("PongWritable", writableWindow);
@@ -552,7 +552,7 @@ IOReturn PongUfsBlock::doAsyncReadWrite(IOMemoryDescriptor *buffer, UInt64 block
 }
 extern "C" bool pong_ufs_transport_start(IOService *provider) {
   if (gTransportAttempted) {
-    IOLog("PONG_UFS: transport attempt already completed; skip duplicate match\n");
+    IOLog("DITING_UFS: transport attempt already completed; skip duplicate match\n");
     return false;
   }
   gTransportAttempted = true;
@@ -602,7 +602,7 @@ extern "C" bool pong_ufs_transport_start(IOService *provider) {
   static const struct { const char *name, *product, *signature; unsigned offset; } wanted[] = {
     {"OS", "Pong OS root", "EFI PART", 512},
     {"SystemOS", "Pong SystemOS", "NXSB", 32},
-#if XNU_PONG_UFS_DATA
+#if XNU_DITING_UFS_DATA
     {"Data", "Pong persistent Data", "EFI PART", 512},
 #endif
   };

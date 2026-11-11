@@ -82,7 +82,7 @@ public:
     IOLockLock(gate);
     if (storeAttached) { IOLockUnlock(gate); return; }
     storeAttached = true;
-#if !defined(PONG_RAM_BLOCK_VOLATILE_ONLY) || !PONG_RAM_BLOCK_VOLATILE_ONLY
+#if !defined(DITING_RAM_BLOCK_VOLATILE_ONLY) || !DITING_RAM_BLOCK_VOLATILE_ONLY
     unsigned mode = &native_ufs_store_mode ? native_ufs_store_mode() : 0;
     if (mode && (sparse.pages || isBig) && &native_ufs_store_open && &native_ufs_store_read && &native_ufs_store_write &&
         &native_ufs_store_sync && &native_ufs_store_gpt_check) {
@@ -253,7 +253,7 @@ bool NativeRamBlock::start(IOService *provider)
     }
   }
   capacity = logical / 512;
-#if defined(PONG_RAM_BLOCK_VOLATILE_ONLY) && PONG_RAM_BLOCK_VOLATILE_ONLY
+#if defined(DITING_RAM_BLOCK_VOLATILE_ONLY) && DITING_RAM_BLOCK_VOLATILE_ONLY
   // Pong's scratch Data is RAM-only; no persistence overlay consumes a seed digest.
   memset(seedHash, 0, sizeof(seedHash));
   if (sparse.pages || isBig) memory = nullptr;
@@ -291,7 +291,7 @@ bool NativeRamBlock::start(IOService *provider)
   IOLog("NativeRamBlock: published %s bytes=%llu sparse=%u resident=%llu seed-sha256=%s\n",
         packedInput ? "PackedRAMDisk" : "RAMDisk", logical,
         native_ram_block_sparse, native_ram_block_resident_bytes,
-#if defined(PONG_RAM_BLOCK_VOLATILE_ONLY) && PONG_RAM_BLOCK_VOLATILE_ONLY
+#if defined(DITING_RAM_BLOCK_VOLATILE_ONLY) && DITING_RAM_BLOCK_VOLATILE_ONLY
         "skipped (volatile only)"
 #else
         "compiled per nonvolatile build"
@@ -345,7 +345,7 @@ IOReturn NativeRamBlock::doAsyncReadWrite(IOMemoryDescriptor *buffer, UInt64 blo
       uint64_t copy(uint64_t at,const void *p,uint64_t n){return buffer->writeBytes(at,p,n);}
     } ops={buffer};
     bool write=buffer->getDirection()==kIODirectionOut;
-#if defined(PONG_RAM_BLOCK_VOLATILE_ONLY) && PONG_RAM_BLOCK_VOLATILE_ONLY
+#if defined(DITING_RAM_BLOCK_VOLATILE_ONLY) && DITING_RAM_BLOCK_VOLATILE_ONLY
     actual=ramSparseIO(sparse,write,block*512,bytes,ops,noMemory);
 #else
     if(direct){

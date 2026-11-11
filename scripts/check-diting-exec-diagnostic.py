@@ -8,8 +8,8 @@ parser.add_argument('--xnu-source', type=Path, required=True, help='原始 XNU �
 args = parser.parse_args()
 device = Path(__file__).resolve().parents[1]
 source = args.xnu_source / 'bsd/kern/kern_exec.c'
-old_patch = device / 'patches/xnu-ipados18/0001-pong-darwin24.patch'
-new_patch = device / 'patches/xnu-ipados18/zzzzzzzzz-pong-exec-diagnostic.patch'
+old_patch = device / 'patches/xnu-ipados18/0001-diting-darwin24.patch'
+new_patch = device / 'patches/xnu-ipados18/zzzzzzzzz-diting-exec-diagnostic.patch'
 
 stub = r'''
 #include <stdio.h>
@@ -19,7 +19,7 @@ stub = r'''
 #include <errno.h>
 #include <fcntl.h>
 #include <sys/stat.h>
-#define ARM64_BOARD_CONFIG_PONG 1
+#define ARM64_BOARD_CONFIG_DITING 1
 #define DEVELOPMENT 1
 #define DEBUG 0
 #define CONFIG_MACF 1
@@ -98,7 +98,7 @@ with tempfile.TemporaryDirectory(prefix='pong-exec-test-') as temporary:
     subprocess.run(['git', 'apply', '--check', str(new_patch)], cwd=tmp, check=True)
     subprocess.run(['git', 'apply', str(new_patch)], cwd=tmp, check=True)
     modified = path.read_text()
-    helper = section(modified, '#if defined(ARM64_BOARD_CONFIG_PONG) && (DEVELOPMENT || DEBUG)\n/* 仅记录',
+    helper = section(modified, '#if defined(ARM64_BOARD_CONFIG_DITING) && (DEVELOPMENT || DEBUG)\n/* 仅记录',
                      'static void exec_prefault_data')
     start = 'static int\nexec_check_permissions(struct image_params *imgp)\n{'
     end = '\n\n\n/*\n * exec_handle_sugid'
@@ -126,8 +126,8 @@ int main(int argc, char **argv) {
     unrelated = subprocess.check_output([str(tmp/'enabled'), '1', 'other'], text=True)
     rows = lambda output: [line for line in output.splitlines() if line.startswith('RESULT ')]
     assert rows(old) == rows(off) == rows(on), (old, off, on)
-    assert 'PONG EXEC' not in off
-    assert 'PONG EXEC' not in unrelated and rows(unrelated) == rows(old)
+    assert 'DITING EXEC' not in off
+    assert 'DITING EXEC' not in unrelated and rows(unrelated) == rows(old)
     for stage in ('nonregular', 'getattr', 'mode', 'mac-vnode', 'vnode-authorize'):
         assert 'stage=' + stage in on, stage
     print('patched XNU source applies; permission outcomes unchanged with diagnostics off/on')
@@ -168,7 +168,7 @@ int main(void) {
     assert 'from=/dev/null to=/dev/null' in result and 'RESULT 13' in result, result
     print('applog preserves O_RDWR; write-only redirection and diagnostic error remain intact')
 
-    spawn_at = modified.index('bad:\n#if defined(ARM64_BOARD_CONFIG_PONG)', modified.index('posix_spawn(proc_t ap,'))
+    spawn_at = modified.index('bad:\n#if defined(ARM64_BOARD_CONFIG_DITING)', modified.index('posix_spawn(proc_t ap,'))
     spawn_end = modified.index('\n\tif (error == 0) {\n\t\t/* reset delay idle sleep status if set */', spawn_at)
     spawn_block = modified[spawn_at + len('bad:\n'):spawn_end]
     spawn_stubs = r'''

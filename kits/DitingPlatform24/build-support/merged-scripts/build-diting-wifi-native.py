@@ -21,7 +21,7 @@ def main():
  if not a.ath11k.is_file():raise RuntimeError('Build the matching Pong ath11k archive first: '+str(a.ath11k))
  profile=json.loads((ROOT/'configs/diting-wifi-sm8475.json').read_text())
  if profile['soc']!='SM8475' or profile['pci']['device']!=0x1103:raise RuntimeError('Pong QCA6490 profile required')
- hardware=os.environ.get('PONG_HARDWARE_DTB')
+ hardware=os.environ.get('DITING_HARDWARE_DTB')
  if hardware:
   spec=importlib.util.spec_from_file_location('pong_fdt',ROOT/'scripts/prepare-diting-wifi.py')
   fdt=importlib.util.module_from_spec(spec);spec.loader.exec_module(fdt)
@@ -96,7 +96,7 @@ def main():
  framework=a.tree/'.cache/fakeroot/System/Library/Frameworks/Kernel.framework/Versions/A'
  env=build_env()
  sdk=subprocess.check_output(['xcrun','--sdk','iphoneos','--show-sdk-path'],env=env,text=True).strip()
- flags=['-target','arm64-apple-ios18.0','-isysroot',sdk,'-mkernel','-ffreestanding','-fno-builtin','-fno-exceptions','-fno-rtti','-fno-stack-protector','-mgeneral-regs-only','-std=gnu++17','-fblocks','-O2','-DKERNEL=1','-DKERNEL_PRIVATE=1','-DXNU_KERNEL_PRIVATE=1','-DARM64_BOARD_CONFIG_PONG=1','-I'+str(framework/'PrivateHeaders'),'-I'+str(framework/'Headers'),'-I'+str(shared/'include'),'-I'+str(input_path('sheng_source')/'package'),'-I'+str(out),'-Wno-deprecated-declarations']
+ flags=['-target','arm64-apple-ios18.0','-isysroot',sdk,'-mkernel','-ffreestanding','-fno-builtin','-fno-exceptions','-fno-rtti','-fno-stack-protector','-mgeneral-regs-only','-std=gnu++17','-fblocks','-O2','-DKERNEL=1','-DKERNEL_PRIVATE=1','-DXNU_KERNEL_PRIVATE=1','-DARM64_BOARD_CONFIG_DITING=1','-I'+str(framework/'PrivateHeaders'),'-I'+str(framework/'Headers'),'-I'+str(shared/'include'),'-I'+str(input_path('sheng_source')/'package'),'-I'+str(out),'-Wno-deprecated-declarations']
  objects=[]
  for name in ('PongWifiPlatform','PongWifiNet'):
   obj=out/(name+'.o');cmd=['xcrun','clang++',*flags,'-c',str(ROOT/'drivers/PongWifi'/(name+'.cpp')),'-o',str(obj)]

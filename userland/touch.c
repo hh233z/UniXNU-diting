@@ -228,18 +228,18 @@ make_service(IOHIDEventSystemClientRef client, const char *product, int page, in
 static void
 send_touch(IOHIDServiceClientRef screen, const struct pong_touch *t)
 {
-	uint32_t change = t->type == PONG_TOUCH_MOVE ? DIGITIZER_POSITION : DIGITIZER_RANGE | DIGITIZER_TOUCH;
+	uint32_t change = t->type == DITING_TOUCH_MOVE ? DIGITIZER_POSITION : DIGITIZER_RANGE | DIGITIZER_TOUCH;
 	IOHIDEventRef hand, finger;
 	bool any = false;
 	unsigned f = t->finger;
 
-	if (f >= MAX_FINGERS || (t->type != PONG_TOUCH_DOWN && !fingers[f].touching)) {
+	if (f >= MAX_FINGERS || (t->type != DITING_TOUCH_DOWN && !fingers[f].touching)) {
 		return;
 	}
-	fingers[f].touching = t->type != PONG_TOUCH_UP;
+	fingers[f].touching = t->type != DITING_TOUCH_UP;
 	fingers[f].x = t->x / 65535.0;
 	fingers[f].y = t->y / 65535.0;
-	if (t->type == PONG_TOUCH_DOWN) {
+	if (t->type == DITING_TOUCH_DOWN) {
 		fingers[f].edge = fingers[f].x < EDGE_SIDE || fingers[f].x > 1 - EDGE_SIDE || fingers[f].y < EDGE_TOP ||
 		    fingers[f].y > 1 - EDGE_BOTTOM;
 	}
@@ -292,7 +292,7 @@ static void
 release_contacts(IOHIDServiceClientRef screen,uint64_t time)
 {
     for (unsigned i=0;i<MAX_FINGERS;i++) if (fingers[i].touching) {
-        struct pong_touch up={time,PONG_TOUCH_UP,i,
+        struct pong_touch up={time,DITING_TOUCH_UP,i,
             (uint32_t)(fingers[i].x*65535),(uint32_t)(fingers[i].y*65535)};
         send_touch(screen,&up);
     }
@@ -327,19 +327,19 @@ input_thread(void *unused)
     struct pong_touch sample;unsigned count=0,waking=0;ssize_t length;
     while ((length=read(device,&sample,sizeof(sample)))>0 || (length<0 && errno==EINTR)) {
         if (length<0) continue;
-        if (length!=(ssize_t)sizeof(sample) || sample.type<PONG_TOUCH_DOWN || sample.type>PONG_TOUCH_UP) continue;
+        if (length!=(ssize_t)sizeof(sample) || sample.type<DITING_TOUCH_DOWN || sample.type>DITING_TOUCH_UP) continue;
         if (sample.finger>=MAX_FINGERS) continue;
         if (count++<4) say("Pong touch HID: type=%u finger=%u xy=%u,%u\n",sample.type,sample.finger,sample.x,sample.y);
         unsigned mode=(unsigned)__atomic_load_n(&touch_mode,__ATOMIC_RELAXED)&0xff;
         unsigned bit=1u<<sample.finger;
         if (mode==TOUCH_MODE_OFF || mode==TOUCH_MODE_WAKE) {
             release_contacts(screen,sample.time);
-            if (mode==TOUCH_MODE_WAKE && sample.type==PONG_TOUCH_DOWN && !waking)
+            if (mode==TOUCH_MODE_WAKE && sample.type==DITING_TOUCH_DOWN && !waking)
                 tap_wake(wake_control,sample.time);
-            if (sample.type==PONG_TOUCH_UP) waking&=~bit;else waking|=bit;
+            if (sample.type==DITING_TOUCH_UP) waking&=~bit;else waking|=bit;
             continue;
         }
-        if (waking&bit) {if (sample.type==PONG_TOUCH_UP) waking&=~bit;continue;}
+        if (waking&bit) {if (sample.type==DITING_TOUCH_UP) waking&=~bit;continue;}
         send_touch(screen,&sample);
     }
     /* Release outstanding contacts if the physical source goes away. */
@@ -398,8 +398,8 @@ buttons_thread(void *unused)
     while ((n=read(fd,&sample,sizeof(sample)))>0 || (n<0 && errno==EINTR)) {
         if (n<0) continue;
         if (n!=(ssize_t)sizeof(sample) || sample.finger>=3 ||
-            (sample.type!=PONG_BUTTON_DOWN && sample.type!=PONG_BUTTON_UP)) continue;
-        bool down=sample.type==PONG_BUTTON_DOWN;
+            (sample.type!=DITING_BUTTON_DOWN && sample.type!=DITING_BUTTON_UP)) continue;
+        bool down=sample.type==DITING_BUTTON_DOWN;
         if (down) held|=1u<<sample.finger;else held&=~(1u<<sample.finger);
         if(sample.finger && volume) {
             const uint8_t report[]={2,(uint8_t)((held>>1)&3)};

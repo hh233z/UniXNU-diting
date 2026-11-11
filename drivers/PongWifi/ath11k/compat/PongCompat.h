@@ -1,6 +1,6 @@
 /* SPDX-License-Identifier: BSD-2-Clause-Patent */
-#ifndef PONG_ATH11K_COMPAT_H
-#define PONG_ATH11K_COMPAT_H
+#ifndef DITING_ATH11K_COMPAT_H
+#define DITING_ATH11K_COMPAT_H
 #include "lx_pci.h"
 /* Linux permits side effects in wait conditions. ath11k's WMI condition
  * transfers skb ownership on success; the shared shim used to evaluate it
@@ -18,11 +18,11 @@
     pong_result; })
 typedef unsigned long kernel_ulong_t;
 #undef IS_ENABLED
-#define PONG_DEFINED_1 0,
-#define PONG_SECOND(_a, b, ...) b
-#define PONG_DEFINED_II(x) PONG_SECOND(x 1, 0)
-#define PONG_DEFINED_I(x) PONG_DEFINED_II(PONG_DEFINED_##x)
-#define IS_ENABLED(x) PONG_DEFINED_I(x)
+#define DITING_DEFINED_1 0,
+#define DITING_SECOND(_a, b, ...) b
+#define DITING_DEFINED_II(x) DITING_SECOND(x 1, 0)
+#define DITING_DEFINED_I(x) DITING_DEFINED_II(DITING_DEFINED_##x)
+#define IS_ENABLED(x) DITING_DEFINED_I(x)
 #define IS_REACHABLE(x) IS_ENABLED(x)
 #define swab32(x) __builtin_bswap32((u32)(x))
 #define prefetch(p) __builtin_prefetch(p)

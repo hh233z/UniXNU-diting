@@ -34,7 +34,7 @@ static char id[64];static uint64_t origin;
 static int (*previous)(unsigned int);
 static uint64_t elapsed() {uint64_t ns=0;absolutetime_to_nanoseconds(mach_absolute_time()-origin,&ns);return ns/1000000000;}
 static void record(const char *phase,int result=0) {
- char line[192];const int n=snprintf(line,sizeof line,"PONG CAPTURE: id=%s phase=%s result=%d\n",id,phase,result);
+ char line[192];const int n=snprintf(line,sizeof line,"DITING CAPTURE: id=%s phase=%s result=%d\n",id,phase,result);
  if(n>0){const int size=n<int(sizeof line)?n:int(sizeof line)-1;pong_ramoops_console_write(line,size);pong_ramoops_diagnostic_write(line,size);}
 }
 static bool wait(Window &w,unsigned offset) {

@@ -6,7 +6,7 @@ diff --git a/bsd/kern/kern_exec.c b/bsd/kern/kern_exec.c
  static void exec_resettextvp(proc_t, struct image_params *);
  static int process_signature(proc_t, struct image_params *);
 +
-+#if defined(ARM64_BOARD_CONFIG_PONG) && (DEVELOPMENT || DEBUG)
++#if defined(ARM64_BOARD_CONFIG_DITING) && (DEVELOPMENT || DEBUG)
 +/* 仅记录启动进程的真实拒绝，不更改 spawn 或签名判定。 */
 +static TUNABLE(uint32_t, pong_exec_diag, "pong_exec_diag", 0);
 +static uint32_t pong_diag_spawn_count, pong_diag_open_count, pong_diag_action_count;
@@ -43,10 +43,10 @@ diff --git a/bsd/kern/kern_exec.c b/bsd/kern/kern_exec.c
  
  again:
  	error = namei(ndp);
-+#if defined(ARM64_BOARD_CONFIG_PONG) && (DEVELOPMENT || DEBUG)
++#if defined(ARM64_BOARD_CONFIG_DITING) && (DEVELOPMENT || DEBUG)
 +	if ((error == EACCES || error == EPERM) && pong_exec_diag_emit(&pong_diag_lookup_count)) {
 +		kauth_cred_t cred = vfs_context_ucred(imgp->ip_vfs_context);
-+		printf("PONG EXEC lookup err=%d uid=%u gid=%u path=%.160s\n", error,
++		printf("DITING EXEC lookup err=%d uid=%u gid=%u path=%.160s\n", error,
 +		    kauth_cred_getuid(cred), kauth_cred_getgid(cred), excpath);
 +	}
 +#endif
@@ -57,9 +57,9 @@ diff --git a/bsd/kern/kern_exec.c b/bsd/kern/kern_exec.c
  	error = -1;
  	for (i = 0; error == -1 && execsw[i].ex_imgact != NULL; i++) {
  		error = (*execsw[i].ex_imgact)(imgp);
-+#if defined(ARM64_BOARD_CONFIG_PONG) && (DEVELOPMENT || DEBUG)
++#if defined(ARM64_BOARD_CONFIG_DITING) && (DEVELOPMENT || DEBUG)
 +		if ((error == EACCES || error == EPERM) && pong_exec_diag_emit(&pong_diag_image_count)) {
-+			printf("PONG EXEC image err=%d activator=%d path=%.160s\n", error, i, excpath);
++			printf("DITING EXEC image err=%d activator=%d path=%.160s\n", error, i, excpath);
 +		}
 +#endif
  
@@ -69,11 +69,11 @@ diff --git a/bsd/kern/kern_exec.c b/bsd/kern/kern_exec.c
  			error = open1(imgp->ip_vfs_context, ndp,
  			    psfa->psfaa_openargs.psfao_oflag,
  			    vap, NULL, NULL, &origfd, AUTH_OPEN_NOAUTHFD);
-+#if defined(ARM64_BOARD_CONFIG_PONG) && (DEVELOPMENT || DEBUG)
++#if defined(ARM64_BOARD_CONFIG_DITING) && (DEVELOPMENT || DEBUG)
 +			if ((error == EACCES || error == EPERM) && pong_exec_diag_emit(&pong_diag_open_count)) {
 +				const char *original = psfa->psfaa_openargs.psfao_path;
 +				const char *effective = exec_applog_path(psfa->psfaa_filedes, original, psfa->psfaa_openargs.psfao_oflag);
-+				printf("PONG EXEC open err=%d uid=%u gid=%u fd=%d flags=0x%x from=%.96s to=%.96s\n",
++				printf("DITING EXEC open err=%d uid=%u gid=%u fd=%d flags=0x%x from=%.96s to=%.96s\n",
 +				    error, kauth_cred_getuid(p_cred), kauth_cred_getgid(p_cred),
 +				    psfa->psfaa_filedes, psfa->psfaa_openargs.psfao_oflag, original, effective);
 +			}
@@ -85,9 +85,9 @@ diff --git a/bsd/kern/kern_exec.c b/bsd/kern/kern_exec.c
  		/* All file actions failures are considered fatal, per POSIX */
  
  		if (error) {
-+#if defined(ARM64_BOARD_CONFIG_PONG) && (DEVELOPMENT || DEBUG)
++#if defined(ARM64_BOARD_CONFIG_DITING) && (DEVELOPMENT || DEBUG)
 +			if ((error == EACCES || error == EPERM) && pong_exec_diag_emit(&pong_diag_action_count)) {
-+				printf("PONG EXEC action err=%d index=%d type=%d fd=%d\n", error,
++				printf("DITING EXEC action err=%d index=%d type=%d fd=%d\n", error,
 +				    action, psfa->psfaa_type, psfa->psfaa_filedes);
 +			}
 +#endif
@@ -98,7 +98,7 @@ diff --git a/bsd/kern/kern_exec.c b/bsd/kern/kern_exec.c
  	struct vnode_attr *origvap = NULL;
  	struct uthread  *uthread = 0;   /* compiler complains if not set to 0*/
  	int error, sig;
-+#if defined(ARM64_BOARD_CONFIG_PONG) && (DEVELOPMENT || DEBUG)
++#if defined(ARM64_BOARD_CONFIG_DITING) && (DEVELOPMENT || DEBUG)
 +	const char *pong_spawn_phase = "setup";
 +#endif
  	int is_64 = IS_64BIT_PROCESS(p);
@@ -108,9 +108,9 @@ diff --git a/bsd/kern/kern_exec.c b/bsd/kern/kern_exec.c
  				goto bad;
  			}
  			if ((error = spawn_validate_persona(px_persona)) != 0) {
-+#if defined(ARM64_BOARD_CONFIG_PONG) && (DEVELOPMENT || DEBUG)
++#if defined(ARM64_BOARD_CONFIG_DITING) && (DEVELOPMENT || DEBUG)
 +				if (pong_exec_diag_emit(&pong_diag_persona_count)) {
-+					printf("PONG EXEC persona stage=validate err=%d\n", error);
++					printf("DITING EXEC persona stage=validate err=%d\n", error);
 +				}
 +#endif
  				goto bad;
@@ -120,7 +120,7 @@ diff --git a/bsd/kern/kern_exec.c b/bsd/kern/kern_exec.c
  		struct kaudit_record *save_uu_ar = uthread->uu_ar;
  		uthread->uu_ar = NULL;
  #endif
-+#if defined(ARM64_BOARD_CONFIG_PONG) && (DEVELOPMENT || DEBUG)
++#if defined(ARM64_BOARD_CONFIG_DITING) && (DEVELOPMENT || DEBUG)
 +	pong_spawn_phase = "file-actions";
 +#endif
  		error = exec_handle_file_actions(imgp,
@@ -130,7 +130,7 @@ diff --git a/bsd/kern/kern_exec.c b/bsd/kern/kern_exec.c
  		}
  	}
  
-+#if defined(ARM64_BOARD_CONFIG_PONG) && (DEVELOPMENT || DEBUG)
++#if defined(ARM64_BOARD_CONFIG_DITING) && (DEVELOPMENT || DEBUG)
 +	pong_spawn_phase = "port-actions";
 +#endif
  	/* Has spawn port actions? */
@@ -140,7 +140,7 @@ diff --git a/bsd/kern/kern_exec.c b/bsd/kern/kern_exec.c
  		}
  	}
  
-+#if defined(ARM64_BOARD_CONFIG_PONG) && (DEVELOPMENT || DEBUG)
++#if defined(ARM64_BOARD_CONFIG_DITING) && (DEVELOPMENT || DEBUG)
 +	pong_spawn_phase = "attributes";
 +#endif
  	/* Has spawn attr? */
@@ -150,14 +150,14 @@ diff --git a/bsd/kern/kern_exec.c b/bsd/kern/kern_exec.c
  				goto bad;
  			}
  
-+#if defined(ARM64_BOARD_CONFIG_PONG) && (DEVELOPMENT || DEBUG)
++#if defined(ARM64_BOARD_CONFIG_DITING) && (DEVELOPMENT || DEBUG)
 +	pong_spawn_phase = "credentials";
 +#endif
  			error = spawn_posix_cred_adopt(p, imgp->ip_px_pcred_info);
  			if (error != 0) {
  				goto bad;
  			}
-+#if defined(ARM64_BOARD_CONFIG_PONG) && (DEVELOPMENT || DEBUG)
++#if defined(ARM64_BOARD_CONFIG_DITING) && (DEVELOPMENT || DEBUG)
 +			pong_spawn_phase = "attributes";
 +#endif
  		}
@@ -167,19 +167,19 @@ diff --git a/bsd/kern/kern_exec.c b/bsd/kern/kern_exec.c
  			 * to ensure that the new persona has access to the image/file
  			 * being executed.
  			 */
-+#if defined(ARM64_BOARD_CONFIG_PONG) && (DEVELOPMENT || DEBUG)
++#if defined(ARM64_BOARD_CONFIG_DITING) && (DEVELOPMENT || DEBUG)
 +	pong_spawn_phase = "persona";
 +#endif
  			error = spawn_persona_adopt(p, imgp->ip_px_persona);
  			if (error != 0) {
-+#if defined(ARM64_BOARD_CONFIG_PONG) && (DEVELOPMENT || DEBUG)
++#if defined(ARM64_BOARD_CONFIG_DITING) && (DEVELOPMENT || DEBUG)
 +				if (pong_exec_diag_emit(&pong_diag_persona_count)) {
-+					printf("PONG EXEC persona stage=adopt err=%d\n", error);
++					printf("DITING EXEC persona stage=adopt err=%d\n", error);
 +				}
 +#endif
  				goto bad;
  			}
-+#if defined(ARM64_BOARD_CONFIG_PONG) && (DEVELOPMENT || DEBUG)
++#if defined(ARM64_BOARD_CONFIG_DITING) && (DEVELOPMENT || DEBUG)
 +			pong_spawn_phase = "attributes";
 +#endif
  		}
@@ -189,7 +189,7 @@ diff --git a/bsd/kern/kern_exec.c b/bsd/kern/kern_exec.c
  		proc_signal_set = 0;
  	}
  
-+#if defined(ARM64_BOARD_CONFIG_PONG) && (DEVELOPMENT || DEBUG)
++#if defined(ARM64_BOARD_CONFIG_DITING) && (DEVELOPMENT || DEBUG)
 +	pong_spawn_phase = "mac-execve";
 +#endif
  #if MAC_SPAWN   /* XXX */
@@ -199,11 +199,11 @@ diff --git a/bsd/kern/kern_exec.c b/bsd/kern/kern_exec.c
  	 * Warning: If activation failed after point of no return, it returns error
  	 * as 0 and pretends the call succeeded.
  	 */
-+#if defined(ARM64_BOARD_CONFIG_PONG) && (DEVELOPMENT || DEBUG)
++#if defined(ARM64_BOARD_CONFIG_DITING) && (DEVELOPMENT || DEBUG)
 +	pong_spawn_phase = "activate";
 +#endif
  	error = exec_activate_image(imgp);
-+#if defined(ARM64_BOARD_CONFIG_PONG) && (DEVELOPMENT || DEBUG)
++#if defined(ARM64_BOARD_CONFIG_DITING) && (DEVELOPMENT || DEBUG)
 +	if (!error) pong_spawn_phase = "post-activate";
 +#endif
  #if defined(HAS_APPLE_PAC)
@@ -213,7 +213,7 @@ diff --git a/bsd/kern/kern_exec.c b/bsd/kern/kern_exec.c
  	}
  
  bad:
-+#if defined(ARM64_BOARD_CONFIG_PONG) && (DEVELOPMENT || DEBUG)
++#if defined(ARM64_BOARD_CONFIG_DITING) && (DEVELOPMENT || DEBUG)
 +	if ((error == EACCES || error == EPERM) && pong_exec_diag_emit(&pong_diag_spawn_count)) {
 +		char path[192];
 +		size_t copied = 0;
@@ -221,11 +221,11 @@ diff --git a/bsd/kern/kern_exec.c b/bsd/kern/kern_exec.c
 +			strlcpy(path, "<unavailable>", sizeof(path));
 +		}
 +		kauth_cred_t cred = kauth_cred_get();
-+		printf("PONG EXEC spawn err=%d phase=%s caller=%s uid=%u gid=%u path=%.160s\n",
++		printf("DITING EXEC spawn err=%d phase=%s caller=%s uid=%u gid=%u path=%.160s\n",
 +		    error, pong_spawn_phase, current_proc()->p_comm,
 +		    kauth_cred_getuid(cred), kauth_cred_getgid(cred), path);
 +#if defined(XNU_OWNER_DATA_MOUNT) && XNU_OWNER_DATA_MOUNT
-+		printf("PONG EXEC data status=%d stage=%d readonly=%d\n",
++		printf("DITING EXEC data status=%d stage=%d readonly=%d\n",
 +		    native_owner_data_status, native_owner_data_stage, native_owner_data_readonly);
 +#endif
 +	}
@@ -237,9 +237,9 @@ diff --git a/bsd/kern/kern_exec.c b/bsd/kern/kern_exec.c
  
  	/* Only allow execution of regular files */
  	if (!vnode_isreg(vp)) {
-+#if defined(ARM64_BOARD_CONFIG_PONG) && (DEVELOPMENT || DEBUG)
++#if defined(ARM64_BOARD_CONFIG_DITING) && (DEVELOPMENT || DEBUG)
 +		if (pong_exec_diag_emit(&pong_diag_perm_count)) {
-+			printf("PONG EXEC permission stage=nonregular err=%d\n", EACCES);
++			printf("DITING EXEC permission stage=nonregular err=%d\n", EACCES);
 +		}
 +#endif
  		return EACCES;
@@ -249,9 +249,9 @@ diff --git a/bsd/kern/kern_exec.c b/bsd/kern/kern_exec.c
  	VATTR_WANTED(vap, va_fileid);
  	VATTR_WANTED(vap, va_data_size);
  	if ((error = vnode_getattr(vp, vap, imgp->ip_vfs_context)) != 0) {
-+#if defined(ARM64_BOARD_CONFIG_PONG) && (DEVELOPMENT || DEBUG)
++#if defined(ARM64_BOARD_CONFIG_DITING) && (DEVELOPMENT || DEBUG)
 +		if ((error == EACCES || error == EPERM) && pong_exec_diag_emit(&pong_diag_perm_count)) {
-+			printf("PONG EXEC permission stage=getattr err=%d\n", error);
++			printf("DITING EXEC permission stage=getattr err=%d\n", error);
 +		}
 +#endif
  		return error;
@@ -261,9 +261,9 @@ diff --git a/bsd/kern/kern_exec.c b/bsd/kern/kern_exec.c
  	 * file really is executable.
  	 */
  	if (!vfs_authopaque(vnode_mount(vp)) && ((vap->va_mode & (S_IXUSR | S_IXGRP | S_IXOTH)) == 0)) {
-+#if defined(ARM64_BOARD_CONFIG_PONG) && (DEVELOPMENT || DEBUG)
++#if defined(ARM64_BOARD_CONFIG_DITING) && (DEVELOPMENT || DEBUG)
 +		if (pong_exec_diag_emit(&pong_diag_perm_count)) {
-+			printf("PONG EXEC permission stage=mode err=%d mode=%o owner=%u:%u\n",
++			printf("DITING EXEC permission stage=mode err=%d mode=%o owner=%u:%u\n",
 +			    EACCES, (unsigned)vap->va_mode, vap->va_uid, vap->va_gid);
 +		}
 +#endif
@@ -274,10 +274,10 @@ diff --git a/bsd/kern/kern_exec.c b/bsd/kern/kern_exec.c
  #if CONFIG_MACF
  	error = mac_vnode_check_exec(imgp->ip_vfs_context, vp, imgp);
  	if (error) {
-+#if defined(ARM64_BOARD_CONFIG_PONG) && (DEVELOPMENT || DEBUG)
++#if defined(ARM64_BOARD_CONFIG_DITING) && (DEVELOPMENT || DEBUG)
 +		if ((error == EACCES || error == EPERM) && pong_exec_diag_emit(&pong_diag_perm_count)) {
 +			kauth_cred_t cred = vfs_context_ucred(imgp->ip_vfs_context);
-+			printf("PONG EXEC permission stage=mac-vnode err=%d uid=%u gid=%u mode=%o owner=%u:%u\n",
++			printf("DITING EXEC permission stage=mac-vnode err=%d uid=%u gid=%u mode=%o owner=%u:%u\n",
 +			    error, kauth_cred_getuid(cred), kauth_cred_getgid(cred),
 +			    (unsigned)vap->va_mode, vap->va_uid, vap->va_gid);
 +		}
@@ -289,10 +289,10 @@ diff --git a/bsd/kern/kern_exec.c b/bsd/kern/kern_exec.c
  		action |= KAUTH_VNODE_READ_DATA;
  	}
  	if ((error = vnode_authorize(vp, NULL, action, imgp->ip_vfs_context)) != 0) {
-+#if defined(ARM64_BOARD_CONFIG_PONG) && (DEVELOPMENT || DEBUG)
++#if defined(ARM64_BOARD_CONFIG_DITING) && (DEVELOPMENT || DEBUG)
 +		if ((error == EACCES || error == EPERM) && pong_exec_diag_emit(&pong_diag_perm_count)) {
 +			kauth_cred_t cred = vfs_context_ucred(imgp->ip_vfs_context);
-+			printf("PONG EXEC permission stage=vnode-authorize err=%d uid=%u gid=%u mode=%o owner=%u:%u\n",
++			printf("DITING EXEC permission stage=vnode-authorize err=%d uid=%u gid=%u mode=%o owner=%u:%u\n",
 +			    error, kauth_cred_getuid(cred), kauth_cred_getgid(cred),
 +			    (unsigned)vap->va_mode, vap->va_uid, vap->va_gid);
 +		}
@@ -304,9 +304,9 @@ diff --git a/bsd/kern/kern_exec.c b/bsd/kern/kern_exec.c
  	/* call the launch constraints hook */
  	os_reason_t launch_constraint_reason;
  	if ((error = mac_proc_check_launch_constraints(p, imgp, &launch_constraint_reason)) != 0) {
-+#if defined(ARM64_BOARD_CONFIG_PONG) && (DEVELOPMENT || DEBUG)
++#if defined(ARM64_BOARD_CONFIG_DITING) && (DEVELOPMENT || DEBUG)
 +		if (pong_exec_diag_emit(&pong_diag_signature_count)) {
-+			printf("PONG EXEC signature stage=launch-constraints err=%d process=%s flags=0x%x\n",
++			printf("DITING EXEC signature stage=launch-constraints err=%d process=%s flags=0x%x\n",
 +			    error, p->p_comm, imgp->ip_csflags);
 +		}
 +#endif
@@ -317,9 +317,9 @@ diff --git a/bsd/kern/kern_exec.c b/bsd/kern/kern_exec.c
  	}
  
  done:
-+#if defined(ARM64_BOARD_CONFIG_PONG) && (DEVELOPMENT || DEBUG)
++#if defined(ARM64_BOARD_CONFIG_DITING) && (DEVELOPMENT || DEBUG)
 +	if (error && pong_exec_diag_emit(&pong_diag_signature_count)) {
-+		printf("PONG EXEC signature stage=decision err=%d process=%s mac=%d csflags=0x%x\n",
++		printf("DITING EXEC signature stage=decision err=%d process=%s mac=%d csflags=0x%x\n",
 +		    error, p->p_comm, imgp->ip_mac_return, imgp->ip_csflags);
 +	}
 +#endif

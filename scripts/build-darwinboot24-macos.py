@@ -22,7 +22,7 @@ def main():
     parser.add_argument('--llvm', type=Path, default=diting_paths.llvm_toolchain())
     args = parser.parse_args()
     if args.llvm is None:
-        raise SystemExit('missing LLVM bin directory for CLANGPDB: pass --llvm or set PONG_LLVM '
+        raise SystemExit('missing LLVM bin directory for CLANGPDB: pass --llvm or set DITING_LLVM '
                          '(clang, lld-link, llvm-lib and llvm-rc)')
     source = DEVICE / 'drivers/DarwinBoot24'
     workspace = args.output_dir.resolve()

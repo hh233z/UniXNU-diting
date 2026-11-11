@@ -34,7 +34,7 @@ def main():
     for name in ('SystemOS','Data'):
         if next(w for w in new['windows'] if w['name']==name)!=prior[name]:raise RuntimeError(name+' must be retained')
     if selected['volume_uuid']!=prior['OS']['volume_uuid']:raise RuntimeError('OS UUID changed')
-    if not a.boot_image.is_file() or not (a.boot_image.parent/'PONG_BUILD_RESULT.json').is_file():raise RuntimeError('completed boot image required')
+    if not a.boot_image.is_file() or not (a.boot_image.parent/'DITING_BUILD_RESULT.json').is_file():raise RuntimeError('completed boot image required')
     manifest=json.loads((a.boot_image.parent/'stage/EFI/UniXNU/pong-boot-manifest.json').read_text())
     if manifest['root_volume_uuid']!=selected['volume_uuid'] or 'pong_rootful=1' not in manifest['boot_args'].split():raise RuntimeError('matching rootful boot required')
     target='/dev/block/by-name/userdata';real=shell('readlink -f '+target)
@@ -73,7 +73,7 @@ def main():
         done=state['completed']['OS'];source.seek(done)
         while done<size:
             amount=min(256<<20,size-done);offset=start+done
-            marker=f'PONG_OS_RELOCATED_{offset}_{amount}'
+            marker=f'DITING_OS_RELOCATED_{offset}_{amount}'
             command=f'set -o pipefail; gzip -dc | dd of={target} bs=1048576 seek={offset//(1<<20)} conv=notrunc,fsync status=none && printf "%s\\n" {marker}'
             writer=subprocess.Popen(cmd+['shell','-T',command],stdin=subprocess.PIPE,stdout=subprocess.PIPE,stderr=subprocess.PIPE)
             try:

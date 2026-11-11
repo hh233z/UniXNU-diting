@@ -1,6 +1,6 @@
 /* SPDX-License-Identifier: BSD-2-Clause-Patent */
-#ifndef PONG_LINUX_SUSPEND_H
-#define PONG_LINUX_SUSPEND_H
+#ifndef DITING_LINUX_SUSPEND_H
+#define DITING_LINUX_SUSPEND_H
 #include "lx_os.h"
 /* This XNU board profile has no Linux system-suspend notifier chain. Match
  * Linux's CONFIG_PM_SLEEP=n behavior; MHI power-up/down is still real. */

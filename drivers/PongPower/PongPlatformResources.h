@@ -1,6 +1,6 @@
 /* SPDX-License-Identifier: BSD-2-Clause-Patent */
-#ifndef PONG_PLATFORM_RESOURCES_H
-#define PONG_PLATFORM_RESOURCES_H
+#ifndef DITING_PLATFORM_RESOURCES_H
+#define DITING_PLATFORM_RESOURCES_H
 #include <stdbool.h>
 #include <stdint.h>
 #ifdef __cplusplus

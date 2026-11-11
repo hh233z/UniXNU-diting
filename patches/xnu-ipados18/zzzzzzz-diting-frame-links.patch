@@ -1,7 +1,7 @@
 --- a/iokit/Kernel/MiniIOMobileFramebuffer.cpp
 +++ b/iokit/Kernel/MiniIOMobileFramebuffer.cpp
 @@ -46,6 +46,11 @@
- #if XNU_PONG_ADRENO_PLATFORM
+ #if XNU_DITING_ADRENO_PLATFORM
  extern "C" void pong_scanout_initialize(uint64_t,size_t,uint32_t,uint32_t,uint32_t);
  extern "C" int pong_scanout_frame(IOMemoryDescriptor *,size_t,uint32_t,uint32_t,uint32_t);
 +extern "C" void native_gpu_trace_record(uint32_t,uint32_t,const uint64_t *,uint32_t);
@@ -16,7 +16,7 @@
  	uint32_t layers = 0;
  	bool report;
  	bool surfacesReady = true;
-+#if XNU_PONG_ADRENO_PLATFORM
++#if XNU_DITING_ADRENO_PLATFORM
 +    pongDisplayTrace(20,swapWord(swap,SWAP_ID),1,swapWord(swap,SWAP_SURFACE(0)));
 +#endif
      struct Readers {
@@ -26,14 +26,14 @@
  	for (unsigned layer = 0; layer < SWAP_LAYERS; layer++) {
  		if (surfaces[layer] != NULL && !MiniIOSurfaceDrawn(surfaces[layer], SWAP_GPU_MS)) {
  			surfacesReady = false;
-+#if XNU_PONG_ADRENO_PLATFORM
++#if XNU_DITING_ADRENO_PLATFORM
 +            pongDisplayTrace(22,swapWord(swap,SWAP_ID),3,swapWord(swap,SWAP_SURFACE(layer)),SWAP_GPU_MS);
 +#endif
  			IOLog("MiniIOMobileFramebuffer: swap %u: GPU surface %u incomplete after %u ms; retaining the last completed frame\n",
  			    swapWord(swap, SWAP_ID), swapWord(swap, SWAP_SURFACE(layer)), SWAP_GPU_MS);
 -		} else if(surfaces[layer])readers.held[layer]=surfaces[layer];
 +		} else if(surfaces[layer]){readers.held[layer]=surfaces[layer];
-+#if XNU_PONG_ADRENO_PLATFORM
++#if XNU_DITING_ADRENO_PLATFORM
 +            pongDisplayTrace(22,swapWord(swap,SWAP_ID),1,swapWord(swap,SWAP_SURFACE(layer)));
 +#endif
 +        }

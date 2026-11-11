@@ -39,11 +39,11 @@ patch_series = ["device:migration/format2/arch-darwin24.series", "soc:patches/xn
 # Explicitly empty: an array here replaces the arch profile's list, and its
 # archive builders produce the BCM2837 providers, not this board's aggregate.
 archives = []
-# The Darwin 24 aggregate is compiled with MACHINE_CONFIGS=PONG (config/MASTER.arm64.pong, added
+# The Darwin 24 aggregate is compiled with MACHINE_CONFIGS=DITING (config/MASTER.arm64.diting, added
 # by patches/xnu-ipados18), not with the BCM2837 machine config the shared kernel step used to
 # select for every board. The kernel step passes this value through as XNU_MACHINE_CONFIG and
 # takes its object directory and aggregate name from it.
-machine_config = "PONG"
+machine_config = "DITING"
 # 由组件配方生成完整内核，避免通用引导步骤先选择其他机器配置。
 builder_component = "DitingPlatform24"
 
@@ -52,7 +52,7 @@ builder_component = "DitingPlatform24"
 # The native aggregate the recipe leaves at this path, and the prelinker this
 # board carried before the format 2 rewrite.
 tool = "kits/XnuPrelink/emit_prelink.py"
-kernel = "build/xnu/ios-obj/DEVELOPMENT_ARM64_PONG/mach.development.pong"
+kernel = "build/xnu/ios-obj/DEVELOPMENT_ARM64_DITING/mach.development.diting"
 # 22H374 的原始预链接基址为 0xfffffff005130000；存储绑定使用
 # 0xfffffff00b000000。最终内核还需通过存储绑定落段检查。
 slide = "0x5ed0000"
@@ -97,7 +97,7 @@ ENABLE_SECUREBOOT = "0"
 MEMORY_PROTECTION = "TRUE"
 SHIP_MODE = "FALSE"
 BUILDID_STRING = "UniXNU-Diting"
-PONG_INITRD_DISK_ENABLED = "1" # Set 0 to isolate SEC/HOB without the disk DXE.
+DITING_INITRD_DISK_ENABLED = "1" # Set 0 to isolate SEC/HOB without the disk DXE.
 
 [payload]
 tools = true
@@ -105,7 +105,7 @@ tools = true
 title = "Diting iPadOS 18.7.10"
 volume = "UNIXNU"
 # 96 MiB, the --fat-mib a local run packs: PongBootMemoryDxe refuses an initrd
-# above PONG_FAT_MAX_INITRD (128 MiB), and the 4096-byte PONGFAT1 header is
+# above DITING_FAT_MAX_INITRD (128 MiB), and the 4096-byte PONGFAT1 header is
 # inside the payload image the package step repacks, so the volume stays well
 # below that bound.
 size_mib = 96

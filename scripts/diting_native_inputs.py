@@ -14,12 +14,12 @@ def options():
 
 def input_path(name):
     variables = {
-        'sheng_source': ('PONG_SHENG_ROOT', 'UNIXNU_SHENG_ROOT'),
-        'wifi_shared': ('PONG_WIFI_SHARED',),
-        'wifi_linux': ('PONG_WIFI_SOURCE',),
-        'wifi_firmware': ('PONG_WIFI_FIRMWARE',),
-        'audio_container': ('PONG_AUDIO_CONTAINER',),
-        'storage_source': ('PONG_STORAGE_HEADERS',),
+        'sheng_source': ('DITING_SHENG_ROOT', 'UNIXNU_SHENG_ROOT'),
+        'wifi_shared': ('DITING_WIFI_SHARED',),
+        'wifi_linux': ('DITING_WIFI_SOURCE',),
+        'wifi_firmware': ('DITING_WIFI_FIRMWARE',),
+        'audio_container': ('DITING_AUDIO_CONTAINER',),
+        'storage_source': ('DITING_STORAGE_HEADERS',),
     }
     defaults = {
         'sheng_source': ROOT / 'refer/ipados18/UniXNU-sheng',
@@ -36,8 +36,8 @@ def input_path(name):
 
 def build_env():
     env = dict(os.environ)
-    if env.get('PONG_DEVELOPER_DIR'):
-        env['DEVELOPER_DIR'] = str(Path(env['PONG_DEVELOPER_DIR']).expanduser())
+    if env.get('DITING_DEVELOPER_DIR'):
+        env['DEVELOPER_DIR'] = str(Path(env['DITING_DEVELOPER_DIR']).expanduser())
     elif not env.get('DEVELOPER_DIR') and options().get('developer_dir'):
         path = Path(options()['developer_dir']).expanduser()
         env['DEVELOPER_DIR'] = str((path if path.is_absolute() else ROOT / path).resolve())

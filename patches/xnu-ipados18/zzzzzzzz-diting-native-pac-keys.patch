@@ -109,9 +109,9 @@ diff --git a/osfmk/arm64/start.s b/osfmk/arm64/start.s
 +LEXT(native_pac_keys)
 +	.space	(NATIVE_PAC_KEY_WORDS + 1) * 8, 0
 +#endif /* HAS_NATIVE_PAC */
-diff --git a/pexpert/pexpert/arm64/PONG.h b/pexpert/pexpert/arm64/PONG.h
---- a/pexpert/pexpert/arm64/PONG.h
-+++ b/pexpert/pexpert/arm64/PONG.h
+diff --git a/pexpert/pexpert/arm64/DITING.h b/pexpert/pexpert/arm64/DITING.h
+--- a/pexpert/pexpert/arm64/DITING.h
++++ b/pexpert/pexpert/arm64/DITING.h
 @@ -14,6 +14,14 @@
  #define __ARM_COHERENT_CACHE__ 1
  #define __ARM_DEBUG__ 7
@@ -120,7 +120,7 @@ diff --git a/pexpert/pexpert/arm64/PONG.h b/pexpert/pexpert/arm64/PONG.h
 +/* Native PAC is an architecture/profile decision, never an arm64 boot-arg.
 + * Enable only after every enabled CPU and EL2 access satisfy the upstream
 + * arm64e requirements. Current22H374 remains arm64 with this flag unset. */
-+#if defined(__arm64e__) && defined(XNU_PONG_NATIVE_PAC) && XNU_PONG_NATIVE_PAC
++#if defined(__arm64e__) && defined(XNU_DITING_NATIVE_PAC) && XNU_DITING_NATIVE_PAC
 +#define HAS_APPLE_PAC 1
 +#define HAS_NATIVE_PAC 1
 +#endif

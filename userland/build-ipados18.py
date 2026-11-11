@@ -832,10 +832,10 @@ def compile_init(out, developer, destination):
     cmd = ['xcrun', '--sdk', 'iphoneos', 'clang', '-target', 'arm64-apple-ios18.0',
            '-isysroot', sdk, '-Os', '-static', '-nostdlib', '-ffreestanding',
            '-fno-stack-protector', '-fno-stack-check', '-fno-builtin', '-Wall', '-Wextra', '-Werror',
-           '-I' + str(PROJECT / 'userland/libmini'), '-DPONG_SYSTEM_VERSION="18.7.10"', '-DPONG_SYSTEM_BUILD="22H374"',
-           '-DPONG_NATIVE_APFS18=1',
-           '-DPONG_UI_LIBRARY_PATH="/pong/libpong-ui18.dylib"',
-           '-DPONG_UI_EXTRA_PROCESSES=" usermanagerd lsd installd pkd runningboardd PosterBoard"', '-Wl,-e,_start',
+           '-I' + str(PROJECT / 'userland/libmini'), '-DDITING_SYSTEM_VERSION="18.7.10"', '-DDITING_SYSTEM_BUILD="22H374"',
+           '-DDITING_NATIVE_APFS18=1',
+           '-DDITING_UI_LIBRARY_PATH="/pong/libpong-ui18.dylib"',
+           '-DDITING_UI_EXTRA_PROCESSES=" usermanagerd lsd installd pkd runningboardd PosterBoard"', '-Wl,-e,_start',
            '-Wl,-pagezero_size,0x100000000', '-Wl,-no_fixup_chains',
            str(PROJECT / 'userland/libmini/start.S'), str(PROJECT / 'userland/libmini/mini.c'),
            str(PROJECT / 'userland/init.c'), '-o', str(destination)]
@@ -1051,7 +1051,7 @@ def helper(a):
         shutil.copyfile(source, preference_seed / name)
     dump(out / 'helper.json', dict(helper=str(out / 'init'), runtime_path='/pong/init',
         signature=signature, required_kernel=['pong_init_path',
-        'native writable Data mount', 'DEVELOPMENT PONG arm64 4K'],
+        'native writable Data mount', 'DEVELOPMENT DITING arm64 4K'],
         ui_library=str(ui_library),
         ui_library_runtime='/pong/libpong-ui18.dylib',
         preference_seed=str(preference_seed),

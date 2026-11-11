@@ -45,7 +45,7 @@ IOReturn PongAdrenoPublishMetalAccelerator()
     service->setProperty("MetalPluginClassName","PongAdrenoMetalDevice");
     if(!service->attach(IOService::getPlatform())) {service->release();return kIOReturnNotAttached;}
     service->registerService();
-    const char message[]="PONG METAL: real IOAcceleratorES provider published for matching guest discovery\n";
+    const char message[]="DITING METAL: real IOAcceleratorES provider published for matching guest discovery\n";
     IOLog("%s",message);pong_ramoops_diagnostic_write(message,sizeof(message)-1);
     return kIOReturnSuccess;
 }

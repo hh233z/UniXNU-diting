@@ -1,8 +1,8 @@
-0001-pong-darwin24.patch
-zz-pong-main-native4k-cache-io.patch
-zzzz-pong-scanout-idle.patch
-zzzzz-pong-wake-scanout-alpha.patch
-zzzzzz-pong-runtime-rule-capacity.patch
-zzzzzzz-pong-frame-links.patch
-zzzzzzzz-pong-native-pac-keys.patch
-zzzzzzzzz-pong-exec-diagnostic.patch
+0001-diting-darwin24.patch
+zz-diting-main-native4k-cache-io.patch
+zzzz-diting-scanout-idle.patch
+zzzzz-diting-wake-scanout-alpha.patch
+zzzzzz-diting-runtime-rule-capacity.patch
+zzzzzzz-diting-frame-links.patch
+zzzzzzzz-diting-native-pac-keys.patch
+zzzzzzzzz-diting-exec-diagnostic.patch

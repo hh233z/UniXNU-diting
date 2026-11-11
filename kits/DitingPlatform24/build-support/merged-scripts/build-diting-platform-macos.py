@@ -30,7 +30,7 @@ def main():
     source = DEVICE / 'drivers/ArmDTPlatform/ArmDTPlatform.cpp'
     framework = tree / '.cache/fakeroot/System/Library/Frameworks/Kernel.framework/Versions/A'
     if not (framework / 'PrivateHeaders/IOKit/IOPlatformExpert.h').exists():
-        raise SystemExit('First build the native PONG kernel SDK')
+        raise SystemExit('First build the native DITING kernel SDK')
     env = build_env()
     sdk = subprocess.check_output(['xcrun', '--sdk', 'iphoneos', '--show-sdk-path'], text=True, env=env).strip()
     target = 'arm64-apple-ios' + os.environ.get('UNIXNU_IOS_TARGET', '18.0')
@@ -39,10 +39,10 @@ def main():
         '-isysroot', sdk, '-mkernel', '-ffreestanding', '-fno-builtin', '-fno-exceptions',
         '-fno-rtti', '-fno-stack-check', '-std=gnu++17', '-fblocks', '-O2',
         '-DKERNEL=1', '-DKERNEL_PRIVATE=1', '-DXNU_KERNEL_PRIVATE=1',
-        '-DARM64_BOARD_CONFIG_PONG=1', '-Xclang', '-target-feature', '-Xclang', '+pan',
-        '-DXNU_PONG_ADRENO_PLATFORM='+env.get('XNU_PONG_ADRENO_PLATFORM','0'),
-        '-DXNU_PONG_WIFI='+env.get('XNU_PONG_WIFI','0'),
-        '-DXNU_PONG_POWER='+env.get('XNU_PONG_POWER','0'),
+        '-DARM64_BOARD_CONFIG_DITING=1', '-Xclang', '-target-feature', '-Xclang', '+pan',
+        '-DXNU_DITING_ADRENO_PLATFORM='+env.get('XNU_DITING_ADRENO_PLATFORM','0'),
+        '-DXNU_DITING_WIFI='+env.get('XNU_DITING_WIFI','0'),
+        '-DXNU_DITING_POWER='+env.get('XNU_DITING_POWER','0'),
         '-I' + str(framework / 'PrivateHeaders'), '-I' + str(framework / 'Headers'),
         '-Wno-deprecated-declarations', '-c', str(source), '-o', str(obj)]
     result = subprocess.run(command, capture_output=True, text=True, env=env)

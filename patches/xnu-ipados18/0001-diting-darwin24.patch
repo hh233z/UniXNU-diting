@@ -51,7 +51,7 @@ index 3acfc7b..eb6f3b6 100644
   * HISTORY
   */
  #include <sys/param.h>
-+#if defined(ARM64_BOARD_CONFIG_PONG)
++#if defined(ARM64_BOARD_CONFIG_DITING)
 +#include <pexpert/arm64/board_config.h>
 +#endif
 +extern void pong_init_note(const char *);
@@ -62,7 +62,7 @@ index 3acfc7b..eb6f3b6 100644
  
  	tp = km_tty[unit];
  
-+#if defined(PONG) && (DEVELOPMENT || DEBUG)
++#if defined(DITING) && (DEVELOPMENT || DEBUG)
 +	pong_init_note("console kmopen entered");
 +#endif
  	tty_lock(tp);
@@ -72,7 +72,7 @@ index 3acfc7b..eb6f3b6 100644
  out:
  	tty_unlock(tp);
  
-+#if defined(PONG) && (DEVELOPMENT || DEBUG)
++#if defined(DITING) && (DEVELOPMENT || DEBUG)
 +	pong_init_note("console kmopen returned");
 +#endif
  	return ret;
@@ -82,7 +82,7 @@ index 3acfc7b..eb6f3b6 100644
  		error = EINVAL;
  		break;
  
-+#if defined(PONG)
++#if defined(DITING)
 +	case TIOCSCTTY:
 +		/* Shared boot console must survive a daemon/session leader exiting. */
 +		error = ENOTTY;
@@ -100,7 +100,7 @@ index 0906700..9d96541 100644
  #endif /* CONFIG_DEBUG_SYSCALL_REJECTION */
  
  	AUDIT_SYSCALL_ENTER(code, proc, uthread);
-+#if defined(PONG) && (DEVELOPMENT || DEBUG)
++#if defined(DITING) && (DEVELOPMENT || DEBUG)
 +	static unsigned pong_dispatch_notes;
 +	uint32_t trace_init = 0;
 +	if (pid == 1 && pong_dispatch_notes < 8 &&
@@ -124,7 +124,7 @@ index 0000000..7c6c450
 + * redwood_buttons.c (APSL 2.0) and NothingOSS spmi-pmic-arb.c register layouts.
 + * No PMIC configuration/reset/supply writes and no display/GPU dependency. */
 +#include <pexpert/arm64/board_config.h>
-+#if defined(PONG)
++#if defined(DITING)
 +#include <kern/clock.h>
 +#include <kern/thread.h>
 +#include <kern/sched_prim.h>
@@ -145,8 +145,8 @@ index 0000000..7c6c450
 +struct peripheral {uint16_t ppid,channel;bool found;};
 +static struct peripheral pon={.ppid=0x013},pin={.ppid=0x18d};
 +struct key {bool usable,live,last,down;uint32_t code;};
-+static struct key keys[3]={{.code=PONG_BUTTON_POWER},{.code=PONG_BUTTON_VOLUME_UP},
-+    {.code=PONG_BUTTON_VOLUME_DOWN}};
++static struct key keys[3]={{.code=DITING_BUTTON_POWER},{.code=DITING_BUTTON_VOLUME_UP},
++    {.code=DITING_BUTTON_VOLUME_DOWN}};
 +static uint32_t rd(vm_offset_t a) {return *(volatile uint32_t *)a;}
 +static void wr(vm_offset_t a,uint32_t v) {*(volatile uint32_t *)a=v;__asm__ volatile("dsb sy":::"memory");}
 +
@@ -277,7 +277,7 @@ index 0000000..7c6c450
 +    if (!k->live) {if (!down) k->live=true;return;}
 +    if (k->down==down) return;
 +    k->down=down;
-+    pong_touch_post(down?PONG_BUTTON_DOWN:PONG_BUTTON_UP,k->code,0,0);
++    pong_touch_post(down?DITING_BUTTON_DOWN:DITING_BUTTON_UP,k->code,0,0);
 +    printf("Pong keys: %u %s\n",k->code,down?"down":"up");
 +}
 +
@@ -332,7 +332,7 @@ index 0000000..7c6c450
 +        failures=good?0:failures+1;
 +        if (failures>=8) {
 +            for (unsigned i=0;i<3;i++) if (keys[i].down)
-+                pong_touch_post(PONG_BUTTON_UP,keys[i].code,0,0);
++                pong_touch_post(DITING_BUTTON_UP,keys[i].code,0,0);
 +            printf("Pong keys: repeated observer read failure; stop optional polling\n");break;
 +        }
 +        /* A detected edge needs its debounce confirmation promptly. Waiting
@@ -376,7 +376,7 @@ index 0000000..00feebd
 + * (APSL 2.0). Hardware resources are the Pong live DT, checked against the
 + * NothingOSS cape pinctrl and waipio GCC source. No Redwood peripherals. */
 +#include <pexpert/arm64/board_config.h>
-+#if defined(PONG)
++#if defined(DITING)
 +#include <kern/clock.h>
 +#include <kern/thread.h>
 +#include <libkern/libkern.h>
@@ -1147,9 +1147,9 @@ index 0000000..00feebd
 +		}
 +		contact[id].seen = true;
 +		if (!contact[id].down) {
-+			pong_touch_post(PONG_TOUCH_DOWN, id, x, y);
++			pong_touch_post(DITING_TOUCH_DOWN, id, x, y);
 +		} else if (contact[id].x != x || contact[id].y != y) {
-+			pong_touch_post(PONG_TOUCH_MOVE, id, x, y);
++			pong_touch_post(DITING_TOUCH_MOVE, id, x, y);
 +		}
 +		contact[id].down = true;
 +		contact[id].x = x;
@@ -1159,7 +1159,7 @@ index 0000000..00feebd
 +	for (uint32_t id = 0; id < GOODIX_MAX_TOUCHES; id++) {
 +		if (contact[id].down && !contact[id].seen) {
 +			contact[id].down = false;
-+			pong_touch_post(PONG_TOUCH_UP, id, contact[id].x, contact[id].y);
++			pong_touch_post(DITING_TOUCH_UP, id, contact[id].x, contact[id].y);
 +		}
 +	}
 +}
@@ -1285,7 +1285,7 @@ index 0000000..00feebd
 +    if (!configuration()) {printf("Pong touch: missing/incompatible Pong DT; SKIP\n");return;}
 +    if (kernel_thread_start(touch_thread,NULL,&thread)==KERN_SUCCESS) thread_deallocate(thread);
 +}
-+#endif /* PONG */
++#endif /* DITING */
 diff --git a/bsd/dev/pong_input.c b/bsd/dev/pong_input.c
 new file mode 100644
 index 0000000..f601a0b
@@ -1295,7 +1295,7 @@ index 0000000..f601a0b
 +/* Blocking touch queue, adapted from the earlier redwood_input.c (APSL 2.0).
 + * Real Goodix and PMIC producers have separate queues and prerequisite gates. */
 +#include <pexpert/arm64/board_config.h>
-+#if defined(PONG)
++#if defined(DITING)
 +#include <kern/clock.h>
 +#include <kern/locks.h>
 +#include <miscfs/devfs/devfs.h>
@@ -1323,9 +1323,9 @@ index 0000000..f601a0b
 +void
 +pong_touch_post(uint32_t type,uint32_t finger,uint32_t x,uint32_t y)
 +{
-+    if (type<PONG_TOUCH_DOWN || type>PONG_BUTTON_UP ||
-+        finger>=(type>=PONG_BUTTON_DOWN?3u:10u)) return;
-+    struct input_queue *q=&queues[type>=PONG_BUTTON_DOWN];
++    if (type<DITING_TOUCH_DOWN || type>DITING_BUTTON_UP ||
++        finger>=(type>=DITING_BUTTON_DOWN?3u:10u)) return;
++    struct input_queue *q=&queues[type>=DITING_BUTTON_DOWN];
 +    lck_mtx_lock(&touch_lock);
 +    if (q->tail-q->head==QUEUE_SIZE) q->head++;
 +    q->samples[q->tail++%QUEUE_SIZE]=(struct pong_touch){mach_absolute_time(),type,finger,
@@ -1592,7 +1592,7 @@ index fc185bb..131a47d 100644
 +			}
 +#endif
 +			int pong_development_root = 0;
-+#if defined(PONG) && (DEVELOPMENT || DEBUG) && !SECURE_KERNEL
++#if defined(DITING) && (DEVELOPMENT || DEBUG) && !SECURE_KERNEL
 +			/* Explicit development policy for this port's unsealed restore image.
 +			 * Keep the APFS auth result visible; never report it as authenticated.
 +			 * This opt-in cannot authorize a writable root or a release kernel. */
@@ -1602,7 +1602,7 @@ index fc185bb..131a47d 100644
 +			    PE_i_can_has_debugger(NULL) &&
 +			    (vfs_flags(vnode_mount(rootvnode)) & MNT_RDONLY);
 +			if (autherr && pong_development_root) {
-+				printf("PONG DEVELOPMENT: allow unsealed read-only root; APFS rootauth error=%d\n", autherr);
++				printf("DITING DEVELOPMENT: allow unsealed read-only root; APFS rootauth error=%d\n", autherr);
 +			}
 +#endif
 +			if (autherr && !owner_authorized && !pong_development_root) {
@@ -1623,7 +1623,7 @@ index fc185bb..131a47d 100644
  		bsd_init_kprintf("calling devfs_kernel_mount\n");
  		devfs_kernel_mount(mounthere);
  	}
-+#if defined(PONG)
++#if defined(DITING)
 +	extern void pong_goodix_init(void);
 +	pong_goodix_init();
 +		extern void pong_buttons_init(void);
@@ -1669,12 +1669,12 @@ index fc185bb..131a47d 100644
  
  	bsd_init_kprintf("bsd_do_post - done");
  
-+#if defined(PONG) && CONFIG_PERSONAS && (DEVELOPMENT || DEBUG) && !SECURE_KERNEL
++#if defined(DITING) && CONFIG_PERSONAS && (DEVELOPMENT || DEBUG) && !SECURE_KERNEL
 +	extern void pong_persona_bootstrap(void);
 +	pong_persona_bootstrap();
 +#endif
  	load_init_program(p);
-+#if defined(PONG) && (DEVELOPMENT || DEBUG)
++#if defined(DITING) && (DEVELOPMENT || DEBUG)
 +	uint32_t trace_init = 0;
 +	if (PE_parse_boot_argn("pong_init_trace", &trace_init, sizeof(trace_init)) && trace_init)
 +		printf("Pong init: bsdinit_task completed; returning through AST\n");
@@ -1695,7 +1695,7 @@ index fc185bb..131a47d 100644
 +	extern void native_legacy_display_late_probe(void);
 +	native_legacy_display_late_probe();
 +#endif
-+#if defined(PONG) && (DEVELOPMENT || DEBUG) && !SECURE_KERNEL
++#if defined(DITING) && (DEVELOPMENT || DEBUG) && !SECURE_KERNEL
 +	if (result == KERN_SUCCESS) {
 +		extern void native_pong_ui_services_start(void);
 +		native_pong_ui_services_start();
@@ -1713,8 +1713,8 @@ index c1c3929..9eb3c8b 100644
  	if (disable_cs_enforcement && PE_i_can_has_debugger(NULL) != 0) {
  		cs_system_enforcement_enable = 0;
  		cs_process_enforcement_enable = 0;
-+#if defined(PONG)
-+		printf("PONG DEVELOPMENT: code-signing enforcement disabled by boot argument\n");
++#if defined(DITING)
++		printf("DITING DEVELOPMENT: code-signing enforcement disabled by boot argument\n");
 +#endif
  	} else {
  		int panic = 0;
@@ -1726,20 +1726,20 @@ index c1c3929..9eb3c8b 100644
 -#if !CONFIG_ENFORCE_LIBRARY_VALIDATION
 -	PE_parse_boot_argn("cs_library_val_enable", &cs_library_val_enable,
 -	    sizeof(cs_library_val_enable));
-+#if !CONFIG_ENFORCE_LIBRARY_VALIDATION || (defined(PONG) && (DEVELOPMENT || DEBUG))
++#if !CONFIG_ENFORCE_LIBRARY_VALIDATION || (defined(DITING) && (DEVELOPMENT || DEBUG))
 +	/* Pong development boots may explicitly disable library validation even
 +	 * when the embedded platform selects it as the compiled default. */
-+#if defined(PONG) && (DEVELOPMENT || DEBUG)
++#if defined(DITING) && (DEVELOPMENT || DEBUG)
 +	if (PE_i_can_has_debugger(NULL)) {
 +#endif
 +		PE_parse_boot_argn("cs_library_val_enable", &cs_library_val_enable,
 +		    sizeof(cs_library_val_enable));
-+#if defined(PONG) && (DEVELOPMENT || DEBUG)
++#if defined(DITING) && (DEVELOPMENT || DEBUG)
 +	}
 +#endif
 +#endif
-+#if defined(PONG)
-+	printf("PONG DEVELOPMENT: cs system=%d process=%d library=%d\n",
++#if defined(DITING)
++	printf("DITING DEVELOPMENT: cs system=%d process=%d library=%d\n",
 +	    cs_system_enforcement_enable, cs_process_enforcement_enable, cs_library_val_enable);
  #endif
  #endif /* !SECURE_KERNEL */
@@ -1782,7 +1782,7 @@ index 240bbf6..400dba5 100644
  	return 0;
  }
  
-+#if defined(ARM64_BOARD_CONFIG_PONG) && (DEVELOPMENT || DEBUG)
++#if defined(ARM64_BOARD_CONFIG_DITING) && (DEVELOPMENT || DEBUG)
 +/* Adapted from the earlier port: expose service output redirected to /dev/null.
 + * This only changes posix_spawn file actions, never PID 1's exec descriptors. */
 +static TUNABLE(uint32_t, exec_applog, "applog", 0);
@@ -1827,7 +1827,7 @@ index 240bbf6..400dba5 100644
  			AUDIT_SUBCALL_ENTER(OPEN, p, uthread);
  
  			NDINIT(ndp, LOOKUP, OP_OPEN, FOLLOW | AUDITVNPATH1, UIO_SYSSPACE,
-+#if defined(ARM64_BOARD_CONFIG_PONG) && (DEVELOPMENT || DEBUG)
++#if defined(ARM64_BOARD_CONFIG_DITING) && (DEVELOPMENT || DEBUG)
 +			    CAST_USER_ADDR_T(exec_applog_path(psfa->psfaa_filedes, psfa->psfaa_openargs.psfao_path, psfa->psfaa_openargs.psfao_oflag)),
 +#else
  			    CAST_USER_ADDR_T(psfa->psfaa_openargs.psfao_path),
@@ -1839,7 +1839,7 @@ index 240bbf6..400dba5 100644
   * Note:	The argument and environment vectors are user space pointers
   *		to arrays of user space pointers.
   */
-+#if defined(ARM64_BOARD_CONFIG_PONG) && (DEVELOPMENT || DEBUG)
++#if defined(ARM64_BOARD_CONFIG_DITING) && (DEVELOPMENT || DEBUG)
 +/* The earlier port's per-program compatibility-library insertion. Keep a bounded,
 + * locked snapshot: root may update configuration while another task execs. */
 +static char exec_inject_conf[512];
@@ -1911,7 +1911,7 @@ index 240bbf6..400dba5 100644
  	}
  
  	/* Save space for envv[] NULL terminator */
-+#if defined(ARM64_BOARD_CONFIG_PONG) && (DEVELOPMENT || DEBUG)
++#if defined(ARM64_BOARD_CONFIG_DITING) && (DEVELOPMENT || DEBUG)
 +	char inject_env[512];
 +	if (exec_inject_env(imgp, inject_env, sizeof(inject_env))) {
 +		error = exec_add_user_string(imgp, CAST_USER_ADDR_T(inject_env), UIO_SYSSPACE, TRUE);
@@ -1925,7 +1925,7 @@ index 240bbf6..400dba5 100644
 +	}
 +#endif
 +	/* Account for the extra string and pointer exactly as for caller envv. */
-+#if defined(ARM64_BOARD_CONFIG_PONG) && (DEVELOPMENT || DEBUG)
++#if defined(ARM64_BOARD_CONFIG_DITING) && (DEVELOPMENT || DEBUG)
 +	if (exec_applog_oslog(imgp)) {
 +		error = exec_add_user_string(imgp, CAST_USER_ADDR_T("OS_ACTIVITY_DT_MODE=YES"), UIO_SYSSPACE, TRUE);
 +		if (error) goto bad;
@@ -1948,7 +1948,7 @@ index 240bbf6..400dba5 100644
 +#if !DEVELOPMENT && !DEBUG
 +#error The offline owner cache mount is a development instrument
 +#endif
-+#if defined(XNU_PONG_APFS_DEBUG) && XNU_PONG_APFS_DEBUG
++#if defined(XNU_DITING_APFS_DEBUG) && XNU_DITING_APFS_DEBUG
 +extern int native_pong_ufs_volume_device(const char *, int, dev_t *, char *, size_t);
 +#else
 +extern int native_verified_block_volume_device(const char *, dev_t *, char *, size_t);
@@ -1960,7 +1960,7 @@ index 240bbf6..400dba5 100644
 +extern void commpage_update_dyld_flags(uint64_t);
 +volatile uint64_t native_owner_cache_dyld_flags = 0;
 +#endif
-+#if !defined(XNU_PONG_APFS_DEBUG) || !XNU_PONG_APFS_DEBUG
++#if !defined(XNU_DITING_APFS_DEBUG) || !XNU_DITING_APFS_DEBUG
 +extern int native_verified_block_root_authorized(dev_t);
 +#endif
 +volatile int native_owner_cache_stage = 0;
@@ -2008,7 +2008,7 @@ index 240bbf6..400dba5 100644
 +#endif
 +	vnode_t original_os_root = rootvnode;
 +	native_owner_cache_original_root = (uintptr_t)original_os_root;
-+	printf("PONG APFS: owner handoff enter root=%p\n", original_os_root);
++	printf("DITING APFS: owner handoff enter root=%p\n", original_os_root);
 +	mount_t root_mount = original_os_root ? vnode_mount(original_os_root) : NULL;
 +	vnode_t device_vnode = root_mount ? vfs_devvp(root_mount) : NULL;
 +	dev_t root_device = device_vnode ? vnode_specrdev(device_vnode) : NODEV;
@@ -2039,7 +2039,7 @@ index 240bbf6..400dba5 100644
 +	request.flags |= MNT_UNION;
 +#endif
 +	if (device_vnode) vnode_put(device_vnode);
-+#if defined(XNU_PONG_APFS_DEBUG) && XNU_PONG_APFS_DEBUG
++#if defined(XNU_DITING_APFS_DEBUG) && XNU_DITING_APFS_DEBUG
 +	root_authorized = root_mount && (vfs_flags(root_mount) & MNT_RDONLY) && root_device != NODEV &&
 +	    native_pong_ufs_volume_device(root_volume, 0, &expected_root, root_device_path,
 +	        sizeof(root_device_path)) && expected_root == root_device;
@@ -2049,29 +2049,29 @@ index 240bbf6..400dba5 100644
 +	    native_verified_block_root_authorized(root_device);
 +#endif
 +	if (!root_authorized) {
-+		printf("PONG APFS: OS root binding SKIP dev=%x flags=%llx\n",
++		printf("DITING APFS: OS root binding SKIP dev=%x flags=%llx\n",
 +		    (unsigned)root_device,
 +		    (unsigned long long)(root_mount ? vfs_flags(root_mount) : 0));
 +		goto done;
 +	}
 +	native_owner_cache_bound_root_device = root_device;
-+	printf("PONG APFS: OS root binding PASS dev=%x\n", (unsigned)root_device);
++	printf("DITING APFS: OS root binding PASS dev=%x\n", (unsigned)root_device);
 +	native_owner_cache_stage = 1;
-+#if defined(XNU_PONG_APFS_DEBUG) && XNU_PONG_APFS_DEBUG
++#if defined(XNU_DITING_APFS_DEBUG) && XNU_DITING_APFS_DEBUG
 +	if (!native_pong_ufs_volume_device(volume, 1, &selected, device_path,
 +	    sizeof(device_path))) {
-+ 		printf("PONG APFS: SystemOS UUID/window lookup SKIP\n");
++ 		printf("DITING APFS: SystemOS UUID/window lookup SKIP\n");
 + 		goto done;
 + 	}
 +#else
 +	if (!native_verified_block_volume_device(volume, &selected, device_path,
 +	    sizeof(device_path))) goto done;
 +#endif
-+	printf("PONG APFS: SystemOS selected dev=%x path=%s\n", (unsigned)selected, device_path);
++	printf("DITING APFS: SystemOS selected dev=%x path=%s\n", (unsigned)selected, device_path);
 +	strlcpy(native_owner_cache_device_path, device_path, sizeof(native_owner_cache_device_path));
 +	native_owner_cache_selected_device = selected;
 +	native_owner_cache_stage = 2;
-+	printf("PONG APFS: SystemOS mount request prepare mountpoint=%s flags=%x\n",
++	printf("DITING APFS: SystemOS mount request prepare mountpoint=%s flags=%x\n",
 +	    mountpoint, (unsigned)request.flags);
 +	/* Exact user-mount payload already qualified against this original APFS. */
 +	memcpy(mount_data, &spec, sizeof(spec));
@@ -2079,37 +2079,37 @@ index 240bbf6..400dba5 100644
 +	memcpy(mount_data + 16, &mount_mode, sizeof(mount_mode));
 +	memcpy(mount_data + 0x144, &anonymous_owner, sizeof(anonymous_owner));
 +	memcpy(mount_data + 0x148, &anonymous_owner, sizeof(anonymous_owner));
-+	printf("PONG APFS: SystemOS copyout type begin\n");
++	printf("DITING APFS: SystemOS copyout type begin\n");
 +	if ((error = copyout("apfs", request.type, 5)) != 0) {
-+		printf("PONG APFS: mount type copyout failed error=%d\n", error);
++		printf("DITING APFS: mount type copyout failed error=%d\n", error);
 +		goto done;
 +	}
-+	printf("PONG APFS: SystemOS copyout path begin\n");
++	printf("DITING APFS: SystemOS copyout path begin\n");
 +	if ((error = copyout(mountpoint, request.path, strlen(mountpoint) + 1)) != 0) {
-+		printf("PONG APFS: mount path copyout failed error=%d\n", error);
++		printf("DITING APFS: mount path copyout failed error=%d\n", error);
 +		goto done;
 +	}
-+	printf("PONG APFS: SystemOS copyout device begin\n");
++	printf("DITING APFS: SystemOS copyout device begin\n");
 +	if ((error = copyout(device_path, spec, strlen(device_path) + 1)) != 0) {
-+		printf("PONG APFS: device path copyout failed error=%d\n", error);
++		printf("DITING APFS: device path copyout failed error=%d\n", error);
 +		goto done;
 +	}
-+	printf("PONG APFS: SystemOS copyout mount-data begin\n");
++	printf("DITING APFS: SystemOS copyout mount-data begin\n");
 +	if ((error = copyout(mount_data, request.data, sizeof(mount_data))) != 0) {
-+		printf("PONG APFS: mount data copyout failed error=%d\n", error);
++		printf("DITING APFS: mount data copyout failed error=%d\n", error);
 +		goto done;
 +	}
 +	native_owner_cache_stage = 3;
-+	printf("PONG APFS: SystemOS mount payload ready\n");
-+	printf("PONG APFS: SystemOS mount enter path=%s dev=%x flags=%x\n",
++	printf("DITING APFS: SystemOS mount payload ready\n");
++	printf("DITING APFS: SystemOS mount enter path=%s dev=%x flags=%x\n",
 +	    mountpoint, (unsigned)selected, (unsigned)request.flags);
 +	error = mount(p, &request, &result);
 +	native_owner_cache_mount_status = error;
-+	printf("PONG APFS: SystemOS mount return error=%d result=%d\n", error, result);
++	printf("DITING APFS: SystemOS mount return error=%d result=%d\n", error, result);
 +	if (error) goto done;
 +	native_owner_cache_stage = 4;
 +	error = vnode_lookup(mountpoint, 0, &mounted_root, vfs_context_current());
-+	printf("PONG APFS: SystemOS root lookup error=%d vnode=%p\n", error, mounted_root);
++	printf("DITING APFS: SystemOS root lookup error=%d vnode=%p\n", error, mounted_root);
 +	if (error) goto done;
 +	mount_t cache_mount = vnode_mount(mounted_root);
 +	if (!cache_mount) { error = ENXIO; goto done; }
@@ -2124,10 +2124,10 @@ index 240bbf6..400dba5 100644
 +	int native_union = (vfs_flags(cache_mount) & MNT_UNION) &&
 +	    vnode_mountedhere(original_os_root) == cache_mount && rootvnode == mounted_root;
 +	native_owner_cache_native_union = native_union;
-+	printf("PONG APFS: SystemOS mounted dev=%x ro=%d union=%d flags=%llx\n",
++	printf("DITING APFS: SystemOS mounted dev=%x ro=%d union=%d flags=%llx\n",
 +	    (unsigned)actual, readonly, native_union,
 +	    (unsigned long long)vfs_flags(cache_mount));
-+#if defined(XNU_PONG_APFS_DEBUG) && XNU_PONG_APFS_DEBUG
++#if defined(XNU_DITING_APFS_DEBUG) && XNU_DITING_APFS_DEBUG
 +	dev_t expected_cache = NODEV;
 +	char expected_cache_path[64] = {0};
 +	cache_authorized = readonly && actual == selected &&
@@ -2149,10 +2149,10 @@ index 240bbf6..400dba5 100644
 +	vnode_t shared_cache_vp = NULLVP;
 +	int shared_cache_error = vnode_lookup(shared_cache_path, 0, &shared_cache_vp,
 +	    vfs_context_current());
-+	printf("PONG APFS: shared cache path probe error=%d vnode=%p\n",
++	printf("DITING APFS: shared cache path probe error=%d vnode=%p\n",
 +	    shared_cache_error, shared_cache_vp);
 +	if (shared_cache_vp) vnode_put(shared_cache_vp);
-+	printf("PONG APFS: launchd shared cache directory=%s\n",
++	printf("DITING APFS: launchd shared cache directory=%s\n",
 +	    environment + sizeof("DYLD_SHARED_CACHE_DIR=") - 1);
 +#endif
 +	if ((error = copyout(environment, environment_vector[0], strlen(environment) + 1)) != 0 ||
@@ -2167,7 +2167,7 @@ index 240bbf6..400dba5 100644
 +	native_owner_cache_stage = 6;
 +done:
 +	if (mounted_root) vnode_put(mounted_root);
-+#if defined(XNU_PONG_APFS_DEBUG) && XNU_PONG_APFS_DEBUG
++#if defined(XNU_DITING_APFS_DEBUG) && XNU_DITING_APFS_DEBUG
 +	dev_t root_rechecked_device = NODEV;
 +	char root_recheck_path[64] = {0};
 +	int root_recheck = root_authorized &&
@@ -2200,7 +2200,7 @@ index 240bbf6..400dba5 100644
 +
 +#if defined(XNU_OWNER_DATA_MOUNT) && XNU_OWNER_DATA_MOUNT
 +#if !defined(XNU_OWNER_BOOT_MANIFEST) || !XNU_OWNER_BOOT_MANIFEST
-+#if !defined(PONG) || !(DEVELOPMENT || DEBUG) || SECURE_KERNEL || !defined(XNU_PONG_APFS_DEBUG) || !XNU_PONG_APFS_DEBUG || !defined(XNU_OWNER_CACHE_MOUNT) || !XNU_OWNER_CACHE_MOUNT
++#if !defined(DITING) || !(DEVELOPMENT || DEBUG) || SECURE_KERNEL || !defined(XNU_DITING_APFS_DEBUG) || !XNU_DITING_APFS_DEBUG || !defined(XNU_OWNER_CACHE_MOUNT) || !XNU_OWNER_CACHE_MOUNT
 +#error Data requires the Pong development SystemOS mount path
 +#endif
 +#if (!defined(XNU_NATIVE_RAM_BLOCK) || !XNU_NATIVE_RAM_BLOCK) && (!defined(XNU_OWNER_DATA_UFS) || !XNU_OWNER_DATA_UFS)
@@ -2237,7 +2237,7 @@ index 240bbf6..400dba5 100644
 +		native_owner_data_status = ENXIO;
 +		return ENXIO;
 +	}
-+	printf("PONG APFS: Data prepare enter uuid=%s\n", XNU_OWNER_DATA_VOLUME_UUID);
++	printf("DITING APFS: Data prepare enter uuid=%s\n", XNU_OWNER_DATA_VOLUME_UUID);
 +	uint64_t base = 0, size = 0;
 +	dev_t device = NODEV;
 +	int error = EINVAL;
@@ -2248,7 +2248,7 @@ index 240bbf6..400dba5 100644
 +	 * SHNGROOT Data window. No md device, seed mapping or RAM fallback. */
 +	if (!native_pong_ufs_data_volume_device(XNU_OWNER_DATA_VOLUME_UUID, &device,
 +	    device_path, sizeof(device_path), &size)) {
-+		printf("PONG APFS: writable UFS Data UUID unavailable\n");
++		printf("DITING APFS: writable UFS Data UUID unavailable\n");
 +		error = ENXIO;
 +		goto done;
 +	}
@@ -2259,7 +2259,7 @@ index 240bbf6..400dba5 100644
 +	 * sparse media. A sparse disk has no contiguous logical-byte address. */
 +	if (!native_ram_block_volume_seed(XNU_OWNER_DATA_VOLUME_UUID, &device, device_path,
 +	    sizeof(device_path), &base, &size, native_owner_data_seed_sha256)) {
-+		printf("PONG APFS: scratch Data NativeRamBlock UUID unavailable\n");
++		printf("DITING APFS: scratch Data NativeRamBlock UUID unavailable\n");
 +		error = ENOENT;
 +		goto done;
 +	}
@@ -2421,7 +2421,7 @@ index 240bbf6..400dba5 100644
 +			chown(p, &owner, &result);
 +			created++;
 +		}
-+		printf("PONG APFS: var skeleton created=%d failed=%d\n", created, failed);
++		printf("DITING APFS: var skeleton created=%d failed=%d\n", created, failed);
 +	}
 +done:
 +	if (data_root) vnode_put(data_root);
@@ -2449,11 +2449,11 @@ index 240bbf6..400dba5 100644
  
  static const char * init_programs[] = {
 -#if DEBUG
-+#if DEBUG && !defined(PONG)
++#if DEBUG && !defined(DITING)
  	"/usr/appleinternal/sbin/launchd.debug",
  #endif
 -#if DEVELOPMENT || DEBUG
-+#if (DEVELOPMENT || DEBUG) && !defined(PONG)
++#if (DEVELOPMENT || DEBUG) && !defined(DITING)
  	"/usr/appleinternal/sbin/launchd.development",
  #endif
  	"/sbin/launchd",
@@ -2469,26 +2469,26 @@ index 240bbf6..400dba5 100644
 +	uint32_t skip_owner_apfs_mounts = 0;
 +	if (PE_parse_boot_argn("pong_skip_owner_apfs_mounts", &skip_owner_apfs_mounts,
 +	    sizeof(skip_owner_apfs_mounts)) && skip_owner_apfs_mounts == 1) {
-+		printf("PONG DEVELOPMENT: optional SystemOS/Data mounts skipped by boot argument\n");
++		printf("DITING DEVELOPMENT: optional SystemOS/Data mounts skipped by boot argument\n");
 +	} else {
 +#if defined(XNU_OWNER_CACHE_MOUNT) && XNU_OWNER_CACHE_MOUNT
-+	printf("PONG APFS: init owner mount hook entered\n");
++	printf("DITING APFS: init owner mount hook entered\n");
 +	int cache_error = native_owner_cache_prepare(p, (user_addr_t)scratch_addr, &init_envp);
-+	printf("PONG APFS: init owner mount hook returned error=%d stage=%d\n",
++	printf("DITING APFS: init owner mount hook returned error=%d stage=%d\n",
 +	    cache_error, native_owner_cache_stage);
 +	if (cache_error) {
-+		printf("PONG DEVELOPMENT: APFS SystemOS union SKIP error=%d stage=%d; continue normal init\n",
++		printf("DITING DEVELOPMENT: APFS SystemOS union SKIP error=%d stage=%d; continue normal init\n",
 +		    cache_error, native_owner_cache_stage);
 +	} else {
-+		printf("PONG DEVELOPMENT: APFS SystemOS union PASS device=%x\n",
++		printf("DITING DEVELOPMENT: APFS SystemOS union PASS device=%x\n",
 +		    (unsigned)native_owner_cache_selected_device);
 +	}
 +#endif
 +#if defined(XNU_OWNER_DATA_MOUNT) && XNU_OWNER_DATA_MOUNT
 +	int data_error = native_owner_data_prepare(p, (user_addr_t)scratch_addr);
-+	if (data_error) printf("PONG DEVELOPMENT: scratch Data mount SKIP error=%d stage=%d\n",
++	if (data_error) printf("DITING DEVELOPMENT: scratch Data mount SKIP error=%d stage=%d\n",
 +	    data_error, native_owner_data_stage);
-+	else printf("PONG APFS: Data mount PASS path=/private/var device=%s rw=%d bytes=%llu\n",
++	else printf("DITING APFS: Data mount PASS path=/private/var device=%s rw=%d bytes=%llu\n",
 +	    native_owner_data_device_path, !native_owner_data_readonly,
 +	    (unsigned long long)native_owner_data_seed_size);
 +#endif
@@ -2533,7 +2533,7 @@ index 240bbf6..400dba5 100644
  	}
  #endif
  
-+#if defined(PONG) && (DEVELOPMENT || DEBUG) && !SECURE_KERNEL
++#if defined(DITING) && (DEVELOPMENT || DEBUG) && !SECURE_KERNEL
 +	/* Only the matching OS-resident Darwin24 helper may replace init.
 +	 * Keep normal exec/signature/error handling. */
 +	char pong_init_path[128];
@@ -2572,7 +2572,7 @@ index d5d5b16..5372d98 100644
  
  #include <pexpert/pexpert.h>
  
-+#if defined(PONG) && defined(XNU_PONG_RAMOOPS_CONSOLE) && XNU_PONG_RAMOOPS_CONSOLE
++#if defined(DITING) && defined(XNU_DITING_RAMOOPS_CONSOLE) && XNU_DITING_RAMOOPS_CONSOLE
 +extern void pong_ramoops_diagnostic_write(const char *, int);
 +
 +/* A write-only, small diagnostic endpoint for the Settings adapter. No
@@ -2594,7 +2594,7 @@ index d5d5b16..5372d98 100644
 +	if (error) return error;
 +	text[req->newlen] = 0;
 +	int length = snprintf(line, sizeof(line), "%s[%d]: %s\n",
-+	    settings ? "PONG SETTINGS" : "PONG GPU", proc_getpid(process), text);
++	    settings ? "DITING SETTINGS" : "DITING GPU", proc_getpid(process), text);
 +	if (length > 0) pong_ramoops_diagnostic_write(line,
 +	    length < (int)sizeof(line) ? length : (int)sizeof(line)-1);
 +	return 0;
@@ -2611,13 +2611,13 @@ index d5d5b16..5372d98 100644
  	task_t task = proc_task(p);
  
  
-+#if defined(PONG) && defined(XNU_PONG_RAMOOPS_CONSOLE) && XNU_PONG_RAMOOPS_CONSOLE
++#if defined(DITING) && defined(XNU_DITING_RAMOOPS_CONSOLE) && XNU_DITING_RAMOOPS_CONSOLE
 +	if (strcmp(p->p_comm, "Preferences") == 0) {
 +		char line[768];
 +		os_reason_t reason = p->p_exit_reason;
 +		const char *description = reason ? exit_reason_get_string_desc(reason) : NULL;
 +		int length = snprintf(line, sizeof(line),
-+		    "PONG SETTINGS EXIT pid=%d signal=%d status=%d namespace=%u code=0x%llx description=%.512s\n",
++		    "DITING SETTINGS EXIT pid=%d signal=%d status=%d namespace=%u code=0x%llx description=%.512s\n",
 +		    proc_getpid(p), WTERMSIG(rv), WEXITSTATUS(rv), reason ? reason->osr_namespace : 0,
 +		    reason ? reason->osr_code : 0ULL, description ? description : "none");
 +		if (length > 0) pong_ramoops_diagnostic_write(line,
@@ -2681,7 +2681,7 @@ index c521960..25fcabb 100644
  		 * backwards compatibility purposes only.
  		 */
 -#if XNU_TARGET_OS_OSX && defined(__arm64__)
-+#if XNU_TARGET_OS_OSX && defined(__arm64__) && !defined(PONG)
++#if XNU_TARGET_OS_OSX && defined(__arm64__) && !defined(DITING)
  	/* The following two are kludged for backward
  	 * compatibility. Use hw.product/hw.target for something
  	 * consistent instead. */
@@ -2692,7 +2692,7 @@ index 0000000..3b91bab
 +++ b/bsd/kern/kern_minimac.c
 @@ -0,0 +1,482 @@
 +#include <pexpert/arm64/board_config.h>
-+#if defined(PONG) && (DEVELOPMENT || DEBUG) && !SECURE_KERNEL
++#if defined(DITING) && (DEVELOPMENT || DEBUG) && !SECURE_KERNEL
 +/*
 + * Stand-ins for the two closed security policies user space cannot do
 + * without: AMFI and the Sandbox. On a device they are kexts that register
@@ -3181,7 +3181,7 @@ index 44f92f5..7409c02 100644
  	return 0;
  }
  
-+#if defined(PONG) && (DEVELOPMENT || DEBUG) && !SECURE_KERNEL
++#if defined(DITING) && (DEVELOPMENT || DEBUG) && !SECURE_KERNEL
 +void pong_persona_bootstrap(void);
 +
 +void
@@ -3262,7 +3262,7 @@ index 060913a..6c66e6b 100644
  
  		void* osent = csblob_os_entitlements_get(blob);
 -		if (!osent) {
-+		#if defined(ARM64_BOARD_CONFIG_PONG) && (DEVELOPMENT || DEBUG)
++		#if defined(ARM64_BOARD_CONFIG_DITING) && (DEVELOPMENT || DEBUG)
 +		/* Darwin24 normally obtains XML through the closed OSEntitlements
 +		 * object. Pong's development adapter reads the real embedded blob
 +		 * instead, as the Darwin22 csops path did. Never return success with
@@ -3325,7 +3325,7 @@ index 0000000..9257df6
 @@ -0,0 +1,24 @@
 +#include <pexpert/arm64/board_config.h>
 +/* Bounded kernel-side progress, without a private sysctl or user copy. */
-+#if defined(PONG) && (DEVELOPMENT || DEBUG)
++#if defined(DITING) && (DEVELOPMENT || DEBUG)
 +#include <sys/param.h>
 +#include <sys/systm.h>
 +#include <sys/proc.h>
@@ -3386,7 +3386,7 @@ index b544bf3..9d459e5 100644
  
 -	default:
 -		return ENOTSUP;
-+#if defined(PONG) && (DEVELOPMENT || DEBUG)
++#if defined(DITING) && (DEVELOPMENT || DEBUG)
 +    /* UniXNU instance start/update/finish ABI used by OS audio workgroups.
 +     * The Pong board has no performance-controller instance sink. Validate
 +     * the caller contract without inventing a controller or scheduling data. */
@@ -3459,7 +3459,7 @@ index 69b9d1f..6f7af7d 100644
  	 */
  	assert(ret == KERN_NOT_SUPPORTED);
  
-+#if defined(PONG) && (DEVELOPMENT || DEBUG) && !SECURE_KERNEL
++#if defined(DITING) && (DEVELOPMENT || DEBUG) && !SECURE_KERNEL
 +	/* AMFI is deliberately absent from this development prelink. Disabling
 +	 * enforcement does not by itself make its kernel interface non-null.
 +	 * Permit the missing entitlement accelerator only when the immutable
@@ -3473,7 +3473,7 @@ index 69b9d1f..6f7af7d 100644
 +		    CS_CONFIG_GET_OUT_OF_MY_WAY)) ==
 +		    (CS_CONFIG_ENFORCEMENT_DISABLED | CS_CONFIG_GET_OUT_OF_MY_WAY)) {
 +			if (!atomic_exchange_explicit(&reported_missing_amfi, true, memory_order_relaxed)) {
-+				printf("PONG DEVELOPMENT: AMFI interface absent; skip entitlement acceleration under hard bypass\n");
++				printf("DITING DEVELOPMENT: AMFI interface absent; skip entitlement acceleration under hard bypass\n");
 +			}
 +			return 0;
 +		}
@@ -4147,17 +4147,17 @@ index 0000000..3843c79
 +++ b/bsd/sys/pong_input.h
 @@ -0,0 +1,24 @@
 +/* Pong touch records. Earlier input ABI adapted to the real Pong producer. */
-+#ifndef _SYS_PONG_INPUT_H_
-+#define _SYS_PONG_INPUT_H_
++#ifndef _SYS_DITING_INPUT_H_
++#define _SYS_DITING_INPUT_H_
 +#include <stdint.h>
-+#define PONG_TOUCH_DOWN 1
-+#define PONG_TOUCH_MOVE 2
-+#define PONG_TOUCH_UP 3
-+#define PONG_BUTTON_DOWN 4
-+#define PONG_BUTTON_UP 5
-+#define PONG_BUTTON_POWER 0
-+#define PONG_BUTTON_VOLUME_UP 1
-+#define PONG_BUTTON_VOLUME_DOWN 2
++#define DITING_TOUCH_DOWN 1
++#define DITING_TOUCH_MOVE 2
++#define DITING_TOUCH_UP 3
++#define DITING_BUTTON_DOWN 4
++#define DITING_BUTTON_UP 5
++#define DITING_BUTTON_POWER 0
++#define DITING_BUTTON_VOLUME_UP 1
++#define DITING_BUTTON_VOLUME_DOWN 2
 +struct pong_touch {
 +    uint64_t time;
 +    uint32_t type, finger, x, y;
@@ -4285,7 +4285,7 @@ index fe34d1b..eab9b59 100644
   */
  
  #include <sys/param.h>
-+#if defined(ARM64_BOARD_CONFIG_PONG)
++#if defined(ARM64_BOARD_CONFIG_DITING)
 +#include <pexpert/arm64/board_config.h>
 +#endif
 +extern void pong_init_note(const char *);
@@ -4297,7 +4297,7 @@ index fe34d1b..eab9b59 100644
  		return error;
  	}
 +
-+#if defined(PONG) && (DEVELOPMENT || DEBUG)
++#if defined(DITING) && (DEVELOPMENT || DEBUG)
 +	pong_init_note("open file descriptor allocation returned");
 +#endif
  	if (flags & O_CLOEXEC) {
@@ -4308,7 +4308,7 @@ index fe34d1b..eab9b59 100644
  	}
  
 +
-+#if defined(PONG) && (DEVELOPMENT || DEBUG)
++#if defined(DITING) && (DEVELOPMENT || DEBUG)
 +	pong_init_note("open vnode authorization begin");
 +#endif
  	if ((error = vn_open_auth(ndp, &flags, vap, authvp))) {
@@ -4319,7 +4319,7 @@ index fe34d1b..eab9b59 100644
  	}
  
 +
-+#if defined(PONG) && (DEVELOPMENT || DEBUG)
++#if defined(DITING) && (DEVELOPMENT || DEBUG)
 +	pong_init_note("open vnode authorization returned");
 +#endif
  	uu->uu_dupfd = 0;
@@ -4330,11 +4330,11 @@ index fe34d1b..eab9b59 100644
  	int error;
  
 +
-+#if defined(PONG) && (DEVELOPMENT || DEBUG)
++#if defined(DITING) && (DEVELOPMENT || DEBUG)
 +	pong_init_note("open state allocation begin");
 +#endif
  	__open_data = kalloc_type(typeof(*__open_data), Z_WAITOK);
-+#if defined(PONG) && (DEVELOPMENT || DEBUG)
++#if defined(DITING) && (DEVELOPMENT || DEBUG)
 +	pong_init_note("open state allocation returned");
 +#endif
 +
@@ -4345,11 +4345,11 @@ index fe34d1b..eab9b59 100644
  int
  open(proc_t p, struct open_args *uap, int32_t *retval)
  {
-+#if defined(PONG) && (DEVELOPMENT || DEBUG)
++#if defined(DITING) && (DEVELOPMENT || DEBUG)
 +	pong_init_note("open handler entered");
 +#endif
  	__pthread_testcancel(1);
-+#if defined(PONG) && (DEVELOPMENT || DEBUG)
++#if defined(DITING) && (DEVELOPMENT || DEBUG)
 +	pong_init_note("open cancellation check returned");
 +#endif
 +
@@ -4423,7 +4423,7 @@ index 2620af5..b782b15 100644
 +}
 +#endif
 +
-+#if defined(PONG) && defined(XNU_OWNER_CACHE_MOUNT) && XNU_OWNER_CACHE_MOUNT && !CONFIG_CSR
++#if defined(DITING) && defined(XNU_OWNER_CACHE_MOUNT) && XNU_OWNER_CACHE_MOUNT && !CONFIG_CSR
 +#if !DEVELOPMENT && !DEBUG
 +#error The Pong SystemOS shared-region binding is development-only
 +#endif
@@ -4496,7 +4496,7 @@ index 2620af5..b782b15 100644
 +#if defined(XNU_OWNER_CACHE_CARRIER) && XNU_OWNER_CACHE_CARRIER
 +		boolean_t owner_carrier = FALSE;
 +#endif
-+#if defined(PONG) && defined(XNU_OWNER_CACHE_MOUNT) && XNU_OWNER_CACHE_MOUNT
++#if defined(DITING) && defined(XNU_OWNER_CACHE_MOUNT) && XNU_OWNER_CACHE_MOUNT
 +		boolean_t pong_owner_cache = FALSE;
 +#endif
  		if (srfmp->vp->v_mount != rdir_vp->v_mount) {
@@ -4506,7 +4506,7 @@ index 2620af5..b782b15 100644
  			vnode_t preboot_vp = NULL;
  #if XNU_TARGET_OS_OSX
  #define PREBOOT_CRYPTEX_PATH "/System/Volumes/Preboot/Cryptexes"
-+#elif defined(PONG) && defined(XNU_OWNER_CACHE_MOUNT) && XNU_OWNER_CACHE_MOUNT
++#elif defined(DITING) && defined(XNU_OWNER_CACHE_MOUNT) && XNU_OWNER_CACHE_MOUNT
 +			pong_owner_cache = pong_owner_shared_cache_mount(rdir_vp, srfmp->vp);
 +#define PREBOOT_CRYPTEX_PATH "/private/preboot/Cryptexes"
  #else
@@ -4518,7 +4518,7 @@ index 2620af5..b782b15 100644
 +#if defined(XNU_OWNER_CACHE_CARRIER) && XNU_OWNER_CACHE_CARRIER
 +			    && !owner_carrier
 +#endif
-+#if defined(PONG) && defined(XNU_OWNER_CACHE_MOUNT) && XNU_OWNER_CACHE_MOUNT
++#if defined(DITING) && defined(XNU_OWNER_CACHE_MOUNT) && XNU_OWNER_CACHE_MOUNT
 +			    && !pong_owner_cache
 +#endif
 +			    ) {
@@ -4551,11 +4551,11 @@ index e9170fd..f7d1e8a 100644
  options   NOS_ARM_ASM			# <nos_arm_asm>
  options   NOS_ARM_PMAP			# <nos_arm_pmap>
  
-diff --git a/config/MASTER.arm64.pong b/config/MASTER.arm64.pong
+diff --git a/config/MASTER.arm64.diting b/config/MASTER.arm64.diting
 new file mode 100644
 index 0000000..c5c541a
 --- /dev/null
-+++ b/config/MASTER.arm64.pong
++++ b/config/MASTER.arm64.diting
 @@ -0,0 +1,97 @@
 +# Pong SM8475 / Darwin24 configuration; topology supplied by the Pong ADT.
 +#
@@ -4662,7 +4662,7 @@ index c7b3a77..1927eaf 100644
  static OSSharedPtr<const OSSymbol> gIOCPUStateKey;
  static OSSharedPtr<OSString> gIOCPUStateNames[kIOCPUStateCount];
  
-+#if defined(PONG)
++#if defined(DITING)
 +// The exported kext SDK omits this internal IOService method. Keep the
 +// completion notification in XNU, after the native driver tried every CPU.
 +extern "C" void
@@ -4680,7 +4680,7 @@ index c7b3a77..1927eaf 100644
  
  	IOUnlock(vector->interruptLock);
  
-+#if !defined(PONG)
++#if !defined(DITING)
 +	// Pong installs all vectors before PSCI CPU_ON. Waiting here for every
 +	// CPU's local interrupt installation would prevent the first CPU_ON.
  	IOTakeLock(vectors[0].interruptLock);
@@ -4726,7 +4726,7 @@ index 39f62c7..8cbf96f 100644
  	gIOSystemStateNotificationService = IOSystemStateNotification::initialize();
  	gIOSystemStateNotificationService->attachToParent(platform, gIOServicePlane);
  	gIOSystemStateNotificationService->registerService();
-+#if defined(PONG)
++#if defined(DITING)
 +	// Publish any values queued before platform attachment.
 +	gIOResources->registerService();
 +#endif
@@ -4738,7 +4738,7 @@ index 39f62c7..8cbf96f 100644
  	}
  
  	gIOResources->setProperty( key, value);
-+#if defined(PONG)
++#if defined(DITING)
 +	// IOMapper may publish before IOPlatformExpert::setPlatform attaches
 +	// IOResources. Keep the value; publish the service once it has a parent.
 +	if (!gIOResources->inPlane(gIOServicePlane)) { return; }
@@ -4780,11 +4780,11 @@ index 95553a0..39e553d 100644
  
 +// These bring-up targets have no RTC provider. Use XNU's calendar fallback
 +// instead of waiting for a service that no linked driver can publish.
-+#if !defined(PONG)
++#if !defined(DITING)
  	IOService::waitForService(
  		IOService::resourceMatching("IORTC"), &t );
-+#elif defined(PONG)
-+	IOLog("PONG: no DT RTC provider; initialize calendar fallback\n");
++#elif defined(DITING)
++	IOLog("DITING: no DT RTC provider; initialize calendar fallback\n");
 +#endif
  #if defined(__i386__) || defined(__x86_64__)
  	IOService::waitForService(
@@ -4836,7 +4836,7 @@ index e1d0d4b..6dc68c7 100644
 +static bool
 +native_sandbox_grant(IOService * service)
 +{
-+#if defined(PONG) && (DEVELOPMENT || DEBUG)
++#if defined(DITING) && (DEVELOPMENT || DEBUG)
 +	/* The opted-in native Metal service is discoverable by every OS client.
 +	 * Require the actual board driver's completed CP publication gate. */
 +	if (service->getProperty("PongNativeMetalGlobal") == kOSBooleanTrue &&
@@ -4980,7 +4980,7 @@ index 0000000..0b489ec
 + * and keychain clients can run without a SEP. Wrapping is not encryption.
 + */
 +#include <pexpert/arm64/board_config.h>
-+#if defined(PONG) && (DEVELOPMENT || DEBUG) && !SECURE_KERNEL
++#if defined(DITING) && (DEVELOPMENT || DEBUG) && !SECURE_KERNEL
 +#include <IOKit/IOLib.h>
 +#include <IOKit/IOKitKeys.h>
 +#include <IOKit/IOService.h>
@@ -5303,7 +5303,7 @@ index 0000000..65a0b78
 + */
 +
 +#include <pexpert/arm64/board_config.h>
-+#if defined(PONG) && (DEVELOPMENT || DEBUG) && !SECURE_KERNEL
++#if defined(DITING) && (DEVELOPMENT || DEBUG) && !SECURE_KERNEL
 +#include <IOKit/IOLib.h>
 +#include <IOKit/IOLocks.h>
 +#include <IOKit/IOKitKeys.h>
@@ -5335,12 +5335,12 @@ index 0000000..65a0b78
 +
 +#include "MiniIOSurface.h"
 +
-+#if XNU_PONG_ADRENO_PLATFORM
++#if XNU_DITING_ADRENO_PLATFORM
 +extern "C" void pong_scanout_initialize(uint64_t,size_t,uint32_t,uint32_t,uint32_t);
 +extern "C" int pong_scanout_frame(IOMemoryDescriptor *,size_t,uint32_t,uint32_t,uint32_t);
 +extern "C" bool pong_scanout_quarantined(void);
 +#endif
-+#if XNU_PONG_BACKLIGHT
++#if XNU_DITING_BACKLIGHT
 +extern "C" void pong_backlight_start(IOService *display);
 +#endif
 +
@@ -5715,7 +5715,7 @@ index 0000000..65a0b78
 +		return failStart(provider);
 +	}
 +	fThreads = gThreads >= 1 && gThreads <= 8 ? gThreads : 1;
-+#if XNU_PONG_ADRENO_PLATFORM
++#if XNU_DITING_ADRENO_PLATFORM
 +	pong_scanout_initialize((uint64_t)fBase,(size_t)fRowBytes*fPanelHeight,
 +	    fRowBytes,fPanelWidth,fPanelHeight);
 +#endif
@@ -6329,7 +6329,7 @@ index 0000000..65a0b78
 +	 * unscaled layer; other layouts use CPU composition unless explicitly disabled.
 +	 * No CPU writes may race an outstanding GPU copy after a timeout. */
 +	bool gpuFrame=false;
-+#if XNU_PONG_ADRENO_PLATFORM
++#if XNU_DITING_ADRENO_PLATFORM
 +	if(pong_scanout_quarantined()){IOLockUnlock(fLock);return kIOReturnNotReady;}
 +	MiniIOSurface *base=surfaces[0];
 +	int32_t source[4],destination[4];
@@ -6352,7 +6352,7 @@ index 0000000..65a0b78
 +#endif
 +	if(fGpuOnly && !gpuFrame) {
 +		static unsigned missed=0;
-+		if(missed++<4)IOLog("PONG GPU ONLY: no completed GPU frame; CPU composition disabled\n");
++		if(missed++<4)IOLog("DITING GPU ONLY: no completed GPU frame; CPU composition disabled\n");
 +		IOLockUnlock(fLock);return kIOReturnNotReady;
 +	}
 +
@@ -6914,7 +6914,7 @@ index 0000000..65a0b78
 +	if (!fb->start(provider)) {
 +		fb->detach(provider);
 +	}
-+#if XNU_PONG_BACKLIGHT
++#if XNU_DITING_BACKLIGHT
 +	else {
 +		pong_backlight_start(fb);
 +	}
@@ -6942,7 +6942,7 @@ index 0000000..9e2008c
 + */
 +
 +#include <pexpert/arm64/board_config.h>
-+#if defined(PONG) && (DEVELOPMENT || DEBUG) && !SECURE_KERNEL
++#if defined(DITING) && (DEVELOPMENT || DEBUG) && !SECURE_KERNEL
 +#include <IOKit/IOLib.h>
 +#include <IOKit/IOPlatformExpert.h>
 +#include <pexpert/pexpert.h>
@@ -9625,7 +9625,7 @@ index 0000000..a4131a8
 +++ b/libkern/amfi/miniamfi.c
 @@ -0,0 +1,272 @@
 +#include <pexpert/arm64/board_config.h>
-+#if defined(PONG) && (DEVELOPMENT || DEBUG) && !SECURE_KERNEL
++#if defined(DITING) && (DEVELOPMENT || DEBUG) && !SECURE_KERNEL
 +/*
 + * Stand-in for the AppleMobileFileIntegrity kext interface.
 + *
@@ -9903,7 +9903,7 @@ index 0000000..9b22f8e
 +++ b/libkern/amfi/miniamfi_entitlements.cpp
 @@ -0,0 +1,127 @@
 +#include <pexpert/arm64/board_config.h>
-+#if defined(PONG) && (DEVELOPMENT || DEBUG) && !SECURE_KERNEL
++#if defined(DITING) && (DEVELOPMENT || DEBUG) && !SECURE_KERNEL
 +/*
 + * Entitlement queries for the AMFI stand-in (see miniamfi.c).
 + *
@@ -10077,7 +10077,7 @@ index 8830671..a980552 100644
  SUPPORTED_ARM64_MACHINE_CONFIGS = NONE
  else
 -SUPPORTED_ARM64_MACHINE_CONFIGS = T6000 T6020 T6030 T6031 T6041 T8101 T8103 T8112 T8122 T8132 VMAPPLE
-+SUPPORTED_ARM64_MACHINE_CONFIGS = PONG T6000 T6020 T6030 T6031 T6041 T8101 T8103 T8112 T8122 T8132 VMAPPLE
++SUPPORTED_ARM64_MACHINE_CONFIGS = DITING T6000 T6020 T6030 T6031 T6041 T8101 T8103 T8112 T8122 T8132 VMAPPLE
  
  SPTM_ENABLED_SOCS_MacOSX = t6041 t8132
  
@@ -10085,7 +10085,7 @@ index 8830671..a980552 100644
  MACHINE_FLAGS_ARM64_T8122 = -DARM64_BOARD_CONFIG_T8122_T8130		-mcpu=apple-m3
  MACHINE_FLAGS_ARM64_T8132 = -DARM64_BOARD_CONFIG_T8132			-mcpu=apple-m4
  MACHINE_FLAGS_ARM64_VMAPPLE = -DARM64_BOARD_CONFIG_VMAPPLE              -march=armv8.5a+sme2
-+MACHINE_FLAGS_ARM64_PONG = -DARM64_BOARD_CONFIG_PONG -mstrict-align -march=armv8.2-a -Xclang -target-feature -Xclang +pan
++MACHINE_FLAGS_ARM64_DITING = -DARM64_BOARD_CONFIG_DITING -mstrict-align -march=armv8.2-a -Xclang -target-feature -Xclang +pan
  
  
  #
@@ -10132,7 +10132,7 @@ index 02ab93c..77b178c 100644
  #include <IOKit/IOPlatformExpert.h>
  #endif /* HIBERNATION */
  
-+#if defined(PONG) && defined(XNU_PONG_RAMOOPS_CONSOLE) && XNU_PONG_RAMOOPS_CONSOLE
++#if defined(DITING) && defined(XNU_DITING_RAMOOPS_CONSOLE) && XNU_DITING_RAMOOPS_CONSOLE
 +#include <arm64/pong_ramoops_console.h>
 +#endif
 +
@@ -10169,7 +10169,7 @@ index 02ab93c..77b178c 100644
  #if __ARM_PAN_AVAILABLE__
  	__builtin_arm_wsr("pan", 1);
  #endif  /* __ARM_PAN_AVAILABLE__ */
-+#if defined(PONG_LEGACY_UACCESS) && PONG_LEGACY_UACCESS
++#if defined(DITING_LEGACY_UACCESS) && DITING_LEGACY_UACCESS
 +	/* SM8475 supports PAN even when the generic copyio implementation does
 +	 * not use it. Keep exception entry from silently re-enabling it. The
 +	 * default SCTLR also carries SPAN so later CPU setup stays consistent. */
@@ -10186,7 +10186,7 @@ index 02ab93c..77b178c 100644
  
  	arm_vm_init(xmaxmem, args);
  
-+#if defined(PONG) && defined(XNU_PONG_RAMOOPS_CONSOLE) && XNU_PONG_RAMOOPS_CONSOLE
++#if defined(DITING) && defined(XNU_DITING_RAMOOPS_CONSOLE) && XNU_DITING_RAMOOPS_CONSOLE
 +	(void)pong_ramoops_console_init();
 +#endif
 +
@@ -10197,7 +10197,7 @@ index 02ab93c..77b178c 100644
  	const unsigned int serial_exists = serial_init();
  	kernel_startup_initialize_upto(STARTUP_SUB_KPRINTF);
  	kprintf("kprintf initialized\n");
-+#if defined(PONG)
++#if defined(DITING)
 +    printf("Pong RAM: %u owned banks, %llu MiB managed before kernel reservations, 4 KiB pages\n",
 +        pong_ram_range_count, pong_ram_bytes >> 20);
 +#endif
@@ -10243,12 +10243,12 @@ index 223d5b1..74fb15b 100644
  #include <arm/pmap/pmap.h>
  #endif
 +
-+#if defined(PONG) && !defined(ASSEMBLER) && !defined(__ASSEMBLER__)
++#if defined(DITING) && !defined(ASSEMBLER) && !defined(__ASSEMBLER__)
 +/* Loader-owned, discontiguous DRAM. Entry 0 is the contiguous bootstrap bank. */
-+#define PONG_RAM_RANGE_MAX 64
++#define DITING_RAM_RANGE_MAX 64
 +struct pong_ram_range { uint64_t start, end, first_page; };
 +__BEGIN_DECLS
-+extern struct pong_ram_range pong_ram_ranges[PONG_RAM_RANGE_MAX];
++extern struct pong_ram_range pong_ram_ranges[DITING_RAM_RANGE_MAX];
 +extern unsigned pong_ram_range_count;
 +extern uint64_t pong_ram_bytes;
 +bool pmap_pong_pa_valid(uint64_t pa);
@@ -10317,7 +10317,7 @@ index a5de704..c7ca70f 100644
 -	vm_last_phys = trunc_page(avail_end);
 +    vm_first_phys = gPhysBase;
 +    vm_last_phys = trunc_page(avail_end);
-+#if defined(PONG)
++#if defined(DITING)
 +    for (unsigned i = 1; i < pong_ram_range_count; i++) {
 +        if (pong_ram_ranges[i].start < vm_first_phys) vm_first_phys = pong_ram_ranges[i].start;
 +        if (pong_ram_ranges[i].end > vm_last_phys) vm_last_phys = pong_ram_ranges[i].end;
@@ -10330,7 +10330,7 @@ index a5de704..c7ca70f 100644
  
  static unsigned int avail_page_count = 0;
  static bool need_ram_ranges_init = true;
-+#if defined(PONG)
++#if defined(DITING)
 +static unsigned pong_free_bank = 1;
 +static uint64_t pong_free_cursor;
 +#endif
@@ -10343,7 +10343,7 @@ index a5de704..c7ca70f 100644
  	assert(end == (end & ~PAGE_MASK));
 -	avail_page_count = atop(end - first);
 +    avail_page_count = atop(end - first);
-+#if defined(PONG)
++#if defined(DITING)
 +    avail_page_count += (unsigned)atop(pong_ram_bytes - gPhysSize);
 +#endif
  
@@ -10354,7 +10354,7 @@ index a5de704..c7ca70f 100644
  		initialize_ram_ranges();
  	}
 -	return (unsigned int)atop(avail_end - first_avail);
-+#if defined(PONG)
++#if defined(DITING)
 +    return avail_page_count;
 +#else
 +    return (unsigned int)atop(avail_end - first_avail);
@@ -10368,7 +10368,7 @@ index a5de704..c7ca70f 100644
  	}
 -	assert(avail_page_count == 0);
 -	return FALSE;
-+#if defined(PONG)
++#if defined(DITING)
 +    while (pong_free_bank < pong_ram_range_count) {
 +        const struct pong_ram_range *r = &pong_ram_ranges[pong_free_bank];
 +        if (!pong_free_cursor) pong_free_cursor = r->start;
@@ -10429,7 +10429,7 @@ index a5de704..c7ca70f 100644
  boolean_t
  pmap_has_managed_page(ppnum_t first, ppnum_t last)
  {
-+#if defined(PONG)
++#if defined(DITING)
 +    for (unsigned i = 0; i < pong_ram_range_count; i++)
 +        if (ptoa(first) < pong_ram_ranges[i].end && ptoa(last) >= pong_ram_ranges[i].start) return TRUE;
 +    return FALSE;
@@ -10474,7 +10474,7 @@ index 449dba7..4347107 100644
 +/* Native 4 KiB: two roots plus up to seven L2 pages per 6 GiB mapping.
 + * The physical and virtual bases may each straddle an extra 1 GiB region.
 + */
-+#if defined(PONG)
++#if defined(DITING)
 +/* Two roots and L2 tables for the complete 12 GiB aperture and slide. */
 +#define BOOTSTRAP_TABLE_SIZE (ARM_PGBYTES * 32)
 +#else
@@ -10491,7 +10491,7 @@ index a0ee8d9..db1cc16 100644
  #include <vm/vm_pageout.h>
  
  #include <arm/pmap/pmap_internal.h>
-+#if !defined(PONG)
++#if !defined(DITING)
 +#define pmap_pong_index_pa(index) (vm_first_phys + (pmap_paddr_t)ptoa(index))
 +#endif
  
@@ -10508,7 +10508,7 @@ index a0ee8d9..db1cc16 100644
 +vm_object_offset_t
 +pmap_page_object_offset(pmap_paddr_t pa)
 +{
-+#if defined(PONG)
++#if defined(DITING)
 +    unsigned index = pmap_pong_pa_index(pa);
 +    if (index == UINT32_MAX) {
 +        panic("%s: unmanaged page-table PA 0x%llx", __func__, pa);
@@ -10558,7 +10558,7 @@ index 0657906..c6d4f9c 100644
  pa_valid(pmap_paddr_t pa)
  {
 -	return (pa >= vm_first_phys) && (pa < vm_last_phys);
-+#if defined(PONG)
++#if defined(DITING)
 +    return vm_last_phys != 0 && pmap_pong_pa_valid(pa);
 +#else
 +    return (pa >= vm_first_phys) && (pa < vm_last_phys);
@@ -10571,7 +10571,7 @@ index 0657906..c6d4f9c 100644
  pa_index(pmap_paddr_t pa)
  {
 -	return (unsigned int)atop(pa - vm_first_phys);
-+#if defined(PONG)
++#if defined(DITING)
 +    return pmap_pong_pa_index(pa);
 +#else
 +    return (unsigned int)atop(pa - vm_first_phys);
@@ -10627,7 +10627,7 @@ index e050e53..27157d6 100644
  SECURITY_READ_ONLY_LATE(pmap_paddr_t)    avail_start;
  SECURITY_READ_ONLY_LATE(pmap_paddr_t)    avail_end;
  SECURITY_READ_ONLY_LATE(pmap_paddr_t)    real_avail_end;
-+#if defined(PONG)
++#if defined(DITING)
 +/* Actual Pong DT gpu_micro_code_mem. Published only before VM allocation. */
 +unsigned int pong_adreno_zap_reserved;
 +#endif
@@ -10639,8 +10639,8 @@ index e050e53..27157d6 100644
  } ptov_table_entry;
  
 +
-+#if defined(PONG)
-+SECURITY_READ_ONLY_LATE(struct pong_ram_range) pong_ram_ranges[PONG_RAM_RANGE_MAX];
++#if defined(DITING)
++SECURITY_READ_ONLY_LATE(struct pong_ram_range) pong_ram_ranges[DITING_RAM_RANGE_MAX];
 +SECURITY_READ_ONLY_LATE(unsigned) pong_ram_range_count;
 +SECURITY_READ_ONLY_LATE(uint64_t) pong_ram_bytes;
 +
@@ -10680,7 +10680,7 @@ index e050e53..27157d6 100644
 +    DTEntry chosen;
 +    unsigned length = 0;
 +    const void *property = NULL;
-+    uint64_t wire[4 + PONG_RAM_RANGE_MAX * 2];
++    uint64_t wire[4 + DITING_RAM_RANGE_MAX * 2];
 +    pong_ram_ranges[0] = (struct pong_ram_range){args->physBase, args->physBase + args->memSize, 0};
 +    pong_ram_range_count = 1;
 +    pong_ram_bytes = args->memSize;
@@ -10693,7 +10693,7 @@ index e050e53..27157d6 100644
 +    const volatile uint8_t *source = (const volatile uint8_t *)property;
 +    for (unsigned i = 0; i < sizeof(wire); i++)
 +        ((uint8_t *)wire)[i] = source[i];
-+    if (wire[0] != 1 || !wire[1] || wire[1] > PONG_RAM_RANGE_MAX || wire[3] ||
++    if (wire[0] != 1 || !wire[1] || wire[1] > DITING_RAM_RANGE_MAX || wire[3] ||
 +        wire[4] != args->physBase || wire[5] != args->memSize) return;
 +    uint64_t total = args->memSize;
 +    for (unsigned i = 1; i < wire[1]; i++) {
@@ -10717,8 +10717,8 @@ index e050e53..27157d6 100644
 +
 +#endif
 +
-+#if defined(PONG)
-+#define PTOV_TABLE_SIZE (8 + PONG_RAM_RANGE_MAX)
++#if defined(DITING)
++#define PTOV_TABLE_SIZE (8 + DITING_RAM_RANGE_MAX)
 +#else
  #define PTOV_TABLE_SIZE 8
 +#endif
@@ -10739,7 +10739,7 @@ index e050e53..27157d6 100644
  }
  
 +
-+#if defined(PONG)
++#if defined(DITING)
 +/* Additional banks do not have an old gVirtBase + PA - gPhysBase alias.
 + * Emit their final aperture directly. All table pages remain in the primary
 + * boot allocation until TTBR1 switches; never dereference an extra bank here. */
@@ -10797,7 +10797,7 @@ index e050e53..27157d6 100644
  	arm_vm_physmap_slide(temp_ptov_table, (args->topOfKernelData - gPhysBase + gVirtBase),
  	    real_avail_end - args->topOfKernelData, AP_RWNA, ARM64_GRANULE_ALLOW_BLOCK | ARM64_GRANULE_ALLOW_HINT); // rest of physmem
  
-+#if defined(PONG)
++#if defined(DITING)
 +    for (unsigned i = 1; i < pong_ram_range_count; i++) {
 +        const struct pong_ram_range *r = &pong_ram_ranges[i];
 +        pong_map_extra_bank(temp_ptov_table, r);
@@ -10811,7 +10811,7 @@ index e050e53..27157d6 100644
  	 */
  	gPhysSize = mem_size = ((gPhysBase + args->memSize) & ~PAGE_MASK) - gPhysBase;
  
-+#if defined(PONG)
++#if defined(DITING)
 +    pong_ram_init(args);
 +    if (memory_size && memory_size < pong_ram_bytes) {
 +        uint64_t remaining = memory_size & ~PAGE_MASK;
@@ -10835,7 +10835,7 @@ index e050e53..27157d6 100644
 +    mem_size = pong_ram_bytes;
 +#endif
  	mem_actual = args->memSizeActual ? args->memSizeActual : mem_size;
-+#if defined(PONG)
++#if defined(DITING)
 +    if (memory_size && mem_actual > memory_size) mem_actual = memory_size;
 +#endif
  
@@ -10854,7 +10854,7 @@ index e050e53..27157d6 100644
  	 */
  	first_avail_phys = avail_start = args->topOfKernelData;
  
-+#if defined(PONG)
++#if defined(DITING)
 +	unsigned int pong_gpu_requested = 0;
 +	if (PE_parse_boot_argn("pong_adreno_start", &pong_gpu_requested,
 +	    sizeof(pong_gpu_requested)) && pong_gpu_requested == 1) {
@@ -10904,7 +10904,7 @@ index 1a45a0a..f89fa9d 100644
   */
  	.text
  	.align 2
-+#if defined(PONG)
++#if defined(DITING)
 +	.globl EXT(CleanPoC_DcacheRegion_Force_nopreempt_nohid)
 +LEXT(CleanPoC_DcacheRegion_Force_nopreempt_nohid)
 +#endif
@@ -10919,7 +10919,7 @@ index 4952ffb..13f7e8f 100644
  #include <arm/cpu_data_internal.h>
  #include <arm/misc_protos.h>
  #include <kern/thread.h>
-+#if defined(ARM64_BOARD_CONFIG_PONG)
++#if defined(ARM64_BOARD_CONFIG_DITING)
 +#include <pexpert/arm64/board_config.h>
 +#endif
 +extern void pong_init_note(const char *);
@@ -10930,7 +10930,7 @@ index 4952ffb..13f7e8f 100644
  	user_addr_t guarded_user_addr;
  	int result;
  
-+#if defined(PONG) && (DEVELOPMENT || DEBUG)
++#if defined(DITING) && (DEVELOPMENT || DEBUG)
 +	pong_init_note("copyin entered");
 +#endif
 +
@@ -10971,7 +10971,7 @@ index cbb494a..63cc4b9 100644
  	 * It needs to be booted here for the boot processor to finish the
  	 * subsequent registerInterrupt operations and unblock the other cores.
  	 */
-+#if !defined(PONG)
++#if !defined(DITING)
  	processor_boot(processor);
 +#else
 +	/* Pong registers the whole topology before creating its shared GIC
@@ -10984,7 +10984,7 @@ index cbb494a..63cc4b9 100644
  	return KERN_SUCCESS;
  }
  
-+#if defined(PONG)
++#if defined(DITING)
 +/* Keep private first-boot scheduler declarations in the Mach core; the
 + * exported kext SDK intentionally omits processor_start_kind_t. */
 +void pong_cpu_first_boot(processor_t processor);
@@ -11010,7 +11010,7 @@ index cbb494a..63cc4b9 100644
  	uint64_t cntvctl = CNTV_CTL_EL0_ENABLE; /* One wants to use 32 bits, but "mrs" prefers it this way */
  
  	__builtin_arm_wsr64(KERNEL_CNTV_CTL_EL0, cntvctl);
-+#if !defined(PONG)
++#if !defined(DITING)
  	/* disable the physical timer as a precaution, as its registers reset to architecturally unknown values */
  	__builtin_arm_wsr64("CNTP_CTL_EL0", CNTP_CTL_EL0_IMASKED);
 +#endif
@@ -11029,12 +11029,12 @@ index 0000000..d3ff8ea
 +#include <arm/caches_internal.h>
 +#include <machine/machine_routines.h>
 +
-+#define PONG_RAMOOPS_PHYS_BASE XNU_PONG_RAMOOPS_BASE
-+#define PONG_RAMOOPS_CONSOLE_BYTES 0x00200000U
-+#define PONG_RAMOOPS_RESERVED_BYTES 0x00400000U
-+#define PONG_RAMOOPS_HEADER_BYTES 12U
-+#define PONG_RAMOOPS_MAGIC 0x43474244U
-+#define PONG_RAMOOPS_DATA_BYTES (PONG_RAMOOPS_CONSOLE_BYTES - PONG_RAMOOPS_HEADER_BYTES)
++#define DITING_RAMOOPS_PHYS_BASE XNU_DITING_RAMOOPS_BASE
++#define DITING_RAMOOPS_CONSOLE_BYTES 0x00200000U
++#define DITING_RAMOOPS_RESERVED_BYTES 0x00400000U
++#define DITING_RAMOOPS_HEADER_BYTES 12U
++#define DITING_RAMOOPS_MAGIC 0x43474244U
++#define DITING_RAMOOPS_DATA_BYTES (DITING_RAMOOPS_CONSOLE_BYTES - DITING_RAMOOPS_HEADER_BYTES)
 +
 +struct pong_ramoops_header {
 +	volatile uint32_t sig;
@@ -11061,22 +11061,22 @@ index 0000000..d3ff8ea
 +{
 +	if (!text || length <= 0 || length > 2048 || !pong_ramoops_base ||
 +	    __atomic_exchange_n(&pong_diagnostic_busy, 1, __ATOMIC_ACQUIRE)) return;
-+	vm_offset_t base = pong_ramoops_base + PONG_RAMOOPS_CONSOLE_BYTES;
++	vm_offset_t base = pong_ramoops_base + DITING_RAMOOPS_CONSOLE_BYTES;
 +	struct pong_ramoops_header *header = (struct pong_ramoops_header *)(uintptr_t)base;
-+	volatile uint8_t *data = (volatile uint8_t *)(uintptr_t)(base + PONG_RAMOOPS_HEADER_BYTES);
++	volatile uint8_t *data = (volatile uint8_t *)(uintptr_t)(base + DITING_RAMOOPS_HEADER_BYTES);
 +	/* Append until full; preserve the first failures rather than overwrite them. */
 +	uint32_t count = (uint32_t)length;
-+	if (count > PONG_RAMOOPS_DATA_BYTES - pong_diagnostic_size)
-+		count = PONG_RAMOOPS_DATA_BYTES - pong_diagnostic_size;
++	if (count > DITING_RAMOOPS_DATA_BYTES - pong_diagnostic_size)
++		count = DITING_RAMOOPS_DATA_BYTES - pong_diagnostic_size;
 +	if (count) {
 +		for (uint32_t i = 0; i < count; i++) data[pong_diagnostic_size + i] = (uint8_t)text[i];
-+		CleanPoC_DcacheRegion_Force(base + PONG_RAMOOPS_HEADER_BYTES + pong_diagnostic_size, count);
++		CleanPoC_DcacheRegion_Force(base + DITING_RAMOOPS_HEADER_BYTES + pong_diagnostic_size, count);
 +		__asm__ volatile("dsb sy" ::: "memory");
 +		pong_diagnostic_size += count;
 +		header->start = pong_diagnostic_size;
 +		header->size = pong_diagnostic_size;
-+		header->sig = PONG_RAMOOPS_MAGIC;
-+		CleanPoC_DcacheRegion_Force(base, PONG_RAMOOPS_HEADER_BYTES);
++		header->sig = DITING_RAMOOPS_MAGIC;
++		CleanPoC_DcacheRegion_Force(base, DITING_RAMOOPS_HEADER_BYTES);
 +		__asm__ volatile("dsb sy" ::: "memory");
 +	}
 +	__atomic_store_n(&pong_diagnostic_busy, 0, __ATOMIC_RELEASE);
@@ -11091,7 +11091,7 @@ index 0000000..d3ff8ea
 +		return;
 +	}
 +
-+	const uint32_t capacity = PONG_RAMOOPS_DATA_BYTES;
++	const uint32_t capacity = DITING_RAMOOPS_DATA_BYTES;
 +	uint32_t old_size = pong_ramoops_size;
 +	uint32_t write_at = old_size < capacity ?
 +	    (pong_ramoops_start + old_size) % capacity : pong_ramoops_start;
@@ -11104,7 +11104,7 @@ index 0000000..d3ff8ea
 +	uint32_t data_at = (write_at + skip) % capacity;
 +	const char *source = text + skip;
 +	volatile uint8_t *data = (volatile uint8_t *)(uintptr_t)
-+	    (pong_ramoops_base + PONG_RAMOOPS_HEADER_BYTES);
++	    (pong_ramoops_base + DITING_RAMOOPS_HEADER_BYTES);
 +	uint32_t first = capacity - data_at;
 +	if (first > count) {
 +		first = count;
@@ -11134,7 +11134,7 @@ index 0000000..d3ff8ea
 +	header->start = new_start;
 +	header->size = new_size;
 +	__asm__ volatile("dsb sy" ::: "memory");
-+	CleanPoC_DcacheRegion_Force(pong_ramoops_base, PONG_RAMOOPS_HEADER_BYTES);
++	CleanPoC_DcacheRegion_Force(pong_ramoops_base, DITING_RAMOOPS_HEADER_BYTES);
 +	__asm__ volatile("dsb sy" ::: "memory");
 +	pong_ramoops_start = new_start;
 +	pong_ramoops_size = new_size;
@@ -11147,8 +11147,8 @@ index 0000000..d3ff8ea
 +	if (pong_ramoops_base) {
 +		return 1;
 +	}
-+	vm_offset_t mapped = ml_io_map_wcomb(PONG_RAMOOPS_PHYS_BASE,
-+	    PONG_RAMOOPS_RESERVED_BYTES);
++	vm_offset_t mapped = ml_io_map_wcomb(DITING_RAMOOPS_PHYS_BASE,
++	    DITING_RAMOOPS_RESERVED_BYTES);
 +	if (!mapped) {
 +		return 0;
 +	}
@@ -11159,16 +11159,16 @@ index 0000000..d3ff8ea
 +	header->start = 0;
 +	header->size = 0;
 +	__asm__ volatile("dsb sy" ::: "memory");
-+	CleanPoC_DcacheRegion_Force(mapped, PONG_RAMOOPS_HEADER_BYTES);
-+	header->sig = PONG_RAMOOPS_MAGIC;
++	CleanPoC_DcacheRegion_Force(mapped, DITING_RAMOOPS_HEADER_BYTES);
++	header->sig = DITING_RAMOOPS_MAGIC;
 +	__asm__ volatile("dsb sy" ::: "memory");
-+	CleanPoC_DcacheRegion_Force(mapped, PONG_RAMOOPS_HEADER_BYTES);
++	CleanPoC_DcacheRegion_Force(mapped, DITING_RAMOOPS_HEADER_BYTES);
 +	__asm__ volatile("dsb sy" ::: "memory");
 +
 +	pong_ramoops_start = 0;
 +	pong_ramoops_size = 0;
 +	pong_ramoops_base = mapped;
-+	static const char ready[] = "PONG DIAGNOSTIC v92: isolated pmsg recorder ready\n";
++	static const char ready[] = "DITING DIAGNOSTIC v92: isolated pmsg recorder ready\n";
 +	pong_ramoops_diagnostic_write(ready, (int)sizeof(ready)-1);
 +	return 1;
 +}
@@ -11182,7 +11182,7 @@ index 0000000..ad5e3d0
 + * Exception delivery is unchanged; no polling threads or periodic probes.
 + */
 +#include <pexpert/arm64/board_config.h>
-+#if defined(ARM64_BOARD_CONFIG_PONG) && (DEVELOPMENT || DEBUG)
++#if defined(ARM64_BOARD_CONFIG_DITING) && (DEVELOPMENT || DEBUG)
 +#include <arm/thread.h>
 +#include <kern/misc_protos.h>
 +#include <kern/task.h>
@@ -11250,7 +11250,7 @@ index d4e10cd..d2404d5 100644
  /* D-Cache, 160KB for Firestorm, 8-way. 64KB for Icestorm, 6-way. */
  #define MMU_CLINE   6                      /* cache line size is 1<<MMU_CLINE (64) */
  
-+#elif defined(PONG)
++#elif defined(DITING)
 +#define MMU_I_CLINE 6
 +#define MMU_CLINE 6
 +
@@ -11545,7 +11545,7 @@ index 77e126f..8f8f220 100644
  #include <vm/vm_map_xnu.h>
  
  #include <sys/errno.h>
-+#if defined(PONG) && (DEVELOPMENT || DEBUG)
++#if defined(DITING) && (DEVELOPMENT || DEBUG)
 +#include <kern/task.h>
 +extern int proc_pid(struct proc *);
 +extern volatile int pong_init_user_seen;
@@ -11557,7 +11557,7 @@ index 77e126f..8f8f220 100644
  
  
  TUNABLE(bool, fp_exceptions_enabled, "-fp_exceptions", false);
-+#if defined(PONG) && (DEVELOPMENT || DEBUG)
++#if defined(DITING) && (DEVELOPMENT || DEBUG)
 +static TUNABLE(bool, pong_init_trace, "pong_init_trace", false);
 +#endif
  
@@ -11567,7 +11567,7 @@ index 77e126f..8f8f220 100644
  	}
  #endif
  	bool is_user = PSR64_IS_USER(get_saved_state_cpsr(state));
-+#if defined(PONG) && (DEVELOPMENT || DEBUG)
++#if defined(DITING) && (DEVELOPMENT || DEBUG)
 +	/* Bounded PID 1 records: no stack walks, user copies, registry or MMIO. */
 +	static unsigned pong_init_faults, pong_init_svcs;
 +	struct proc *pong_proc = (pong_init_trace && is_user) ?
@@ -11587,7 +11587,7 @@ index 77e126f..8f8f220 100644
  	if (SPSR_INTERRUPTS_ENABLED(get_saved_state_cpsr(state))) {
  		ml_set_interrupts_enabled(TRUE);
  	}
-+#if defined(PONG) && (DEVELOPMENT || DEBUG)
++#if defined(DITING) && (DEVELOPMENT || DEBUG)
 +	/* Normal console I/O is allowed only after restoring the interrupt mask.
 +	 * A diagnostic must never turn a recoverable user page fault into panic. */
 +	if (pong_record && ml_get_interrupts_enabled()) {
@@ -11605,7 +11605,7 @@ index 77e126f..8f8f220 100644
  		}
  
  		handle_svc(state);
-+#if defined(PONG) && (DEVELOPMENT || DEBUG)
++#if defined(DITING) && (DEVELOPMENT || DEBUG)
 +		if (pong_record && ml_get_interrupts_enabled()) printf("Pong init: user exception handled class=%x pc=%llx x0=%llx\n",
 +		    class, (unsigned long long)get_saved_state_pc(state),
 +		    (unsigned long long)get_saved_state_reg(state, 0));
@@ -11614,7 +11614,7 @@ index 77e126f..8f8f220 100644
  
  	case ESR_EC_DABORT_EL0:
  		handle_abort(state, esr, far, inspect_data_abort, handle_user_abort, expected_fault_handler);
-+#if defined(PONG) && (DEVELOPMENT || DEBUG)
++#if defined(DITING) && (DEVELOPMENT || DEBUG)
 +		if (pong_record && ml_get_interrupts_enabled()) printf("Pong init: user exception handled class=%x pc=%llx x0=%llx\n",
 +		    class, (unsigned long long)get_saved_state_pc(state),
 +		    (unsigned long long)get_saved_state_reg(state, 0));
@@ -11626,7 +11626,7 @@ index 77e126f..8f8f220 100644
  
  	case ESR_EC_IABORT_EL0:
  		handle_abort(state, esr, far, inspect_instruction_abort, handle_user_abort, expected_fault_handler);
-+#if defined(PONG) && (DEVELOPMENT || DEBUG)
++#if defined(DITING) && (DEVELOPMENT || DEBUG)
 +		if (pong_record && ml_get_interrupts_enabled()) printf("Pong init: user exception handled class=%x pc=%llx x0=%llx\n",
 +		    class, (unsigned long long)get_saved_state_pc(state),
 +		    (unsigned long long)get_saved_state_reg(state, 0));
@@ -11885,14 +11885,14 @@ index 7784e72..4ea8603 100644
   * @param str The string of characters to print.
   * @param size The number of characters in `str` to print.
   */
-+#if defined(PONG) && defined(XNU_PONG_RAMOOPS_CONSOLE) && XNU_PONG_RAMOOPS_CONSOLE
++#if defined(DITING) && defined(XNU_DITING_RAMOOPS_CONSOLE) && XNU_DITING_RAMOOPS_CONSOLE
 +extern void pong_ramoops_console_write(const char *, int);
 +#endif
 +
  void
  console_write(char *str, int size)
  {
-+#if defined(PONG) && defined(XNU_PONG_RAMOOPS_CONSOLE) && XNU_PONG_RAMOOPS_CONSOLE
++#if defined(DITING) && defined(XNU_DITING_RAMOOPS_CONSOLE) && XNU_DITING_RAMOOPS_CONSOLE
 +	pong_ramoops_console_write(str, size);
 +#endif
  	if (disableConsoleOutput) {
@@ -11902,7 +11902,7 @@ index 7784e72..4ea8603 100644
  void
  console_write_unbuffered(char c)
  {
-+#if defined(PONG) && defined(XNU_PONG_RAMOOPS_CONSOLE) && XNU_PONG_RAMOOPS_CONSOLE
++#if defined(DITING) && defined(XNU_DITING_RAMOOPS_CONSOLE) && XNU_DITING_RAMOOPS_CONSOLE
 +	pong_ramoops_console_write(&c, 1);
 +#endif
  	if (disableConsoleOutput) {
@@ -11917,7 +11917,7 @@ index 648cb70..5f14753 100644
  		} else {
  			if (makeMapping) {
 -#if HAS_UCNORMAL_MEM || APPLEVIRTUALPLATFORM
-+#if HAS_UCNORMAL_MEM || APPLEVIRTUALPLATFORM || defined(PONG)
++#if HAS_UCNORMAL_MEM || APPLEVIRTUALPLATFORM || defined(DITING)
  				/*
  				 * Framebuffers would normally use VM_WIMG_RT, which
  				 * io_map doesn't support.  However this buffer is set up
@@ -11929,7 +11929,7 @@ index 2583f81..8ce4c08 100644
  	}
  
  	if (!mach_msg_filter_at_least(MACH_MSG_FILTER_CALLBACKS_VERSION_1)) {
-+#if defined(PONG) && (DEVELOPMENT || DEBUG)
++#if defined(DITING) && (DEVELOPMENT || DEBUG)
 +		/*
 +		 * This development kernel does not load the private message-filter
 +		 * provider. 22H374 libxpc accepts KERN_INVALID_CAPABILITY for ports
@@ -11980,7 +11980,7 @@ index 7b3c26a..8c32639 100644
  
  #include <sys/code_signing.h> /* for developer mode state */
 +#include <pexpert/arm64/board_config.h>
-+#if defined(ARM64_BOARD_CONFIG_PONG) && (DEVELOPMENT || DEBUG)
++#if defined(ARM64_BOARD_CONFIG_DITING) && (DEVELOPMENT || DEBUG)
 +extern void pong_ui_exception(exception_type_t, mach_exception_data_t,
 +    mach_msg_type_number_t, thread_t);
 +#endif
@@ -11991,7 +11991,7 @@ index 7b3c26a..8c32639 100644
  
  	assert(exception != EXC_RPC_ALERT);
  
-+#if defined(ARM64_BOARD_CONFIG_PONG) && (DEVELOPMENT || DEBUG)
++#if defined(ARM64_BOARD_CONFIG_DITING) && (DEVELOPMENT || DEBUG)
 +	pong_ui_exception(exception, code, codeCnt, thread);
 +#endif
 +
@@ -12003,7 +12003,7 @@ index 7b3c26a..8c32639 100644
  	char *proc_name = proc_name_address(proc);
  	os_log_error(OS_LOG_DEFAULT, "%s: process %s[%d] hit an unrecoverable exception\n", __func__, proc_name, pid);
 +	/* These traps exit before exception_triage_thread's ordinary capture. */
-+#if defined(ARM64_BOARD_CONFIG_PONG) && (DEVELOPMENT || DEBUG)
++#if defined(ARM64_BOARD_CONFIG_DITING) && (DEVELOPMENT || DEBUG)
 +	pong_ui_exception(exception, code, 2, current_thread());
 +#endif
  
@@ -12144,7 +12144,7 @@ index c5c6da5..9854c4f 100644
  
 -	if (!console_is_serial() && !disable_serial_output && (PE_kputc != NULL)) {
 +	if (!console_is_serial() && !disable_serial_output && (PE_kputc != NULL)
-+#if defined(ARM64_BOARD_CONFIG_PONG)
++#if defined(ARM64_BOARD_CONFIG_DITING)
 +	    && PE_kputc != console_write_unbuffered
 +#endif
 +	    ) {
@@ -12157,7 +12157,7 @@ index c5c6da5..9854c4f 100644
  
 -	if (!console_is_serial() && !disable_serial_output && (PE_kputc != NULL)) {
 +	if (!console_is_serial() && !disable_serial_output && (PE_kputc != NULL)
-+#if defined(ARM64_BOARD_CONFIG_PONG)
++#if defined(ARM64_BOARD_CONFIG_DITING)
 +	    && PE_kputc != console_write_unbuffered
 +#endif
 +	    ) {
@@ -12187,7 +12187,7 @@ index a7f4322..abcb5d4 100644
  	zfree(_recount_usage_zones[topo], usage);
  }
 +
-+#if defined(ARM64_BOARD_CONFIG_PONG)
++#if defined(ARM64_BOARD_CONFIG_DITING)
 +/* Idle accounting for Pong's EPSS policy. Same recount interface used by
 + * Data A Live; Darwin24 processor layout is obtained from this tree. */
 +uint64_t pong_cpu_idle_mach(unsigned int cpu);
@@ -12210,7 +12210,7 @@ index e48077a..1b508e0 100644
  
  	assert(thread->sched_pri <= MAXPRI);
  
-+#if defined(ARM64_BOARD_CONFIG_PONG)
++#if defined(ARM64_BOARD_CONFIG_DITING)
 +	/* The board supplies only a ranking of currently idle eligible cores.
 +	 * Keep native RT deadlines, explicit binding, recommendation and pset
 +	 * ownership intact. CPU0's warm-cache hint must not hide an idle X2.
@@ -12239,7 +12239,7 @@ index 7616f20..93df9e5 100644
  	kernel_bootstrap_log("vnguard_policy_init");
  	vnguard_policy_init();
  #endif
-+#if defined(PONG) && (DEVELOPMENT || DEBUG) && !SECURE_KERNEL
++#if defined(DITING) && (DEVELOPMENT || DEBUG) && !SECURE_KERNEL
 +	extern void minimac_policy_init(void);
 +	minimac_policy_init();
 +#endif
@@ -12250,7 +12250,7 @@ index 7616f20..93df9e5 100644
  	csm_initialize_provisioning_profiles();
  #endif
  
-+#if !defined(PONG) || (defined(XNU_NATIVE_TRUST_CACHE) && XNU_NATIVE_TRUST_CACHE)
++#if !defined(DITING) || (defined(XNU_NATIVE_TRUST_CACHE) && XNU_NATIVE_TRUST_CACHE)
  	kernel_bootstrap_log("trust_cache_init");
  
  	/* Initialize the runtime for the trust cache interface */
@@ -12272,7 +12272,7 @@ index 5a144b3..b3cc2f2 100644
  		}
  		if (!task_is_app(creating_task)) {
 -#if XNU_TARGET_OS_OSX
-+#if XNU_TARGET_OS_OSX || (defined(PONG) && (DEVELOPMENT || DEBUG))
++#if XNU_TARGET_OS_OSX || (defined(DITING) && (DEVELOPMENT || DEBUG))
  			/*
  			 * Soft-fail the case of a non-app pretending to be an
  			 * app, by allowing it to press the buttons, but they're
@@ -12390,7 +12390,7 @@ index 4cfd11b..8b13be4 100644
 +		vm_config.swap_is_present = FALSE;
 +		vm_config.swap_is_active = FALSE;
 +		vm_config.freezer_swap_is_active = FALSE;
-+		printf("PONG DEVELOPMENT: VM swap disabled by boot argument\n");
++		printf("DITING DEVELOPMENT: VM swap disabled by boot argument\n");
 +	} else
 +#endif
  	if (VM_CONFIG_SWAP_IS_PRESENT) {
@@ -12418,7 +12418,7 @@ index 632e50e..ea284d5 100644
  extern uint32_t         vm_pages_count;
  #if XNU_VM_HAS_LINEAR_PAGES_ARRAY
  extern ppnum_t          vm_pages_first_pnum;
-+#if defined(PONG)
++#if defined(DITING)
 +__BEGIN_DECLS
 +extern unsigned vm_pages_first_pong_index;
 +extern unsigned pmap_pong_pa_index(uint64_t pa);
@@ -12433,7 +12433,7 @@ index 632e50e..ea284d5 100644
  		uintptr_t index = (uintptr_t)(m - vm_pages_array_internal());
  
 -		return (ppnum_t)(vm_pages_first_pnum + index);
-+#if defined(PONG)
++#if defined(DITING)
 +        return (ppnum_t)(pmap_pong_index_pa(vm_pages_first_pong_index + index) >> PAGE_SHIFT);
 +#else
 +        return (ppnum_t)(vm_pages_first_pnum + index);
@@ -12449,7 +12449,7 @@ index bd4bb7f..b18fe72 100644
  #endif /* XNU_VM_HAS_DELAYED_PAGES */
  #if XNU_VM_HAS_LINEAR_PAGES_ARRAY
  SECURITY_READ_ONLY_LATE(ppnum_t)   vm_pages_first_pnum;
-+#if defined(PONG)
++#if defined(DITING)
 +SECURITY_READ_ONLY_LATE(unsigned) vm_pages_first_pong_index = UINT32_MAX;
 +#endif
  #endif /* XNU_VM_HAS_LINEAR_PAGES_ARRAY */
@@ -12459,7 +12459,7 @@ index bd4bb7f..b18fe72 100644
  #if XNU_VM_HAS_LINEAR_PAGES_ARRAY
  		if (i == 0) {
  			vm_pages_first_pnum = phys_page;
-+#if defined(PONG)
++#if defined(DITING)
 +            vm_pages_first_pong_index = pmap_pong_pa_index((uint64_t)phys_page << PAGE_SHIFT);
 +#endif
  			patch_low_glo_vm_page_info(vm_pages, vm_pages_end,
@@ -12481,7 +12481,7 @@ index bd4bb7f..b18fe72 100644
 -	if (pnum < pmap_first_pnum) {
 -		vm_page_for_ppnum_panic(pnum);
 -	}
-+#if defined(PONG)
++#if defined(DITING)
 +    unsigned dense = pmap_pong_pa_index((uint64_t)pnum << PAGE_SHIFT);
 +    unsigned first = vm_pages_first_pong_index;
 +    if (dense == UINT32_MAX) return VM_PAGE_NULL;
@@ -12540,7 +12540,7 @@ index 666b87b..e3d2ee7 100644
  vm_offset_t gPanicBase = 0;
  unsigned int gPanicSize;
  struct embedded_panic_header *panic_info = NULL;
-+#if defined(PONG) && defined(XNU_PONG_VOLATILE_PANIC_LOG) && XNU_PONG_VOLATILE_PANIC_LOG
++#if defined(DITING) && defined(XNU_DITING_VOLATILE_PANIC_LOG) && XNU_DITING_VOLATILE_PANIC_LOG
 +static uint8_t pong_volatile_panic_log[128 * 1024] __attribute__((aligned(4096)));
 +#endif
  
@@ -12559,7 +12559,7 @@ index 666b87b..e3d2ee7 100644
  	uintptr_t const *reg_prop;
  	uint32_t const *panic_region_length;
  
-+#if defined(PONG) && defined(XNU_PONG_VOLATILE_PANIC_LOG) && XNU_PONG_VOLATILE_PANIC_LOG
++#if defined(DITING) && defined(XNU_DITING_VOLATILE_PANIC_LOG) && XNU_DITING_VOLATILE_PANIC_LOG
 +	/*
 +	 * Pong has no Apple PRAM reservation in its supplied DT.  Keep the normal
 +	 * embedded panic machinery valid with kernel-owned RAM.  The contents are
@@ -12610,7 +12610,7 @@ index 666b87b..e3d2ee7 100644
  #endif /* DEVELOPMENT && defined(XNU_TARGET_OS_BRIDGE) */
  
 +#endif
-+#if defined(PONG) && defined(XNU_PONG_VOLATILE_PANIC_LOG) && XNU_PONG_VOLATILE_PANIC_LOG
++#if defined(DITING) && defined(XNU_DITING_VOLATILE_PANIC_LOG) && XNU_DITING_VOLATILE_PANIC_LOG
 +pong_panic_region_ready:
  #endif
  	panic_info = (struct embedded_panic_header *)gPanicBase;
@@ -12619,7 +12619,7 @@ index 666b87b..e3d2ee7 100644
  	 */
  	check_for_panic_log();
  
-+#if defined(PONG)
++#if defined(DITING)
 +	boolean_t verbose_console = FALSE;
 +	if (PE_parse_boot_argn("-v", &verbose_console, sizeof(verbose_console)) &&
 +	    PE_state.video.v_baseAddr && PE_state.video.v_width &&
@@ -12662,22 +12662,22 @@ index 5afac02..2c2a516 100644
  	H14.h \
  	H15.h \
  	H16.h \
-+	PONG.h \
++	DITING.h \
  	VMAPPLE.h
  
  
-diff --git a/pexpert/pexpert/arm64/PONG.h b/pexpert/pexpert/arm64/PONG.h
+diff --git a/pexpert/pexpert/arm64/DITING.h b/pexpert/pexpert/arm64/DITING.h
 new file mode 100644
 index 0000000..0d7d130
 --- /dev/null
-+++ b/pexpert/pexpert/arm64/PONG.h
++++ b/pexpert/pexpert/arm64/DITING.h
 @@ -0,0 +1,34 @@
 +// SPDX-License-Identifier: BSD-2-Clause-Patent
-+#ifndef _PEXPERT_ARM64_PONG_H
-+#define _PEXPERT_ARM64_PONG_H
++#ifndef _PEXPERT_ARM64_DITING_H
++#define _PEXPERT_ARM64_DITING_H
 +
 +// Nothing Phone (2), SM8475: firmware PSCI and the native GICv3 CPU provider.
-+#define PONG 1
++#define DITING 1
 +#define GENERIC_PSCI_SMP 1
 +#define NO_MONITOR 1
 +#define NO_ECORE 1
@@ -12694,13 +12694,13 @@ index 0000000..0d7d130
 +/* Development-only compatibility mode: use the generic no-PAN uaccess
 + * implementation and preserve PAN=0 across exception entry. All three
 + * pieces (copyio, initial PSTATE and SCTLR.SPAN) must agree. */
-+#if defined(XNU_PONG_LEGACY_UACCESS) && XNU_PONG_LEGACY_UACCESS && \
++#if defined(XNU_DITING_LEGACY_UACCESS) && XNU_DITING_LEGACY_UACCESS && \
 +    (DEVELOPMENT || DEBUG) && !SECURE_KERNEL
-+#define PONG_LEGACY_UACCESS 1
++#define DITING_LEGACY_UACCESS 1
 +#else
-+#define PONG_LEGACY_UACCESS 0
++#define DITING_LEGACY_UACCESS 0
 +#endif
-+#if defined(XNU_NATIVE_PAN) && XNU_NATIVE_PAN && !PONG_LEGACY_UACCESS
++#if defined(XNU_NATIVE_PAN) && XNU_NATIVE_PAN && !DITING_LEGACY_UACCESS
 +#define __ARM_PAN_AVAILABLE__ 1
 +#endif
 +
@@ -12733,13 +12733,13 @@ index ba15ae4..6bf82a9 100644
  
  #endif  /* ARM64_BOARD_CONFIG_T6041 */
  
-+#ifdef ARM64_BOARD_CONFIG_PONG
-+#include <pexpert/arm64/PONG.h>
++#ifdef ARM64_BOARD_CONFIG_DITING
++#include <pexpert/arm64/DITING.h>
 +#define MAX_L2_CLINE                   6
 +#define MAX_CPUS                       8
 +#define MAX_CPU_CLUSTERS               1
 +#define CORE_NCTRS                     8 /* Unused placeholder: KPC disabled */
-+#endif /* ARM64_BOARD_CONFIG_PONG */
++#endif /* ARM64_BOARD_CONFIG_DITING */
 +
  
  

@@ -45,9 +45,9 @@ def main():
     link(DEVICE/'patches/xnu-ipados18',tree/'patches/xnu')
     (tree/'build').mkdir(exist_ok=True);(tree/'.cache').mkdir(exist_ok=True)
     env={k:v for k,v in os.environ.items() if not k.startswith(('XNU_','UNIXNU_'))}
-    env.update(DEVELOPER_DIR=str(a.developer_dir),JOBS=str(a.jobs),PONG_NATIVE_DRIVER_SOURCE=str(DEVICE),
+    env.update(DEVELOPER_DIR=str(a.developer_dir),JOBS=str(a.jobs),DITING_NATIVE_DRIVER_SOURCE=str(DEVICE),
         UNIXNU_IOS_TARGET='18.0',SCAN_BUILD='',DO_CTFMERGE='0',CTFINSERT='',CTFCONVERT='',CTFMERGE='',CTFDUMP='')
-    if a.hardware_dtb:env['PONG_HARDWARE_DTB']=str(a.hardware_dtb.resolve())
+    if a.hardware_dtb:env['DITING_HARDWARE_DTB']=str(a.hardware_dtb.resolve())
     tools=tree/'.tools';tools.mkdir(exist_ok=True)
     link(Path(sys.executable),tools/'python3')
     env['PATH']=diting_paths.path_with(tools, *(['/opt/local/bin','/opt/local/sbin'] if diting_paths.macports() else []))
@@ -74,7 +74,7 @@ def main():
         config_path=DEVICE/'configs'/(board.get('kernel',{}).get('defconfig') or 'pong_ipados18_defconfig')
     resolved=config_path.read_text()
     print(f"recipe config: {config_path}", flush=True)
-    for probe in ('CONFIG_XNU_PONG_WIFI=', 'CONFIG_XNU_PONG_BACKLIGHT=', 'CONFIG_XNU_PONG_ADRENO_PLATFORM='):
+    for probe in ('CONFIG_XNU_DITING_WIFI=', 'CONFIG_XNU_DITING_BACKLIGHT=', 'CONFIG_XNU_DITING_ADRENO_PLATFORM='):
         hit=[l for l in resolved.splitlines() if l.startswith(probe)]
         print(f"  {probe}{hit[0].split(String:=chr(61),1)[1] if hit else '<absent>'}".replace('String:',''), flush=True)
     for line in resolved.splitlines():
@@ -86,9 +86,9 @@ def main():
         # Wi-Fi itself needs the shared SMMU lease, which PongPlatformResources provides;
         # that object is built by the full power archive or by --resources-only when
         # NATIVE_UFS is set, so the power/audio archive is not required to build it.
-        'XNU_PONG_WIFI': ('XNU_ARMCPU', 'XNU_NATIVE_UFS'),
-        'XNU_PONG_BACKLIGHT': ('XNU_PONG_POWER',),
-        'XNU_PONG_POWER': ('XNU_ARM_DT_PLATFORM', 'XNU_ARMCPU'),
+        'XNU_DITING_WIFI': ('XNU_ARMCPU', 'XNU_NATIVE_UFS'),
+        'XNU_DITING_BACKLIGHT': ('XNU_DITING_POWER',),
+        'XNU_DITING_POWER': ('XNU_ARM_DT_PLATFORM', 'XNU_ARMCPU'),
         'XNU_ARM_DT_PLATFORM': ('XNU_ARMCPU',),
     }
     for feature, required in dependencies.items():
@@ -117,16 +117,16 @@ def main():
         report['hardware_dtb']=str(a.hardware_dtb.resolve())
         report['configuration']=str(config_path.resolve())
         report['schema_version']=2
-    result=tree.parent/'PONG_BUILD_RESULT.json';result.write_text(json.dumps(report,indent=2)+'\n')
+    result=tree.parent/'DITING_BUILD_RESULT.json';result.write_text(json.dumps(report,indent=2)+'\n')
     if a.prepare_only:print(tree);return
     stamp=datetime.datetime.now(datetime.timezone.utc).strftime('%Y%m%dT%H%M%SZ');log=tree.parent/f'build-{stamp}.log'
     print('Building Darwin 24; log:',log,flush=True)
     with log.open('w') as f:r=subprocess.run(['bash','scripts/build-xnu-ipados18.sh'],cwd=tree,env=env,stdout=f,stderr=subprocess.STDOUT)
     report.update(returncode=r.returncode,log=str(log));result.write_text(json.dumps(report,indent=2)+'\n')
     if r.returncode:raise SystemExit(f'Build failed; log retained: {log}')
-    kernel=tree/'build/xnu/ios-obj/DEVELOPMENT_ARM64_PONG/mach.development.pong'
+    kernel=tree/'build/xnu/ios-obj/DEVELOPMENT_ARM64_DITING/mach.development.diting'
     a.artifact_dir.mkdir(parents=True,exist_ok=True);shutil.copyfile(kernel,a.artifact_dir/kernel.name)
     report.update(build_complete=True,kernel=dict(path=str(a.artifact_dir/kernel.name),bytes=kernel.stat().st_size))
-    for dest in (result,a.artifact_dir/'PONG_BUILD_RESULT.json'):dest.write_text(json.dumps(report,indent=2)+'\n')
+    for dest in (result,a.artifact_dir/'DITING_BUILD_RESULT.json'):dest.write_text(json.dumps(report,indent=2)+'\n')
     print(a.artifact_dir/kernel.name)
 if __name__=='__main__':main()
