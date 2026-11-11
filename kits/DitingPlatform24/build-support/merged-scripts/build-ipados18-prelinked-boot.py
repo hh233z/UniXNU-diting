@@ -5,16 +5,16 @@ from pathlib import Path
 ROOT=Path(__file__).resolve().parents[1]
 sys.path.insert(0,str(ROOT/'scripts'))
 sys.path.insert(0,str(ROOT/'kits/NativePrelink'))
-import pong_paths
+import diting_paths
 from emit_prelink import emit,COALESCED
 from native_prelink import arm64_image,macho,plan
-from pong_rootful_policy import apply as apply_rootful_policy
+from diting_rootful_policy import apply as apply_rootful_policy
 
 def main():
  p=argparse.ArgumentParser(description=__doc__)
  p.add_argument('--artifact-dir',type=Path,default=ROOT/'out/ipados18/kernel')
  p.add_argument('--original',type=Path,default=ROOT/'apple/ipados18-22H374/components/kernelcache.release.ipad7c.decompressed/kernelcache.release.ipad7c.decompressed')
- p.add_argument('--volume-layout',type=Path,default=pong_paths.volume_layout())
+ p.add_argument('--volume-layout',type=Path,default=diting_paths.volume_layout())
  p.add_argument('--output-dir',type=Path,required=True)
  p.add_argument('--cpus',type=int,choices=range(1,9),default=8,
                 help='actual Pong CPU nodes; use --cpus 1 for isolated bring-up')
@@ -45,7 +45,7 @@ def main():
  candidate,selection=emit(native,original,roots,slide,verify_images=False,library_only_components=library)
  # A single board-owned root-upgrade call is adapted after ordinary prelink.
  # The native helper retains the stock policy unless explicitly requested.
- candidate,selection['pong_rootful_policy']=apply_rootful_policy(candidate,native,original,slide,selection['components'])
+ candidate,selection['diting_rootful_policy']=apply_rootful_policy(candidate,native,original,slide,selection['components'])
  kernel=a.output_dir/'kernel-ipados18.macho';kernel.write_bytes(candidate)
  (a.output_dir/'prelink.json').write_text(json.dumps(selection,indent=2)+'\n')
  report['base_kernel']=report['kernel'];report['kernel']={'path':str(kernel),'bytes':len(candidate)};report['prelink']={'components':selection['components'],'library_only_components':selection['library_only_components']};report['image_verification']='skipped by request'

@@ -59,7 +59,7 @@ def module(path, name):
 def stage(a):
     out=a.out.resolve();out.mkdir(parents=True,exist_ok=False)
     root=out/'root-overlay';root.mkdir()
-    sign=module(PROJECT/'scripts/prepare-pong-sileo.py','sileo_sign')
+    sign=module(PROJECT/'scripts/prepare-diting-sileo.py','sileo_sign')
     process=subprocess.Popen(['zstd','-dc',str(a.bootstrap)],stdout=subprocess.PIPE)
     with tarfile.open(fileobj=process.stdout,mode='r|') as archive:extract(archive,root)
     if process.wait():raise RuntimeError('bootstrap decompression failed')

@@ -10,10 +10,10 @@ Darwin 后端、A730 格式修正、OOM 处理、128 IB 批次、ABI1 优先级�
 各文件的版权和许可证声明保留，不含固件、shader 二进制或 Apple 组件。
 
 ```sh
-python3 scripts/prepare-pong-mesa.py \
+python3 scripts/prepare-diting-mesa.py \
   --repository /path/to/mesa-git --out /path/to/build/pong-mesa
 ```
 
-再通过运行时 source overlay 中的 `scripts/build-pong-turnip.py`，使用
+再通过运行时 source overlay 中的 `scripts/build-diting-turnip.py`，使用
 `--guest-build 22H374 --mesa /path/to/build/pong-mesa` 编译。该配方启用真实
 IR3 磁盘缓存及 release/O3，不将旧的三个早期补丁当成完整运行时。

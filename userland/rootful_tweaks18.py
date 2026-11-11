@@ -62,7 +62,7 @@ exit 0
     (root/'etc/rc.d/ellekit-loader').unlink(missing_ok=True)
     config=root/'private/etc/pong-tweak-processes';config.parent.mkdir(parents=True,exist_ok=True)
     config.write_text('# Explicit app executable names; append additional tweak targets here.\nSpringBoard Preferences MobilePhone Sileo\n')
-    sign=load('tweak_sign',PROJECT/'scripts/prepare-pong-sileo.py')
+    sign=load('tweak_sign',PROJECT/'scripts/prepare-diting-sileo.py')
     sign.sign_tree(root,out)
     return out
 

@@ -17,7 +17,7 @@ import plistlib
 def build_wifi(runtime):
     import sys
     sys.path.insert(0, str(Path(__file__).resolve().parents[1] / 'scripts'))
-    from pong_native_inputs import build_env
+    from diting_native_inputs import build_env
     runtime.mkdir(parents=True, exist_ok=True)
     target=runtime/'wifi-bootstrap'
     subprocess.run(['xcrun','--sdk','iphoneos','clang','-target','arm64-apple-ios18.0',

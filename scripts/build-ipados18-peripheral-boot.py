@@ -52,7 +52,7 @@ def emit_hid(operation):
 base.plan=include_hid(base.plan)
 base.emit=include_hid(emit_hid(base.emit))
 if __name__=='__main__':
-    from pong_native_inputs import options
+    from diting_native_inputs import options
     # Keep per-phone identity in ignored local.toml. The public board recipe
     # must not bake in an Apple ECID or another developer's hardware serial.
     supplied=any(item.startswith('--kernel-arg=pong_platform_uuid=') or

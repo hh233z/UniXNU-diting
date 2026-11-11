@@ -15,12 +15,12 @@ import subprocess
 import sys
 import zlib
 
-from pong_adt_contract import audit_adt
+from diting_adt_contract import audit_adt
 
 ROOT = Path(__file__).resolve().parents[2]
 DEVICE = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(DEVICE / 'scripts'))
-import pong_paths
+import diting_paths
 
 
 def main():
@@ -29,7 +29,7 @@ def main():
     parser.add_argument('--kernel', type=Path, default=DEVICE / 'out/ipados18/kernel/mach.development.pong')
     parser.add_argument('--result', type=Path, default=DEVICE / 'out/ipados18/kernel/PONG_BUILD_RESULT.json')
     parser.add_argument('--loader', type=Path, default=DEVICE / 'mac-build/darwinboot24/DarwinBoot24.efi')
-    parser.add_argument('--template', type=Path, default=pong_paths.boot_template())
+    parser.add_argument('--template', type=Path, default=diting_paths.boot_template())
     parser.add_argument('--output-dir', type=Path, default=DEVICE / 'out/ipados18/boot')
     parser.add_argument('--fat-mib', type=int, default=32)
     parser.add_argument('--window-size', type=lambda value: int(value, 0), default=0x10000000,
@@ -134,7 +134,7 @@ def main():
     }, sort_keys=True, separators=(',', ':')).encode() + b'\n'
     manifest_path = payload / 'pong-boot-manifest.json'
     manifest_path.write_bytes(boot_manifest)
-    subprocess.run([sys.executable, str(DEVICE / 'scripts/make-pong-adt-ipados18.py'),
+    subprocess.run([sys.executable, str(DEVICE / 'scripts/make-diting-adt-ipados18.py'),
         '--cpus', str(args.cpus),
         '--dram-size', '0x300000000', '--window-size', hex(args.window_size),
         '--output', str(payload / 'kernel.macho.adt'),

@@ -111,7 +111,7 @@ pong_build=ipados18-22H374 pong_gpu_scanout=1 pong_gpu_pool_mib=0 pong_metal_glo
 pong_gpu_lock_max=1 pong_usb=1 pong_usb_mux=1 pong_usb_iphone=1 pong_rootful=1
 ```
 
-- 本地已提交的相关工具：`scripts/dump-pong-adt.py`（解 payload 里的 ADT）、
+- 本地已提交的相关工具：`scripts/dump-diting-adt.py`（解 payload 里的 ADT）、
   `scripts/apfs-volume-uuid.py`（读容器卷 UUID）、`scripts/make-data-window.py`、
   `scripts/make-userdata-image.py`、`scripts/make-sparse-image.py`、`scripts/decode-sparse-image.py`、
   `scripts/flash-userdata-image.py`。

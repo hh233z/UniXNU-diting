@@ -64,7 +64,7 @@ dsc = "Platforms/Nothing/pongPkg/pong.dsc"
 fd = "Build/pongPkg/{target}_CLANGPDB/FV/SILICIUM_UEFI.fd"
 # Runs in the build tree before the firmware build and writes the device tree the boot image
 # carries; [bootimg] dtb names the same path.
-preflight = ["scripts/build-pong-hardware-dtb.py"]
+preflight = ["scripts/build-diting-hardware-dtb.py"]
 patches = [
   "Resources/MuPatches/AsmMacroLib.patch",
   "Resources/MuPatches/Auth-Service.patch",
@@ -172,7 +172,7 @@ chip_id = "0x8010"
 
 [userdata]
 # The userdata partition this board installs into, in 4 KiB sectors: the geometry
-# scripts/install-pong-ufs-data.py and scripts/prepare-ipados18-ufs-layout.py check
+# scripts/install-diting-ufs-data.py and scripts/prepare-ipados18-ufs-layout.py check
 # against. Measured on this unit over adb on 2026-11-06:
 #   /dev/block/by-name/userdata -> /dev/block/sda37
 #   /sys/class/block/sda37/start = 24924160 (512-byte sectors) = 3115520 4K
@@ -195,7 +195,7 @@ unixnu = "../UniXNU"
 "ipados-18.7.10-22H374" = "diting_ipados18_defconfig"
 
 [bootimg]
-# Compiled by scripts/build-pong-hardware-dtb.py at the firmware preflight step, relative to the
+# Compiled by scripts/build-diting-hardware-dtb.py at the firmware preflight step, relative to the
 # build tree (docs/porting/packaging.md).
 dtb = "build/pong/pong.dtb"
 
@@ -204,7 +204,7 @@ dtb = "build/pong/pong.dtb"
 # packs and verifies v0-v2 headers only: verify() reads header_version and pagesize at the v0/v1/v2
 # offsets and a v4 header carries them elsewhere. This header therefore describes boot/boot.img,
 # the spec product whose ramdisk is the bare payload.img. The flashable v4 image the firmware
-# accepts is boot/pong-xnu-initial.img, written by scripts/finalize-pong-adt.py with the same
+# accepts is boot/pong-xnu-initial.img, written by scripts/finalize-diting-adt.py with the same
 # container the local flow produces; see the payload section above.
 header_version = 0
 pagesize = 4096

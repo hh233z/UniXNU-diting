@@ -958,7 +958,7 @@
 };
 
 /* UFS: the ADT generator reads three board properties from this node
-   (make-pong-adt-ipados18.py: pong,gcc-ufs-page, pong,smmu-stream-id, pong,ufs-spi).
+   (make-diting-adt-ipados18.py: pong,gcc-ufs-page, pong,smmu-stream-id, pong,ufs-spi).
    Values cross-checked against the stock diting tree (merged /soc/ufshc@1d84000):
    interrupts = <0x00 0x109 0x04> gives SPI 265, iommus = <.. 0xe0 ..> gives stream id
    0xe0, and 0x187000 is the SM8475 GCC UFS page register the Pong port uses. */

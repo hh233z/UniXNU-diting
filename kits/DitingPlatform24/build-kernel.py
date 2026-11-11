@@ -83,7 +83,7 @@ def hardware_dtb(device, tree, given=None):
         raise SystemExit('dtc is missing; install it (brew install dtc)')
     # include_dirs may carry a soc: prefix; those resolve against the SoC seed
     # named by feeds.toml (kind=soc, path=migration/format2/soc-seed), which the
-    # upstream firmware preflight build-pong-hardware-dtb.py also uses.
+    # upstream firmware preflight build-diting-hardware-dtb.py also uses.
     soc_root = device
     for src in tomllib.loads((device / 'feeds.toml').read_text()).get('source', []):
         if src.get('kind') == 'soc' and src.get('path'):
@@ -130,7 +130,7 @@ def main():
     dtb = hardware_dtb(device, tree, args.hardware_dtb)
     env = dict(os.environ, PONG_BUILD_TREE=str(tree), PONG_HARDWARE_DTB=str(dtb),
                UNIXNU_DEVICE=str(device))
-    command = [sys.executable, str(device / 'scripts/build-pong-profile-kernel.py'),
+    command = [sys.executable, str(device / 'scripts/build-diting-profile-kernel.py'),
                '--source', str(device), '--artifact-dir', str(args.artifact_dir.resolve()),
                '--hardware-dtb', str(dtb), '--jobs', str(args.jobs)]
     # The resolved configuration `release` wrote at its preflight step: the tree

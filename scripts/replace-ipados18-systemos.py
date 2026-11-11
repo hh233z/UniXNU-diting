@@ -5,13 +5,13 @@ from pathlib import Path
 ROOT=Path(__file__).resolve().parents[1];MIB=1<<20
 import sys
 sys.path.insert(0,str(ROOT/'scripts'))
-import pong_paths
+import diting_paths
 p=argparse.ArgumentParser(description=__doc__)
 p.add_argument('--layout',type=Path,default=ROOT/'out/ipados18/ufs/ufs-layout.json')
 p.add_argument('--old-installation',type=Path,default=ROOT/'out/ipados18/install/installation.json')
 p.add_argument('--boot-image',type=Path,required=True)
 p.add_argument('--serial',required=True);p.add_argument('--port',type=int,default=5038)
-p.add_argument('--adb',type=Path,default=pong_paths.adb())
+p.add_argument('--adb',type=Path,default=diting_paths.adb())
 p.add_argument('--output-dir',type=Path,default=ROOT/'out/ipados18/install-systemos4')
 p.add_argument('--stream-compression',choices=('none','gzip'),default='none',help='compress only the USB stream; leave the installed filesystem uncompressed')
 p.add_argument('--resume',action='store_true');a=p.parse_args()

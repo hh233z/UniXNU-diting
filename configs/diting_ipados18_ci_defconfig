@@ -5,7 +5,7 @@
 #   modem amss/m3/regdb and tfa98xx.cnt
 # Adreno platform archive: enabled; it builds from the vendor firmware the CI job
 # decodes from the ADRENO_FW_* secrets into PONG_ADRENO_FIRMWARE.
-#     (build-pong-adreno-platform.py refuses to continue without them)
+#     (build-diting-adreno-platform.py refuses to continue without them)
 # NativeUfs, the DT platform, and ArmCpu stay on, so the Intel host gates
 # and the XNU link still run.
 # The boot packager defaults to all 8 SM8475 CPU nodes; PSCI starts them.

@@ -55,7 +55,7 @@ git -C ../UniXNU-upstream checkout 0fc0fc1f9ddd0fbd4787738afef38667df5e0a95
 cp local.toml.example local.toml
 # Set local build, Xcode and volume-layout paths in local.toml.
 python3.12 scripts/migrate-pong-format2.py --unixnu ../UniXNU-upstream
-python3.12 scripts/build-pong-format2.py --unixnu ../UniXNU-upstream --out ../pong-build --jobs 4
+python3.12 scripts/build-diting-format2.py --unixnu ../UniXNU-upstream --out ../pong-build --jobs 4
 ```
 
 The entry point resolves ARM64, SM8475, OS and board layers, compiles the hardware DTS and invokes the Darwin24 builder. Outputs reside in `../pong-build/pong/ipados-18.7.10-22H374/pong_ipados18/`. See the OS migration guide for restore download, userland and userdata preparation; these require matching local binary inputs.
@@ -100,9 +100,9 @@ Three things differ from the repository defaults on the runner, none of them inc
 
 ### Matching the local artifacts
 
-`docs/porting/packaging.md` stops at `boot/boot.img`, while the local flow does two more things. CI performs them with `scripts/finalize-pong-adt.py` under the same parameters, so a CI image has the same shape as a local one:
+`docs/porting/packaging.md` stops at `boot/boot.img`, while the local flow does two more things. CI performs them with `scripts/finalize-diting-adt.py` under the same parameters, so a CI image has the same shape as a local one:
 
-- **ADT from the local generator**: the shared `devicetree.generate()` writes only root, chosen and the nodes configured under `[adt]`. The `pong,ufs-*` properties, touch and button resources and PMIC metadata that the kernel reads on `/arm-io` are not among them. This step calls `scripts/make-pong-adt-ipados18.py` with the local parameters: `--dram-size 0x300000000` (12 GiB), `--window-size 0x100000000` (4 GiB), `--cpus 1`, `--chip-id 0x8010`, `--development-debug`, `--skip-image-verification`, and stores the SHA-384 of `pong-boot-manifest.json` in `/chosen/boot-manifest-hash`. The result replaces `EFI/UniXNU/Payloads/kernel.macho.adt` inside `payload.img`, and a copy of `pong-boot-manifest.json` sits beside it.
+- **ADT from the local generator**: the shared `devicetree.generate()` writes only root, chosen and the nodes configured under `[adt]`. The `pong,ufs-*` properties, touch and button resources and PMIC metadata that the kernel reads on `/arm-io` are not among them. This step calls `scripts/make-diting-adt-ipados18.py` with the local parameters: `--dram-size 0x300000000` (12 GiB), `--window-size 0x100000000` (4 GiB), `--cpus 1`, `--chip-id 0x8010`, `--development-debug`, `--skip-image-verification`, and stores the SHA-384 of `pong-boot-manifest.json` in `/chosen/boot-manifest-hash`. The result replaces `EFI/UniXNU/Payloads/kernel.macho.adt` inside `payload.img`, and a copy of `pong-boot-manifest.json` sits beside it.
 - **Boot image in the flashable shape**: the firmware (`PongBootMemoryDxe`) only accepts an initrd carrying the `PONGFAT1` envelope, while `release` puts `payload.img` into the ramdisk slot unwrapped. This step rewrites `boot/pong-xnu-initial.img` in the local container's shape: Android boot v4 header, empty kernel slot (this machine boots firmware from its own partition), ramdisk is the envelope plus `payload.img`, and 4096 zero bytes of empty signature area at the end. `boot/boot.img` remains the spec artifact that `release` wrote.
 
 Inside that `PONGFAT1` envelope `payload.img` must be 96 MiB, because `PongBootMemoryDxe` rejects an initrd over 128 MiB and the local `--fat-mib` is 96 as well. That is why `board.toml [payload] size_mib` is 96.
@@ -113,7 +113,7 @@ There is one input: the download URL of Apple's iPadOS 18.7.10 / 22H374 restore 
 
 The link must be https and end in `.ipsw`. A non-empty `ipsw_sha256` is checked against the whole IPSW after download, and a mismatch fails before a single byte is unpacked.
 
-On the runner (`scripts/prepare-pong-userland-from-ipsw.py` chains the steps):
+On the runner (`scripts/prepare-diting-userland-from-ipsw.py` chains the steps):
 
 1. Download the IPSW (`scripts/download-ipados18-restore.py`, chunked and resumable), check its size and the sha256 when given.
 2. Take the components with `scripts/prepare-ipados18-components.py --ipsw`, after confirming it really is 18.7.10 / 22H374 for an iPad7,11 or 7,12.
@@ -122,9 +122,9 @@ On the runner (`scripts/prepare-pong-userland-from-ipsw.py` chains the steps):
 5. Create a fresh 5 GiB plain APFS volume, copy the stock SystemOS files with `userland/build-systemos18.py`, and emit `pong-ipados18-systemos.cdr`.
 6. Create a fresh empty 8 GiB APFS volume, convert it to a raw disk, and use it as the Data starting point.
 7. Run `userland/build-ipados18.py prepare` / `apply` / `finish`.
-8. Check the five files, the build in `result.json`, image alignment and the three volume UUIDs with the validators in `scripts/stage-pong-userdata.py`.
+8. Check the five files, the build in `result.json`, image alignment and the three volume UUIDs with the validators in `scripts/stage-diting-userdata.py`.
 
-Then it writes `ci-volume-layout.json`, generates the SHNGROOT directory (`scripts/prepare-ipados18-ufs-layout.py`, which reads about 19 GiB and is the slow part), and finally assembles the whole image from that directory (`scripts/build-pong-userdata-image.py`).
+Then it writes `ci-volume-layout.json`, generates the SHNGROOT directory (`scripts/prepare-ipados18-ufs-layout.py`, which reads about 19 GiB and is the slow part), and finally assembles the whole image from that directory (`scripts/build-diting-userdata-image.py`).
 
 The three UUIDs are read from the APFS volume headers of the image, baked into the kernel's `XNU_OWNER_*_VOLUME_UUID` and written into the ADT's root-match value. **The kernel from a run and that run's userland belong together**: the UUIDs are kernel constants, so a different userland means rebuilding the kernel.
 

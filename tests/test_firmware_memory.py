@@ -18,7 +18,7 @@ class FirmwareMemoryTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as directory:
             work = Path(directory)
             subprocess.run(
-                ["python3", str(DEVICE / "scripts/build-pong-hardware-dtb.py")],
+                ["python3", str(DEVICE / "scripts/build-diting-hardware-dtb.py")],
                 cwd=work, env={**os.environ, "UNIXNU_DEVICE": str(DEVICE)},
                 check=True, capture_output=True, text=True,
             )

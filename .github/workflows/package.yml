@@ -344,7 +344,7 @@ jobs:
           set -euo pipefail
           export PATH="/usr/local/opt/llvm/bin:/usr/local/opt/lld/bin:$PATH"
           python3 device/kits/DitingPlatform24/build-with-runtime.py --overlay-only --overlay-dir "$RUNNER_TEMP/wifi-overlay"
-          python3 "$RUNNER_TEMP/wifi-overlay/scripts/build-pong-ath11k.py" --output-dir "$GITHUB_WORKSPACE/wifi-preflight" --jobs 4
+          python3 "$RUNNER_TEMP/wifi-overlay/scripts/build-diting-ath11k.py" --output-dir "$GITHUB_WORKSPACE/wifi-preflight" --jobs 4
       - name: diting hardware tree
         # The live tree names the Wi-Fi reset/enable/wake lines differently from Pong and
         # its PCIe refgen clock sits at another index; apply.py bakes the device values in.
@@ -368,12 +368,12 @@ jobs:
           PONG_HARDWARE_DTB: ${{ runner.temp }}/diting-live.dtb
           PONG_WIFI_SOURCE: ${{ github.workspace }}/linux
           PONG_SHENG_ROOT: ${{ github.workspace }}/sheng
-          # the recipes resolve the shared ABI through pong_native_inputs, not sheng_root
+          # the recipes resolve the shared ABI through diting_native_inputs, not sheng_root
           PONG_WIFI_SHARED: ${{ github.workspace }}/sheng/drivers/Ath12kWifi
         run: scripts/package.sh --os "${{ inputs.os }}" --uefi ../uefi-pong
       - name: v4 container
         # docs/porting/packaging.md stops at boot/boot.img (header v0). The flashable image the
-        # firmware accepts is the PONGFAT1 envelope finalize-pong-adt.py writes.
+        # firmware accepts is the PONGFAT1 envelope finalize-diting-adt.py writes.
         working-directory: device
         env:
           UNIXNU_UNIQUE_CHIP_ID: ${{ secrets.UNIXNU_UNIQUE_CHIP_ID }}
@@ -383,7 +383,7 @@ jobs:
           python3 scripts/check-storage-bindings.py "$WORK/kernel/kernel.macho"
           DTB="$WORK/device-tree/build/pong/hardware.dtb"
           [ -f "$DTB" ] || { echo "missing hardware DTB: $DTB" >&2; exit 1; }
-          python3 scripts/finalize-pong-adt.py \
+          python3 scripts/finalize-diting-adt.py \
             --work-dir "$WORK" \
             --uefi "$GITHUB_WORKSPACE/uefi-pong" \
             --unique-chip-id "$UNIXNU_UNIQUE_CHIP_ID" \
@@ -392,7 +392,7 @@ jobs:
             --ufs-probe
           ls -l "$WORK/boot"
       - name: self-contained v4 (shim + firmware)
-        # finalize-pong-adt.py leaves the kernel slot empty because a Pong device boots the
+        # finalize-diting-adt.py leaves the kernel slot empty because a Pong device boots the
         # firmware from its own partition. A fastboot-boot candidate needs the shim and the
         # volume in that slot, which scripts/build-bootimg.py already builds.
         working-directory: device

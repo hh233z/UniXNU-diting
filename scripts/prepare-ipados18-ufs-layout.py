@@ -8,7 +8,7 @@ import argparse,hashlib,json,struct,sys
 from pathlib import Path
 ROOT=Path(__file__).resolve().parents[1];MIB=1<<20
 sys.path.insert(0,str(ROOT/'scripts'))
-import pong_paths
+import diting_paths
 FIRST=0x413248;LAST=0x75a40ea
 
 def digest_file(path):
@@ -18,10 +18,10 @@ def digest_file(path):
             digest.update(chunk)
     return digest.digest()
 p=argparse.ArgumentParser(description=__doc__)
-p.add_argument('--userland',type=Path,default=pong_paths.prepared_userland())
+p.add_argument('--userland',type=Path,default=diting_paths.prepared_userland())
 p.add_argument('--systemos',type=Path,default=ROOT/'apple/ipados18-22H374/prepared/pong-ipados18-systemos.cdr')
 p.add_argument('--output-dir',type=Path,default=ROOT/'out/ipados18/ufs')
-p.add_argument('--volume-layout',type=Path,default=pong_paths.volume_layout())
+p.add_argument('--volume-layout',type=Path,default=diting_paths.volume_layout())
 a=p.parse_args();state=json.loads((a.userland/'result.json').read_text())
 if state.get('build')!='22H374' or not (a.userland/'apply-complete.json').exists():raise SystemExit('Apply the matching iPadOS18 userland first')
 volumes=json.loads(a.volume_layout.read_text());cursor=MIB;records=[]

@@ -19,8 +19,8 @@
 
 ```sh
 python3.12 scripts/migrate-pong-format2.py --unixnu ../UniXNU-upstream
-python3.12 scripts/fetch-pong-native-sources.py
-python3.12 scripts/build-pong-format2.py --unixnu ../UniXNU-upstream --out /path/to/build-output --jobs 4
+python3.12 scripts/fetch-diting-native-sources.py
+python3.12 scripts/build-diting-format2.py --unixnu ../UniXNU-upstream --out /path/to/build-output --jobs 4
 ```
 
 入口依次调用官方 defconfig、status、模块解析、树组装及 DTS 编译，再调用本项目已适配的 Darwin24 内核构建器。输出归入 `out/pong/ipados-18.7.10-22H374/pong_ipados18/`，其中包含 `resolved-profile.json`、`device-tree/hardware.dtb`、`kernel/` 和 `PONG_FORMAT2_RESULT.json`。

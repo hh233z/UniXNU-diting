@@ -15,7 +15,7 @@
 - The user explicitly requested skipping image hashes, image audits and device image readback verification. Use `--skip-image-verification` for kernel/boot builds and the default non-verifying Pong userland workflow. Do not run verification or benchmarks unless the user asks.
 - Keep generated candidates and runtime artifacts under `/Volumes/PongDev/build/servicesNN`, logs/install receipts under `/Volumes/PongDev/logs/pong/servicesNN`, and temporary task scripts under `/Volumes/PongDev/tmp/servicesNN`. Never write these into the user's Downloads directory.
 - The user requested deleting superseded temporary candidates and logs. Retain current deployment metadata and required compiler/firmware inputs; retire the previous candidate after the replacement is deployed. Keep original project sources and user scripts.
-- For system updates, the user requests changed parts only. Refresh the unmounted guest OS with `scripts/sync-pong-os-for-update.py` before local edits, then use begin/stage/finish and install changed bands. Keep REC quiescent until the update is installed so guest filesystem changes are preserved. Do not blindly overlay old host APFS metadata after a guest boot.
+- For system updates, the user requests changed parts only. Refresh the unmounted guest OS with `scripts/sync-diting-os-for-update.py` before local edits, then use begin/stage/finish and install changed bands. Keep REC quiescent until the update is installed so guest filesystem changes are preserved. Do not blindly overlay old host APFS metadata after a guest boot.
 - DarwinBoot24 and the selected XNU boot_args ABI have a 1024-byte command-line array, including the NUL terminator. Keep the assembled ASCII boot command at most 1023 bytes. Shorten optional log filters instead of changing the ABI or silently truncating functional boot arguments.
 
 # Repository layout
@@ -26,7 +26,7 @@
 - Publish source/configuration/porting records only. Apple restore binaries, generated ABI dumps, firmware, userdata, credentials and build artifacts stay local.
 - Record host build results separately from device results in porting.toml. A successful build or Fastboot command is not evidence of working Wi-Fi, PCM audio or buttons.
 - Keep XNU_PONG_POWER independent of Wi-Fi. Shared RPMh/SMMU locks belong to PongPlatformResources, and Darwin24 links native4K helpers once through libPongSmmu4K.a.
-- Native public prerequisites are pinned in configs/pong-native-sources.toml. Use scripts/fetch-pong-native-sources.py and ignored local.toml paths; do not reintroduce host volume paths into recipes.
+- Native public prerequisites are pinned in configs/pong-native-sources.toml. Use scripts/fetch-diting-native-sources.py and ignored local.toml paths; do not reintroduce host volume paths into recipes.
 
 # Diting packaging status (2026-11-06)
 
@@ -80,7 +80,7 @@
 1. Kernel death after handoff: no screen output even with `-v debug=0x144`, `/sys/fs/pstore` is empty.
    Next: firmware log via `Tools -> Advanced Logger` (QR, OneSend) and/or a real UART.
 2. Wi-Fi: sources compile locally (`libPongAth11k.a`, 2,981 symbols) but CI stops in
-   `build-pong-wifi-native.py` because the build reads `device-tree/build/pong/hardware.dtb`, not
+   `build-diting-wifi-native.py` because the build reads `device-tree/build/pong/hardware.dtb`, not
    `PONG_HARDWARE_DTB`. The live tree (`/sys/firmware/fdt`) plus `platform-firmware/dtb-fixups/apply.py`
    provides PCIe/PHY/GPIO; the refgen clock is at `freq[10]` with `clock_names[8]` = `pcie_phy_refgen_clk`.
 3. Wi-Fi firmware is checked in under `platform-firmware/wifi/` (amss.bin 5,470,128, amss20.bin 5,296,128,
@@ -223,7 +223,7 @@ stream 0xe0, SPI 265, UFS compatible `qcom,sm8475-ufshc` — verify against the 
   `kUfsHost = 0x01d84000`, `kUfsStreamId = 0xe0`, ADT properties `pong,smmu-base = 0x15000000`,
   `pong,smmu-size = 0x100000`, `pong,smmu-context-banks = 78`, `pong,smmu-match-groups = 120`,
   `pong,ufs-spi = 265`. The ADT generator writes the ufshc node with
-  `compatible = qcom,sm8475-ufshc\0qcom,sm8450-ufshc\0` (make-pong-adt-ipados18.py:244), which is
+  `compatible = qcom,sm8475-ufshc\0qcom,sm8450-ufshc\0` (make-diting-adt-ipados18.py:244), which is
   exactly what the driver's `compatible()` accepts, so matching is not the blocker.
 - Swapping in the supported ShengUfs component is **not** a board.toml edit: `[kernel]
   builder_component = DitingPlatform24` makes the core skip `build_archives()` entirely, the kit recipe
@@ -231,7 +231,7 @@ stream 0xe0, SPI 265, UFS compatible `qcom,sm8475-ufshc` — verify against the 
   and the archive the kernel links is hard-coded at three sites in the **merged** copy
   `kits/DitingPlatform24/build-support/merged-scripts/build-xnu-ipados18.sh` (the repo copy is not what
   runs). A real switch needs a `UFS_DRIVER`/`UFS_ARCHIVE` parameter, a `--driver` option in
-  `build-pong-ufs-ipados18-macos.py`, VerifiedRoot/VirtioMmioBlock include paths, and the
+  `build-diting-ufs-ipados18-macos.py`, VerifiedRoot/VirtioMmioBlock include paths, and the
   bindings.json producer to keep writing `mac-build/native-ufs/bindings.json` (Adreno platform reads
   it). Until that is done, tune the imported driver.
 - `native-ufs-root=1` must **not** be set while the imported driver is used: the core rejects the
@@ -261,7 +261,7 @@ stream 0xe0, SPI 265, UFS compatible `qcom,sm8475-ufshc` — verify against the 
 
 ## 2026-11-09 03:40 — the ADT the driver receives is correct
 
-Added the reusable `scripts/dump-pong-adt.py` (parses the Apple device tree out of any payload
+Added the reusable `scripts/dump-diting-adt.py` (parses the Apple device tree out of any payload
 image without knowing the FAT layout; `--all` lists blobs, `--index` selects one).
 
 `payload.img` from run 42509554099 carries **two** device-tree blobs:
@@ -466,7 +466,7 @@ is not needed again; a `fastboot boot` of the new image is enough.
 
 - The CI workflow hard-codes the Data volume UUID it compiles in
   (`.github/workflows/package.yml`, volume layout step: `'data': {'uuid': '337CF716-F62B-446B-B959-4A5F12A7701C'}`),
-  and `build-ipados18-pong-macos.py` passes `layout['data']['uuid']` as `XNU_OWNER_DATA_VOLUME_UUID`.
+  and `build-ipados18-diting-macos.py` passes `layout['data']['uuid']` as `XNU_OWNER_DATA_VOLUME_UUID`.
   Our first Data window was created with a random mkapfs UUID, so the kernel skipped the mount
   (`scratch Data mount SKIP error=-6`).
 - `scripts/make-data-window.py` now takes `--uuid` and passes it to mkapfs **-u** (the volume UUID;
@@ -661,7 +661,7 @@ content hashes to `45b6344f…` and `1378adfe…`. `RootLayout.h` checks only th
 checksum and bounds/names/flags, and `PongUfsTransport.cpp` never compares the per-window digests, so
 the stale record does not block publication — but it must not be quoted as the installed digests.
 
-`scripts/inspect-pong-userland.py` (added here) passes on the installed triple: OS UUID B07DF049,
+`scripts/inspect-diting-userland.py` (added here) passes on the installed triple: OS UUID B07DF049,
 `/pong/init` 755, `/pong/etc/var.skel`, `/pong/var-seed`; `/sbin/launchd` is byte-identical to
 `/pong/init` (the Pong static init wrapper) while `/sbin/launchd.ios` is Apple's 560,752-byte launchd
 and carries `PerformInRestore` for `usermanagerd` and `launchd_cache_loader`; Data UUID 337CF716 with

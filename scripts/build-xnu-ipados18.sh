@@ -15,18 +15,18 @@ import os
 import sys
 from pathlib import Path
 sys.path.insert(0, str(Path(os.environ['PONG_NATIVE_DRIVER_SOURCE']) / 'scripts'))
-import pong_paths
+import diting_paths
 wifi = os.environ.get('XNU_PONG_WIFI') == '1'
 backlight = os.environ.get('XNU_PONG_BACKLIGHT') == '1'
 if wifi:
-    linux = Path(os.environ['PONG_WIFI_SOURCE']) if os.environ.get('PONG_WIFI_SOURCE') else pong_paths.wifi_source()
+    linux = Path(os.environ['PONG_WIFI_SOURCE']) if os.environ.get('PONG_WIFI_SOURCE') else diting_paths.wifi_source()
     pci = linux / 'drivers/net/wireless/ath/ath11k/pci.c'
     if not pci.is_file():
         raise SystemExit(
             'refusing XNU_PONG_WIFI=1 before compile: Linux ath11k pci.c is not at '
             f'{pci}. Set PONG_WIFI_SOURCE to a real Linux tree such as v7.0.14. '
             'No stub driver was written.')
-    sheng = pong_paths.sheng_root()
+    sheng = diting_paths.sheng_root()
     for rel in ('drivers/Ath12kWifi/include/nw_abi.h',
                 'drivers/Ath12kWifi/shim/src/lx_rt.c',
                 'drivers/Ath12kWifi/src/nw_sta.c',
@@ -37,7 +37,7 @@ if wifi:
                 'refusing XNU_PONG_WIFI=1 before compile: UniXNU-sheng is missing '
                 f'{path}. Set PONG_SHENG_ROOT. No stub ABI was written.')
 if wifi or backlight:
-    package = pong_paths.sheng_root() / 'package'
+    package = diting_paths.sheng_root() / 'package'
     if not package.is_dir():
         raise SystemExit(
             'refusing before compile: Wi-Fi and backlight need the UniXNU-sheng package at '
@@ -244,17 +244,17 @@ fi
 if [ "${XNU_ARM_DT_PLATFORM:-0}" = 1 ] && [ -n "${PONG_NATIVE_DRIVER_SOURCE:-}" ]; then
   # These sources live in the active Pong project, not the old baseline's
   # drivers symlink. Build against the same freshly exported machine headers.
-  python3 "$PONG_NATIVE_DRIVER_SOURCE/scripts/build-pong-platform-macos.py" \
+  python3 "$PONG_NATIVE_DRIVER_SOURCE/scripts/build-diting-platform-macos.py" \
     --tree "$ROOT" --skip-image-verification
   if [ "${XNU_ARMCPU:-0}" = 1 ]; then
-    python3 "$PONG_NATIVE_DRIVER_SOURCE/scripts/build-pong-armcpu-macos.py" \
+    python3 "$PONG_NATIVE_DRIVER_SOURCE/scripts/build-diting-armcpu-macos.py" \
       --tree "$ROOT" --skip-image-verification
   fi
 fi
 if [ "${XNU_NATIVE_UFS:-0}" = 1 ] && [ -n "${PONG_NATIVE_DRIVER_SOURCE:-}" ]; then
   # The transport changes with the selected Data backend. Always compile the
   # active Pong source before linking, rather than reuse an older RAM-era .a.
-  python3 "$PONG_NATIVE_DRIVER_SOURCE/scripts/build-pong-ufs-ipados18-macos.py" \
+  python3 "$PONG_NATIVE_DRIVER_SOURCE/scripts/build-diting-ufs-ipados18-macos.py" \
     --tree "$ROOT" --skip-image-verification
 fi
 if [ "${XNU_PONG_WIFI:-0}" = 1 ]; then
@@ -263,19 +263,19 @@ if [ "${XNU_PONG_WIFI:-0}" = 1 ]; then
   # below) at them; refuse rather than silently building without a backend.
   WIFI_SOURCE=${PONG_WIFI_SOURCE:-/Volumes/Untitled/Pong-iPadOS18/wifi-source-7.0.14}
   WIFI_BUILD=${PONG_WIFI_BUILD:-/Volumes/Untitled/Pong-iPadOS18/wifi-ath11k-build}
-  python3 "$PONG_NATIVE_DRIVER_SOURCE/scripts/build-pong-ath11k.py" \
+  python3 "$PONG_NATIVE_DRIVER_SOURCE/scripts/build-diting-ath11k.py" \
     --linux "$WIFI_SOURCE" \
     --output-dir "$WIFI_BUILD"
-  python3 "$PONG_NATIVE_DRIVER_SOURCE/scripts/build-pong-wifi-native.py" --tree "$ROOT" \
+  python3 "$PONG_NATIVE_DRIVER_SOURCE/scripts/build-diting-wifi-native.py" --tree "$ROOT" \
     --ath11k "$WIFI_BUILD/libPongAth11k.a"
 fi
 if [ "${XNU_PONG_WIFI:-0}" = 1 ] || [ "${XNU_PONG_BACKLIGHT:-0}" = 1 ]; then
-  python3 "$PONG_NATIVE_DRIVER_SOURCE/scripts/build-pong-power-native.py" --tree "$ROOT"
+  python3 "$PONG_NATIVE_DRIVER_SOURCE/scripts/build-diting-power-native.py" --tree "$ROOT"
 elif [ "${XNU_NATIVE_UFS:-0}" = 1 ]; then
   # The UFS transport takes the shared SMMU lease from PongPlatformResources; build that
   # one object when the full power/audio archive is not selected, or the link has no
   # pong_smmu_lease_lock/pong_smmu_lease_unlock.
-  python3 "$PONG_NATIVE_DRIVER_SOURCE/scripts/build-pong-power-native.py" --tree "$ROOT" --resources-only
+  python3 "$PONG_NATIVE_DRIVER_SOURCE/scripts/build-diting-power-native.py" --tree "$ROOT" --resources-only
 fi
 if [ ! -f "$KERNEL_SDKROOT/usr/local/lib/kernel/libfirehose_kernel.a" ]; then
   bash scripts/build-firehose.sh
@@ -967,7 +967,7 @@ if [ "$PONG_ADRENO_PLATFORM" != 0 ] && [ "$PONG_ADRENO_PLATFORM" != 1 ]; then
   exit 1
 fi
 if [ "$PONG_ADRENO_PLATFORM" = 1 ]; then
-  python3 "$PONG_NATIVE_DRIVER_SOURCE/scripts/build-pong-adreno-platform.py" \
+  python3 "$PONG_NATIVE_DRIVER_SOURCE/scripts/build-diting-adreno-platform.py" \
     --guest-build 22H374 --tree "$ROOT" --output-dir "$ROOT/build/pong-adreno"
   test -f "$ROOT/build/pong-adreno/libPongAdrenoPlatform.a"
 fi
