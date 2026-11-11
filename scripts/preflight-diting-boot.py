@@ -12,7 +12,7 @@ the device repository's tools/apfs.
 
 Usage:
     preflight-diting-boot.py --serial 9e0c2b55 \
-        --boot-image ../build-work/greenI2/.../boot/pong-unixnu-uefi.img \
+        --boot-image ../build-work/greenI2/.../boot/diting-unixnu-uefi.img \
         --os ../build-work/prepared-420734-os.img \
         --data ../build-work/windows/Data.img
 """

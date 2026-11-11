@@ -97,7 +97,7 @@ def main():
             raise ValueError('Prelinked APFS dependency attestation exceeds component list')
     out = args.output_dir.resolve()
     out.mkdir(parents=True, exist_ok=True)
-    boot = out / 'pong-xnu-initial.img'
+    boot = out / 'diting-xnu-initial.img'
     if boot.exists():
         parser.error('Preserving the existing image; choose another --output-dir')
     payload = out / 'stage/EFI/UniXNU'

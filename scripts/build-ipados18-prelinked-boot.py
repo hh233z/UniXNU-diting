@@ -20,7 +20,7 @@ def main():
  p.add_argument('--window-size',type=lambda s:int(s,0),default=0x100000000)
  p.add_argument('--kernel-arg',action='append',default=[])
  a=p.parse_args()
- if (a.output_dir/'pong-xnu-initial.img').exists():raise SystemExit('Existing boot image retained; choose another --output-dir before prelinking')
+ if (a.output_dir/'diting-xnu-initial.img').exists():raise SystemExit('Existing boot image retained; choose another --output-dir before prelinking')
  a.output_dir.mkdir(parents=True,exist_ok=True)
  report=json.loads((a.artifact_dir/'PONG_BUILD_RESULT.json').read_text())
  if not report['build_complete'] or report['profile']!='Pong-iPadOS18-22H374-Darwin24':raise SystemExit('A completed Darwin 24 build is required')

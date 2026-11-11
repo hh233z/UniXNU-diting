@@ -8,7 +8,7 @@ hash (`manifest=3` in the UFS report). fastboot streams the sparse encoding chun
 write happens with Android out of the picture entirely.
 
 Usage:
-    flash-userdata-image.py --image out/userdata/userdata-root.img [--boot boot/pong-unixnu-uefi.img]
+    flash-userdata-image.py --image out/userdata/userdata-root.img [--boot boot/diting-unixnu-uefi.img]
 
 The device must already be in the bootloader. The script refuses to continue when the product or the
 unlock state is not what the board expects.

@@ -13,8 +13,8 @@ The FAT files are edited with mtools; the tool runs where mcopy/mdel exist
 not rebuilt.
 
 Usage:
-    patch-boot-payload-args.py --image pong-unixnu-uefi.img \
-        --output pong-unixnu-uefi-cache.img --set launchd_unsecure_cache=1
+    patch-boot-payload-args.py --image diting-unixnu-uefi.img \
+        --output diting-unixnu-uefi-cache.img --set launchd_unsecure_cache=1
 """
 import argparse
 import hashlib

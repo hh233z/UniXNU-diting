@@ -77,7 +77,7 @@ def main():
         raise ValueError('Invalid Pong DTB')
     out = args.output_dir or ROOT / 'UniXNU/out/pong/boot'
     out.mkdir(parents=True, exist_ok=True)
-    image = out / 'pong-unixnu-uefi.img'
+    image = out / 'diting-unixnu-uefi.img'
     ramdisk = args.ramdisk.read_bytes() if args.ramdisk else b''
     with tempfile.TemporaryDirectory(prefix='pong-bootimg-') as name:
         scratch = Path(name)

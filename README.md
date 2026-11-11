@@ -36,7 +36,7 @@ A740/WCN7850 实现。Diting 的板级配置在 `board.toml`、`dts/diting.dts` 
 固件。源版本由 `feeds.toml`、`unixnu.lock` 和迁移记录固定；克隆时加 `--recurse-submodules`。
 
 CI 使用 `.github/workflows/package.yml`（仅 `workflow_dispatch`），在 macOS runner 上构建
-kernel / payload / boot image，产物为 `pong-package` artifact。三个卷 UUID 是内核常量，换 userdata
+kernel / payload / boot image，产物为 `diting-package` artifact。三个卷 UUID 是内核常量，换 userdata
 必须重编内核；占位 UUID 的构建只能用于编译验证，不能上机。
 
 ## 源码边界

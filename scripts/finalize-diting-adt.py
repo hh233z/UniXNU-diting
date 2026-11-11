@@ -209,7 +209,7 @@ def main():
 
     ramdisk = envelope(payload.read_bytes())
     image = boot_image(ramdisk)
-    target = work / 'boot/pong-xnu-initial.img'
+    target = work / 'boot/diting-xnu-initial.img'
     target.parent.mkdir(parents=True, exist_ok=True)
     target.write_bytes(image)
     if image[:8] != b'ANDROID!' or struct.unpack_from('<I', image, 40)[0] != 4:
@@ -235,14 +235,14 @@ def main():
               'boot_args': boot_args,
               'payload_bytes': payload.stat().st_size, 'payload_sha256': sha256(payload),
               'image_sha256': sha256(target), 'hardware_tested': False}
-    (work / 'boot/pong-boot.json').write_text(json.dumps(record, indent=2) + '\n')
+    (work / 'boot/diting-boot.json').write_text(json.dumps(record, indent=2) + '\n')
     (work / 'payload/pong-adt.json').write_text(json.dumps(record, indent=2) + '\n')
     manifest_path = work / 'package.manifest.json'
     if manifest_path.is_file():
         package = json.loads(manifest_path.read_text())
         outputs = package.setdefault('outputs', {})
         for key, path in (('boot.img', work / 'boot/boot.img'), ('payload.img', payload),
-                          ('pong-xnu-initial.img', target)):
+                          ('diting-xnu-initial.img', target)):
             if path.is_file():
                 outputs[key] = {'bytes': path.stat().st_size, 'sha256': sha256(path)}
         manifest_path.write_text(json.dumps(package, indent=2, sort_keys=True) + '\n')

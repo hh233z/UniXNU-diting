@@ -70,8 +70,8 @@ When there is no local Xcode, Apple open-source dependency tree or private firmw
 
 | job | what it does | artifacts |
 | --- | --- | --- |
-| **userdata image** | builds the prepared userland, the SHNGROOT directory and the whole userdata image from the IPSW at `ipsw_url` | `pong-userdata` (30 days), `volume-layout` (1 day) |
-| **boot image, payload and kernel** | `scripts/package.sh --os …` runs deps / preflight / patches / build / pack / verify, then adds the two things the spec does not describe but the local flow does | `pong-package` (14 days) |
+| **userdata image** | builds the prepared userland, the SHNGROOT directory and the whole userdata image from the IPSW at `ipsw_url` | `diting-userdata` (30 days), `volume-layout` (1 day) |
+| **boot image, payload and kernel** | `scripts/package.sh --os …` runs deps / preflight / patches / build / pack / verify, then adds the two things the spec does not describe but the local flow does | `diting-package` (14 days) |
 
 The jobs are split by disk, not by CPU: the userdata chain peaks near 37 GiB, the packaging job's XNU objects and EDK II output near 25 GiB, and a hosted runner has 14 GiB of RAM and 80–180 GiB of disk. The packaging job takes only a 2 KB `ci-volume-layout.json` from the other, so a failed or skipped `userdata` never blocks it.
 
@@ -82,7 +82,7 @@ The jobs are split by disk, not by CPU: the userdata chain peaks near 37 GiB, th
 3. The OS profile is fixed to `ipados-18.7.10-22H374` (the only choice).
 4. For a userdata image as well, put the restore download URL for Apple's iPadOS 18.7.10 (22H374) into `ipsw_url`. Leaving it empty skips that job, and the packaging job then compiles the kernel against uuid5 placeholder UUIDs, so that run's output cannot be booted on hardware.
 5. To use the stock 22H374 kernelcache as a prelink base, tick `prelink`. It is off by default and the run uses the natively built kernel.
-6. When the run finishes, download `pong-package` from **Artifacts** at the bottom of the run page, plus `pong-userdata` when that job ran.
+6. When the run finishes, download `diting-package` from **Artifacts** at the bottom of the run page, plus `diting-userdata` when that job ran.
 
 The `package` job needs a repository secret named `UNIXNU_UNIQUE_CHIP_ID`: the device's 8-digit hexadecimal platform seed. Without it the payload step refuses to run, because the seed is compiled into the image and differs per chip.
 
@@ -103,7 +103,7 @@ Three things differ from the repository defaults on the runner, none of them inc
 `docs/porting/packaging.md` stops at `boot/boot.img`, while the local flow does two more things. CI performs them with `scripts/finalize-diting-adt.py` under the same parameters, so a CI image has the same shape as a local one:
 
 - **ADT from the local generator**: the shared `devicetree.generate()` writes only root, chosen and the nodes configured under `[adt]`. The `pong,ufs-*` properties, touch and button resources and PMIC metadata that the kernel reads on `/arm-io` are not among them. This step calls `scripts/make-diting-adt-ipados18.py` with the local parameters: `--dram-size 0x300000000` (12 GiB), `--window-size 0x100000000` (4 GiB), `--cpus 1`, `--chip-id 0x8010`, `--development-debug`, `--skip-image-verification`, and stores the SHA-384 of `pong-boot-manifest.json` in `/chosen/boot-manifest-hash`. The result replaces `EFI/UniXNU/Payloads/kernel.macho.adt` inside `payload.img`, and a copy of `pong-boot-manifest.json` sits beside it.
-- **Boot image in the flashable shape**: the firmware (`PongBootMemoryDxe`) only accepts an initrd carrying the `PONGFAT1` envelope, while `release` puts `payload.img` into the ramdisk slot unwrapped. This step rewrites `boot/pong-xnu-initial.img` in the local container's shape: Android boot v4 header, empty kernel slot (this machine boots firmware from its own partition), ramdisk is the envelope plus `payload.img`, and 4096 zero bytes of empty signature area at the end. `boot/boot.img` remains the spec artifact that `release` wrote.
+- **Boot image in the flashable shape**: the firmware (`PongBootMemoryDxe`) only accepts an initrd carrying the `PONGFAT1` envelope, while `release` puts `payload.img` into the ramdisk slot unwrapped. This step rewrites `boot/diting-xnu-initial.img` in the local container's shape: Android boot v4 header, empty kernel slot (this machine boots firmware from its own partition), ramdisk is the envelope plus `payload.img`, and 4096 zero bytes of empty signature area at the end. `boot/boot.img` remains the spec artifact that `release` wrote.
 
 Inside that `PONGFAT1` envelope `payload.img` must be 96 MiB, because `PongBootMemoryDxe` rejects an initrd over 128 MiB and the local `--fat-mib` is 96 as well. That is why `board.toml [payload] size_mib` is 96.
 
@@ -130,7 +130,7 @@ The three UUIDs are read from the APFS volume headers of the image, baked into t
 
 This step needs macOS with passwordless `sudo`: `apply` and `build-systemos18.py` must be root to write the stock files' uid/gid correctly. A failing `sudo -n true` fails the step rather than skipping a root step and pretending it worked.
 
-The image is uploaded as four parts of `pong-userdata`, named `<name>.part00` … `.part03` (two-digit numbering, at most 8 GiB each for a ~19.4 GiB image, kept 30 days). Join them in order:
+The image is uploaded as four parts of `diting-userdata`, named `<name>.part00` … `.part03` (two-digit numbering, at most 8 GiB each for a ~19.4 GiB image, kept 30 days). Join them in order:
 
 ```sh
 cat pong-ipados18-userdata.img.part00 pong-ipados18-userdata.img.part01 \
@@ -143,18 +143,18 @@ Without `ipsw_url` the userdata job reports `staged=false` and stops. That is no
 
 ### Artifacts
 
-`pong-package` (14 days):
+`diting-package` (14 days):
 
 | file | contents |
 | --- | --- |
-| `pong-xnu-initial.img` | the boot image in the local shape: Android boot v4, empty kernel slot, ramdisk is the `PONGFAT1` envelope plus `payload.img`, empty signature area; `pong-boot.json` records the parameters and the ADT and manifest digests |
+| `diting-xnu-initial.img` | the boot image in the local shape: Android boot v4, empty kernel slot, ramdisk is the `PONGFAT1` envelope plus `payload.img`, empty signature area; `diting-boot.json` records the parameters and the ADT and manifest digests |
 | `boot.img` / `payload.img` | the spec artifacts `release` wrote; the ramdisk in `boot.img` is the unwrapped `payload.img` |
 | `kernel/kernel.macho` | the kernel this run built (or prelinked) |
 | `package.manifest.json` | the `release` manifest, with digests updated for the rewritten files |
 | `pong-boot-manifest.json` | the same unsigned development boot description the local image carries |
 | `ci-volume-layout.json` / `local.toml` | the volume layout this run used and the board-level local inputs written on the runner |
 
-`pong-userdata` (30 days) is `.part00` … `.part03` plus `userdata-image.json` and `ci-volume-layout.json`. `volume-layout` (1 day) only passes the layout between the two jobs.
+`diting-userdata` (30 days) is `.part00` … `.part03` plus `userdata-image.json` and `ci-volume-layout.json`. `volume-layout` (1 day) only passes the layout between the two jobs.
 
 ### What it does not do
 
