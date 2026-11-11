@@ -820,3 +820,13 @@ work is the boot itself, not the inputs.
 - 顺序：舞台 1（旧镜像 `cb56ac9d…`）→ userdata job 出 OS 窗口 → bring-up 内核 → TWRP 写 OS 窗口（`sda37`，`seek=1`）→ `fastboot boot` 新镜像 → 逐步开驱动。
 - 写 OS 窗口前核对 `sda37` start=24924160、size=468930520；回退用 `prepared-420734-os.img`。
 - provenance 修正：`porting.toml` 里继承的 “Pong live Android DT” 等历史输入不再改成 Diting。
+
+# 2026-11-11 阶段 2a/2b 完成
+
+- userdata job `42987806310` 绿：新 OS 窗口 `diting-ipados18-system.cdr` 6,845,104,128 B，sha256 `27c507c8972275c9170806bb975b03d762ebbb9379945b890d5665a154e8102d`；根卷 UUID `B07DF049…`，`/sbin/launchd` == `/diting/init`（71,392 B，sha256 `95cb7341…`），`launchd.ios` 含 `PerformInRestore`，`/diting/libditing-ui18.dylib` 174,976 B，`/pong` 不存在。已下载到 `D:\ai\diting\artifacts\ci-42987806310`。
+- 该 job 的 `volume-layout.json` 里 SystemOS/Data 是新建容器 UUID（`771CEF3F…`/`1C04B790…`），**不要**用于设备或内核；设备继续用 `4A77BA00…`/`337CF716…`。
+- bring-up 内核 run `42994674560` 绿（`diting_ipados18_bringup_defconfig`）：`diting-unixnu-uefi.img` 101,191,680 B sha256 `e9b615bf9ae0143cbe6195f9625105b92cbbc877c5e35e97ec7b6d6130b0d35d`；`kernel.macho` 51,793,920 B sha256 `6399f2ca5dbde521a3aaf352028da2a22f704803272e2c8665a56491d995ff76`；配置 `diting_ipados18_bringup_defconfig`。
+- 镜像参数已逐个核对：`launchd_unsecure_cache=1`、`diting_ufs_readwrite=1`、`diting_exec_diag=1` 均在；无 `diting_init_path`、无 `pong_`；manifest 与 TOML 一致，ADT 的 `boot-manifest-hash` 等于 manifest SHA-384，PONGFAT1 CRC 有效；内核里三个 UUID 字符串都在。
+- CI 修正：`5863dd7`（按所选 defconfig 走打包路径）、`31e710c`（断言 `[package.defconfig]` 与输入一致）。
+- 写入 runbook：`D:\ai\diting\OS窗口写入与回退-安全版-20261111.md`；路线图 §2c 已改为 `shell -T` + `count=6528` + `pipefail` + receipt，并用 `ANDROID_ADB_SERVER_PORT=5038` 适配只读校验脚本。
+- 下一步：手机可用时先舞台 1（`diting-boot-launchd-unsecure.img`，`cb56ac9d…`）取日志；再按 runbook 写 OS 窗口、`fastboot boot` bring-up 镜像、Advanced Logger 取日志。
