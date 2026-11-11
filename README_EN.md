@@ -171,3 +171,9 @@ Only source, configuration, patches and scripts are published. IPSWs, Apple priv
 `DitingPlatform24` identifies the community A730/QCA6490 implementation (derived from the Diting work), independently of the upstream A740/WCN7850 driver. The versioned SM8475 seed is kept under `migration/format2/soc-seed`.
 
 Board code uses BSD-2-Clause-Patent. Imported components retain their licenses and SPDX identifiers; see [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md).
+
+## Disclaimer and trademarks
+
+- This is an unofficial, independent hardware porting effort. It is not affiliated with, endorsed by, or sponsored by Apple Inc., Xiaomi Inc., or Qualcomm Incorporated; trademarks belong to their respective owners.
+- The work rewrites userdata LBA windows and boots a self-built UEFI chain; it can cause data loss or an unbootable device. Back up first; you use it at your own risk.
+- The repository does not contain or redistribute Apple restore images, vendor firmware, or extracted binaries; obtain those on your own hardware or local environment.
