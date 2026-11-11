@@ -1,10 +1,10 @@
 # Hosted CI compile. Not the shipping kernel.
 # Adreno platform archive: enabled; it builds from the vendor firmware the CI job
-# decodes from the ADRENO_FW_* secrets into PONG_ADRENO_FIRMWARE.
+# decodes from the ADRENO_FW_* secrets into DITING_ADRENO_FIRMWARE.
 # private firmware this public repository does not carry:
 #   modem amss/m3/regdb and tfa98xx.cnt
 # Adreno platform archive: enabled; it builds from the vendor firmware the CI job
-# decodes from the ADRENO_FW_* secrets into PONG_ADRENO_FIRMWARE.
+# decodes from the ADRENO_FW_* secrets into DITING_ADRENO_FIRMWARE.
 #     (build-diting-adreno-platform.py refuses to continue without them)
 # NativeUfs, the DT platform, and ArmCpu stay on, so the Intel host gates
 # and the XNU link still run.
@@ -54,14 +54,14 @@ CONFIG_XNU_OWNER_CACHE_VOLUME_UUID=""
 CONFIG_XNU_OWNER_ROOT_AUDIT=n
 CONFIG_XNU_OWNER_ROOT_TRUST=n
 CONFIG_XNU_OWNER_UNION_SYSTEMOS=y
-CONFIG_XNU_PONG_APFS_DEBUG=y
-CONFIG_XNU_PONG_ADRENO_PLATFORM=n
-CONFIG_XNU_PONG_BACKLIGHT=n
-CONFIG_XNU_PONG_EARLY_TRACE=n
-CONFIG_XNU_PONG_LEGACY_UACCESS=n
-CONFIG_XNU_PONG_RAMOOPS_CONSOLE=y
-CONFIG_XNU_PONG_RAMOOPS_BASE=0xa7000000
-CONFIG_XNU_PONG_VOLATILE_PANIC_LOG=y
+CONFIG_XNU_DITING_APFS_DEBUG=y
+CONFIG_XNU_DITING_ADRENO_PLATFORM=n
+CONFIG_XNU_DITING_BACKLIGHT=n
+CONFIG_XNU_DITING_EARLY_TRACE=n
+CONFIG_XNU_DITING_LEGACY_UACCESS=n
+CONFIG_XNU_DITING_RAMOOPS_CONSOLE=y
+CONFIG_XNU_DITING_RAMOOPS_BASE=0xa7000000
+CONFIG_XNU_DITING_VOLATILE_PANIC_LOG=y
 CONFIG_XNU_SHENG_PMGR=n
 CONFIG_XNU_SMMU4K_PROBE=n
 CONFIG_XNU_SOURCE_CORECRYPTO14=n
@@ -71,4 +71,4 @@ CONFIG_XNU_TRUST_CACHE_RUNTIME=n
 CONFIG_XNU_VERIFIED_ROOT_PROBE=n
 CONFIG_XNU_ZONE_PGZ_ALIGNMENT_PROBE=n
 
-CONFIG_XNU_PONG_WIFI=n
+CONFIG_XNU_DITING_WIFI=n
