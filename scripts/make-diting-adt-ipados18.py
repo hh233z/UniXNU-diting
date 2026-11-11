@@ -173,7 +173,7 @@ def main():
     # or a claim of Apple personalization. Keep only its SHA-384 digest in DT.
     # Rebooting the same image reuses it; rebuilding rolls it.
     boot_nonce_hash = hashlib.sha384(os.urandom(32)).digest()
-    backlight = json.loads((ROOT / 'configs/pong-display-sm8475.json').read_text())['brightness']
+    backlight = json.loads((ROOT / 'configs/diting-display-sm8475.json').read_text())['brightness']
     chosen = [
         ('random-seed', os.urandom(64)),
         ('osenvironment', b'main\0'),
@@ -190,7 +190,7 @@ def main():
         ('darwinboot-memory-ranges', bytes(32 + 64 * 16)),
         ('pong-allocatable-ram', b''.join(
             struct.pack('<QQ', int(bank['base'], 0), int(bank['size'], 0))
-            for bank in json.loads((ROOT / 'configs/pong-memory-sm8475.json').read_text())['allocatable'])),
+            for bank in json.loads((ROOT / 'configs/diting-memory-sm8475.json').read_text())['allocatable'])),
         ('display-rotation', struct.pack('<I', 0)),
         # Host UTC sampled for this temporary development boot. The platform
         # expert advances this software clock using the native arch timer.

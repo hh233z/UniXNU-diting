@@ -52,7 +52,7 @@ evidence = [{kind = "source", reported_kind = "host-build", reference = "migrati
 id = "memory"
 status = "implemented"
 components = ["DitingPlatform24"]
-paths = ["configs/pong-memory-sm8475.json", "drivers/PongAdreno/ArmSmmu4K/**"]
+paths = ["configs/diting-memory-sm8475.json", "drivers/PongAdreno/ArmSmmu4K/**"]
 inputs = ["Pong live Android DT、NothingOSS SM8475源码与匹配22H374 restore"]
 configuration = ["board.toml、pong_ipados18_defconfig 与对应板级配置"]
 procedure = ["从实际不连续 DRAM 和保留区接管已取得所有权的 RAM。"]
@@ -80,7 +80,7 @@ evidence = [{kind = "source", reported_kind = "host-build", reference = "migrati
 id = "display"
 status = "implemented"
 components = ["DitingPlatform24"]
-paths = ["configs/pong-display-sm8475.json", "drivers/PongPower/PongBacklight*", "scripts/*display*"]
+paths = ["configs/diting-display-sm8475.json", "drivers/PongPower/PongBacklight*", "scripts/*display*"]
 inputs = ["Pong live Android DT、NothingOSS SM8475源码与匹配22H374 restore"]
 configuration = ["board.toml、pong_ipados18_defconfig 与对应板级配置"]
 procedure = ["Pong 1080x2412、stride4320；DCS背光和原有显示服务。"]
@@ -122,7 +122,7 @@ evidence = [{kind = "source", reported_kind = "device-capture", reference = "mig
 id = "network"
 status = "implemented"
 components = ["DitingPlatform24"]
-paths = ["drivers/PongWifi/**", "configs/pong-wifi-sm8475.json", "scripts/*wifi*", "scripts/*ath11k*"]
+paths = ["drivers/PongWifi/**", "configs/diting-wifi-sm8475.json", "scripts/*wifi*", "scripts/*ath11k*"]
 inputs = ["Pong live Android DT、NothingOSS SM8475源码与匹配22H374 restore"]
 configuration = ["board.toml、pong_ipados18_defconfig 与对应板级配置"]
 procedure = ["Pong PCIe0/QCA6490，82项PHY序列、GPIO80/94/95/96/204、RPMh。"]
@@ -150,7 +150,7 @@ evidence = [{kind = "source", reported_kind = "host-build", reference = "migrati
 id = "power"
 status = "implemented"
 components = ["DitingPlatform24"]
-paths = ["drivers/PongPower/**", "configs/pong-power-sm8475.json", "userland/sleepserver/**"]
+paths = ["drivers/PongPower/**", "configs/diting-power-sm8475.json", "userland/sleepserver/**"]
 inputs = ["Pong live Android DT、NothingOSS SM8475源码与匹配22H374 restore"]
 configuration = ["board.toml、pong_ipados18_defconfig 与对应板级配置"]
 procedure = ["SM8475 ADSP/RPMh、PMIC battery管理和Pong电源策略。"]
@@ -166,7 +166,7 @@ status = "implemented"
 components = ["DitingPlatform24", "XnuPrelink"]
 paths = ["scripts/package.sh", "scripts/finalize-diting-adt.py", "scripts/build-diting-hardware-dtb.py", "scripts/install-unixnu-inputs.py", "kits/DitingPlatform24/**", "os-profiles/**", "board.toml", ".github/workflows/package.yml", "scripts/build-ipados18*", "scripts/build-diting-profile-kernel.py", "scripts/make-diting-adt-ipados18.py", "scripts/build-xnu-ipados18.sh", "patches/xnu-ipados18/**"]
 inputs = ["UniXNU c96b299（release 与 templates/package.sh）、uefi-pong 固件树、匹配 22H374 restore、UNIXNU_UNIQUE_CHIP_ID 平台种子"]
-configuration = ["board.toml 的 [package]/[package.defconfig]/[bootimg]/[userdata]，os-profiles/ipados-18.7.10-22H374，configs/pong_ipados18_ci_defconfig"]
+configuration = ["board.toml 的 [package]/[package.defconfig]/[bootimg]/[userdata]，os-profiles/ipados-18.7.10-22H374，configs/diting_ipados18_ci_defconfig"]
 procedure = ["scripts/package.sh --check 走 deps/preflight/patches；CI 的 package job 跑 scripts/package.sh --os … --skip-prelink，再跑 scripts/finalize-diting-adt.py：用本地同一份 make-diting-adt-ipados18.py 与同一组参数（12 GiB DRAM、4 GiB 窗口、单 CPU）重写 payload 里的 ADT，并重打 boot.img 与 PONGFAT1 包装的 boot.img.pong。"]
 findings = ["scripts/package.sh --check --no-deps 在 Linux 上通过：1 个补丁、pong_ipados18_defconfig、OS ipados-18.7.10-22H374。release 只跑 kernel/package/firmware/payload，不含 userdata；本板内核需要 MACHINE_CONFIGS=PONG，共享 kernel 步骤写死 BCM2837，因此由 kits/DitingPlatform24 作为组件 recipe 编译；共享 kernel 步骤的 tree 已有真实 drivers/ 目录，设备 builder 另用一棵树并在编完后回填 mach.development.pong。bootimg 的 validate 只认 v0-v2 头，board 覆写 header_version = 0。本板固件只认 PONGFAT1 包装的 ramdisk，故规范产物 boot/boot.img 之外另出 boot.img.pong。userdata 不走 unixnu userdata：它写 SHNGROOT v2 且缺 Data 窗口，本板 RootLayout.h 只接受 v1 且强制 OS/SystemOS/Data 三窗口。", "package.yml 去掉未使用的 blacktop/tap/ipsw；porting-record.yml 改为 submodules: recursive，与 drivers/ submodule 拆分对齐。"]
 completion = ["在 macOS runner 上跑通 package.yml 两个 job，并取得 boot.img、boot.img.pong、payload.img、kernel.macho、package.manifest.json 与 userdata 分片"]

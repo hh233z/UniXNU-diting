@@ -8,7 +8,7 @@ from diting_native_inputs import ROOT, input_path
 
 
 def main():
-    sources = tomllib.loads((ROOT / 'configs/pong-native-sources.toml').read_text())['source']
+    sources = tomllib.loads((ROOT / 'configs/diting-native-sources.toml').read_text())['source']
     local = ROOT / 'local.toml'
     overrides = tomllib.loads(local.read_text()).get('source', []) if local.exists() else []
     for source in tomllib.loads((ROOT / 'feeds.toml').read_text())['source']:

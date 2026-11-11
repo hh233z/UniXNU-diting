@@ -326,7 +326,7 @@ jobs:
         run: >-
           python3 device/scripts/prepare-ci-wifi.py
           --workspace "$GITHUB_WORKSPACE"
-          --manifest device/configs/pong-native-sources.toml
+          --manifest device/configs/diting-native-sources.toml
       - name: preflight Wi-Fi compile
         env:
           UNIXNU_DEVICE: ${{ github.workspace }}/device

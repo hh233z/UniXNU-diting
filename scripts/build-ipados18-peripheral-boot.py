@@ -33,7 +33,7 @@ def emit_hid(operation):
         import emit_prelink
         original=emit_prelink.unserialize_xml
         matches=json.loads((Path(__file__).resolve().parents[1]/
-            'configs/pong-hid-match.json').read_text())
+            'configs/diting-hid-match.json').read_text())
         def metadata(blob):
             value=original(blob)
             for entry in value.get('_PrelinkInfoDictionary',[]):

@@ -23,7 +23,7 @@ def main():
     p.add_argument('--output-dir', type=Path, required=True)
     p.add_argument('--developer-dir', type=Path, default=diting_paths.developer_dir())
     a = p.parse_args(); out = a.output_dir.resolve(); out.mkdir(parents=True, exist_ok=True)
-    profile = json.loads((ROOT / 'configs/pong-wifi-sm8475.json').read_text())
+    profile = json.loads((ROOT / 'configs/diting-wifi-sm8475.json').read_text())
     if profile['soc'] != 'SM8475' or profile['pci']['device'] != 0x1103 or profile['driver_family'] != 'ath11k':
         raise RuntimeError('QCA6490 board inputs required')
     framework = a.tree / '.cache/fakeroot/System/Library/Frameworks/Kernel.framework/Versions/A'

@@ -108,7 +108,7 @@ def main():
         subprocess.run(cmd,env=env,check=True);commands.append(cmd);objects.append(obj)
     # Sheng's late accelerator class: bind the selected guest's IOAcceleratorES
     # ancestry, and defer its constructor until IOGPUFamily is loaded.
-    abi=json.loads((ROOT/('configs/pong-iogpu-'+a.guest_build+'.json')).read_text())
+    abi=json.loads((ROOT/('configs/diting-iogpu-'+a.guest_build+'.json')).read_text())
     fixed=json.loads((ROOT/'mac-build/native-ufs/bindings.json').read_text())
     if fixed.get('build', '20G81') != a.guest_build:raise RuntimeError('GPU and storage prelink guests differ')
     slide=int(fixed['fixed_prelink_base'],16)-int(abi['original_prelink_base'],16)

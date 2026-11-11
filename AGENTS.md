@@ -26,7 +26,7 @@
 - Publish source/configuration/porting records only. Apple restore binaries, generated ABI dumps, firmware, userdata, credentials and build artifacts stay local.
 - Record host build results separately from device results in porting.toml. A successful build or Fastboot command is not evidence of working Wi-Fi, PCM audio or buttons.
 - Keep XNU_PONG_POWER independent of Wi-Fi. Shared RPMh/SMMU locks belong to PongPlatformResources, and Darwin24 links native4K helpers once through libPongSmmu4K.a.
-- Native public prerequisites are pinned in configs/pong-native-sources.toml. Use scripts/fetch-diting-native-sources.py and ignored local.toml paths; do not reintroduce host volume paths into recipes.
+- Native public prerequisites are pinned in configs/diting-native-sources.toml. Use scripts/fetch-diting-native-sources.py and ignored local.toml paths; do not reintroduce host volume paths into recipes.
 
 # Diting packaging status (2026-11-06)
 
@@ -41,7 +41,7 @@
 # Diting Wi-Fi 构建进展（2026-11-07）
 
 - Actions 运行 42350648631 的内层日志显示，所用 Sheng main 引入了与设备清单不同的 Ath12kWifi，31 个编译单元因此找不到 `linux/kconfig.h`；Linux 稀疏检出还缺少 MHI 和 QMI 源码。
-- `scripts/prepare-ci-wifi.py` 根据 `configs/pong-native-sources.toml` 固定 Linux、Sheng 和 Ath12kWifi，检查 ath11k、MHI、QMI、shim 及头文件。工作流先独立编译 Wi-Fi，再进入较耗时的内核构建；检查日志会随失败产物上传。
+- `scripts/prepare-ci-wifi.py` 根据 `configs/diting-native-sources.toml` 固定 Linux、Sheng 和 Ath12kWifi，检查 ath11k、MHI、QMI、shim 及头文件。工作流先独立编译 Wi-Fi，再进入较耗时的内核构建；检查日志会随失败产物上传。
 - 使用清单中的 Linux 和 Ath12kWifi 固定版本，本机 Linux 交叉编译已生成 arm64 Mach-O 对象及 `libPongAth11k.a`。macOS/Xcode、内核最终链接、固件加载和 Diting 真机 Wi-Fi 仍需分别验证。
 - 这是本地未提交修改；在 33 授权提交推送前，远端 Actions 不会使用这些改动。请勿把编译归档或占位卷布局当成设备功能证据。
 

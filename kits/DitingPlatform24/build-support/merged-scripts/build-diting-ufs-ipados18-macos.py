@@ -38,9 +38,9 @@ def main():
         ['xcrun', '--sdk', 'iphoneos', '--show-sdk-path'], text=True, env=env).strip()
     obj = out / 'NativeUfs.o'
     data_enabled = env.get('XNU_OWNER_DATA_UFS') == '1' if 'XNU_OWNER_DATA_UFS' in env else (
-        'CONFIG_XNU_OWNER_DATA_UFS=y' in (DEVICE / 'configs/pong_ipados18_defconfig').read_text().splitlines())
+        'CONFIG_XNU_OWNER_DATA_UFS=y' in (DEVICE / 'configs/diting_ipados18_defconfig').read_text().splitlines())
     trace_enabled = env.get('XNU_PONG_EARLY_TRACE') == '1' if 'XNU_PONG_EARLY_TRACE' in env else (
-        'CONFIG_XNU_PONG_EARLY_TRACE=y' in (DEVICE / 'configs/pong_ipados18_defconfig').read_text().splitlines())
+        'CONFIG_XNU_PONG_EARLY_TRACE=y' in (DEVICE / 'configs/diting_ipados18_defconfig').read_text().splitlines())
     command = ['xcrun', '--sdk', 'iphoneos', 'clang++', '-target', 'arm64-apple-ios18.0',
         '-isysroot', sdk, '-mkernel', '-ffreestanding', '-fno-builtin', '-fno-exceptions',
         '-fno-rtti', '-fno-stack-check', '-std=gnu++17', '-fblocks', '-O2',

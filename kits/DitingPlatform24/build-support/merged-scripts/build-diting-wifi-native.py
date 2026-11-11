@@ -19,7 +19,7 @@ def main():
  if a.ath11k is None:a.ath11k=a.tree/'build/pong-ath11k/libPongAth11k.a'
  shared=input_path('wifi_shared')
  if not a.ath11k.is_file():raise RuntimeError('Build the matching Pong ath11k archive first: '+str(a.ath11k))
- profile=json.loads((ROOT/'configs/pong-wifi-sm8475.json').read_text())
+ profile=json.loads((ROOT/'configs/diting-wifi-sm8475.json').read_text())
  if profile['soc']!='SM8475' or profile['pci']['device']!=0x1103:raise RuntimeError('Pong QCA6490 profile required')
  hardware=os.environ.get('PONG_HARDWARE_DTB')
  if hardware:

@@ -16,7 +16,7 @@ def main():
  p.add_argument('--firmware',type=Path,default=diting_paths.wifi_firmware())
  a=p.parse_args();out=a.tree/'build/pong-wifi';out.mkdir(parents=True,exist_ok=True)
  shared=diting_paths.sheng_root()
- profile=json.loads((ROOT/'configs/pong-wifi-sm8475.json').read_text())
+ profile=json.loads((ROOT/'configs/diting-wifi-sm8475.json').read_text())
  if profile['soc']!='SM8475' or profile['pci']['device']!=0x1103:raise RuntimeError('Pong QCA6490 profile required')
  hardware=os.environ.get('PONG_HARDWARE_DTB')
  if hardware:
