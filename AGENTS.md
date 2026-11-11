@@ -830,3 +830,11 @@ work is the boot itself, not the inputs.
 - CI 修正：`5863dd7`（按所选 defconfig 走打包路径）、`31e710c`（断言 `[package.defconfig]` 与输入一致）。
 - 写入 runbook：`D:\ai\diting\OS窗口写入与回退-安全版-20261111.md`；路线图 §2c 已改为 `shell -T` + `count=6528` + `pipefail` + receipt，并用 `ANDROID_ADB_SERVER_PORT=5038` 适配只读校验脚本。
 - 下一步：手机可用时先舞台 1（`diting-boot-launchd-unsecure.img`，`cb56ac9d…`）取日志；再按 runbook 写 OS 窗口、`fastboot boot` bring-up 镜像、Advanced Logger 取日志。
+
+# 2026-11-12 全开配对（private firmware + live DTB）
+
+- run `43057086317`（`23d3a92`，`diting_ipados18_defconfig` + `firmware_tag=fw-20261111`）在 package 步骤失败：Wi-Fi native 构建 `prepare-diting-wifi.py:54` `KeyError: 'qcom,phy-sequence'`。原因：`scripts/build-ipados18-diting-macos.py:46` 把 `DITING_HARDWARE_DTB` 覆盖成内核 `hardware.dtb`（format-2 精简树），Wi-Fi 的 PHY 参数来自 live 树。修复 `2e406ef`：新增 `DITING_LIVE_DTB`，`build-diting-wifi-native.py` 优先读它；workflow package env 指向 `$RUNNER_TEMP/diting-live.dtb`。
+- 音频可缺省：`prepare-diting-audio.py` 在 `tfa98xx.cnt` 缺失时写哨兵 profile 并跳过；手机 `/vendor` 确实没有 TFA 容器（DTB 音频是 Qualcomm WSA），`POWER` 仍能编译出电量/背光。
+- 私有固件：QCA6490 的 222 个文件（`amss/amss20/m3/regdb/bdwlan*`，解包 25.7 MB，压缩 7.2 MB）放在私有仓库 `nagatoquin33/diting-firmware` 的 release `fw-20261111`；公共仓库用 `FIRMWARE_TOKEN` secret 拉取，固件不进公共仓库。`stage-diting-firmware.py` 允许只带部分分组（wifi）。
+- 全开配置：`diting_ipados18_defconfig` 进入 CI 选项；`board.toml` 的 `cpus=1` 改为 `cpus=8`，并加 `diting_wifi=1`、`diting_adreno_start=1`、`diting_metal=1`。
+- 新 run `43068678253`（`2e406ef`）验证以上修复。
