@@ -803,3 +803,11 @@ work is the boot itself, not the inputs.
 - Metal：老谱系有设备证据（services124/135/155/167）；当前缺 `diting_adreno_start=1`/`diting_metal=1`，CI 不构建 Metal bundle；`drivers/AdrenoMetal` 是未使用的重复副本。
 - 许可证：`THIRD_PARTY_NOTICES.md` 未列 GPL-2.0（ath11k/MHI/QMI）、metal2vulkan、Mesa/Turnip；公开产物前补。
 - 当前真正卡点仍是 `launchd_cache_loader` 的 code directory 校验；WiFi/Metal/基带都不在进入界面的关键路径。
+
+# Sheng 答复要点（2026-11-11）
+
+- Sheng 未改 OS 镜像：OS/SystemOS 原样；驱动在内核；Metal 插件走 payload gpu-addon 写到 Data；owner trust 合入 trust cache；无 /sheng 包装器、无 launchd cache 改动。
+- Sheng 的 RootLayout 是 v1 两窗口（OS/SystemOS）+ payload Data seed；Diting 的 v1 三窗口是 fork 自己的选择。
+- Data seed 是 packed_ramdisk DBRDISK1（APFS NXSB），960 GiB 逻辑容量打包后仅 1.28 MB；在 macos-15 runner 上用 seed-data-grow.py 生成。
+- userdata 在 WSL Linux 上用 unixnu build userdata 生成；21H461 无 AEA，udif.py 可直接解码；18.7.10 的 AEA 才需要 macOS。
+- 对 Diting：A 路线（v1 两窗口 + seed、不改 OS）可完全 Linux 化，但需替代 /diting 包装器与 launchd 补丁；B 路线（保留 prepared OS，只重建 6.8 GB OS 窗口）峰值约 14 GB，仍需一台 Mac。先走 B，A 作为目标。
