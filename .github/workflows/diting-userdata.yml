@@ -1,0 +1,96 @@
+name: diting userdata
+
+# OS-window rebuild for the prepared 22H374 userland. The full chain (prepared OS +
+# SystemOS + Data) is the one run 42073458178 proved on a hosted macos-15-intel
+# runner; this workflow uploads only the OS window and the reports, because the
+# device keeps its SystemOS and Data windows for the first /diting boot.
+
+on:
+  workflow_dispatch:
+    inputs:
+      ipsw_url:
+        description: "IPSW URL (default: board.toml [ipsw] url)"
+        required: false
+        type: string
+
+permissions:
+  contents: read
+
+concurrency:
+  group: diting-userdata-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  userland:
+    runs-on: macos-15-intel
+    timeout-minutes: 300
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          path: device
+          submodules: false
+      - name: reclaim disk
+        # Peak is about 37 GiB; the unused Xcode copies go below 80 GiB free.
+        run: |
+          set -euo pipefail
+          selected="$(xcode-select -p)"
+          echo "xcode-select: ${selected}"
+          need=$((80 * 1024 * 1024))
+          avail="$(df -k / | awk 'NR==2 {print $4}')"
+          echo "avail_kb=${avail} need_kb=${need}"
+          if [ "$avail" -lt "$need" ]; then
+            for app in /Applications/Xcode*.app; do
+              [ -d "$app" ] || continue
+              case "$selected" in
+                "$app"/*) echo "keep $app" ;;
+                *) echo "remove $app"; sudo rm -rf "$app" ;;
+              esac
+            done
+          fi
+          sudo rm -rf /Library/Developer/CoreSimulator/Caches /Library/Developer/CoreSimulator/Devices || true
+          rm -rf "$HOME/Library/Developer/CoreSimulator" "$HOME/Library/Developer/Xcode/DerivedData" || true
+          df -h
+      - name: tools
+        run: |
+          set -euo pipefail
+          export HOMEBREW_NO_AUTO_UPDATE=1 HOMEBREW_NO_INSTALL_CLEANUP=1
+          python3 -m pip install --quiet --break-system-packages pyhpke
+          ok=1
+          for t in hdiutil diskutil aea python3; do
+            command -v "$t" >/dev/null || { echo "missing tool: $t"; ok=0; }
+          done
+          sudo -n true || { echo 'this runner cannot sudo -n, and the userland chain needs it'; ok=0; }
+          [ "$ok" = 1 ]
+      - name: prepared userland
+        id: userland
+        run: |
+          set -euo pipefail
+          url="${{ inputs.ipsw_url }}"
+          if [ -z "$url" ]; then
+            url="$(python3 -c "import tomllib; print(tomllib.load(open('device/board.toml','rb'))['ipsw']['url'])")"
+          fi
+          case "$url" in
+            https://*) ;;
+            *) echo "ipsw_url must be an https URL, got: ${url}" >&2; exit 1 ;;
+          esac
+          rm -rf "$RUNNER_TEMP/diting-userland" "$RUNNER_TEMP/diting-ipsw-work"
+          python3 device/scripts/prepare-diting-userland-from-ipsw.py \
+            --ipsw-url "$url" \
+            --work-dir "$RUNNER_TEMP/diting-ipsw-work" \
+            --out "$RUNNER_TEMP/diting-userland" \
+            --developer "$(xcode-select -p)" \
+            --json-out "$RUNNER_TEMP/diting-userland/report.json" \
+            --volume-layout-out "$RUNNER_TEMP/diting-userland/volume-layout.json" \
+            --data-mib 8192 \
+            --jobs 4
+          df -h
+      - uses: actions/upload-artifact@v4
+        with:
+          name: diting-os-window
+          retention-days: 14
+          if-no-files-found: error
+          path: |
+            ${{ runner.temp }}/diting-userland/diting-ipados18-system.cdr
+            ${{ runner.temp }}/diting-userland/report.json
+            ${{ runner.temp }}/diting-userland/volume-layout.json
+            ${{ runner.temp }}/diting-userland/apply-complete.json

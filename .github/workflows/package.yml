@@ -11,6 +11,11 @@ on:
         type: choice
         options: ["ipados-18.7.10-22H374"]
         default: "ipados-18.7.10-22H374"
+      defconfig:
+        description: "Kernel defconfig; bringup pairs with the prepared OS"
+        type: choice
+        options: ["diting_ipados18_ci_defconfig", "diting_ipados18_bringup_defconfig"]
+        default: "diting_ipados18_ci_defconfig"
 
 permissions:
   contents: read
@@ -285,18 +290,21 @@ jobs:
       - name: select the CI defconfig
         # [package.defconfig] only selects the release configuration; the kernel component
         # reads [kernel] defconfig, which is the shipping one (Wi-Fi, backlight, Adreno on).
-        # The CI configuration is the reduced one, so point the kernel at it for this run.
+        # The selected defconfig comes from the workflow input: the bringup one pairs with
+        # the prepared 22H374 userland (SystemOS at /private/preboot).
+        env:
+          DEFCONFIG: ${{ inputs.defconfig }}
         run: |
           python3 - <<'PY'
+          import os
           from pathlib import Path
+          ci = os.environ['DEFCONFIG']
           p = Path('device/board.toml')
           text = p.read_text()
           pairs = [
-              ('defconfig = "diting_ipados18_defconfig"',
-               'defconfig = "diting_ipados18_ci_defconfig"'),
-              (# [package.defconfig] is what the preflight writes .config from,
-               '"ipados-18.7.10-22H374" = "diting_ipados18_defconfig"',
-               '"ipados-18.7.10-22H374" = "diting_ipados18_ci_defconfig"'),
+              ('defconfig = "diting_ipados18_defconfig"', 'defconfig = "' + ci + '"'),
+              ('"ipados-18.7.10-22H374" = "diting_ipados18_defconfig"',
+               '"ipados-18.7.10-22H374" = "' + ci + '"'),
           ]
           for before, after in pairs:
               if before in text:
