@@ -2,7 +2,15 @@
 """Derive the two real amplifier register profiles from a local Diting CNT."""
 import argparse,struct,json
 from pathlib import Path
-p=argparse.ArgumentParser(description=__doc__);p.add_argument('--container',type=Path,required=True);p.add_argument('--output',type=Path,required=True);a=p.parse_args();b=a.container.read_bytes()
+p=argparse.ArgumentParser(description=__doc__);p.add_argument('--container',type=Path,required=True);p.add_argument('--output',type=Path,required=True);a=p.parse_args()
+if not a.container.exists():
+ print(json.dumps(dict(amplifiers=0,source=None,fields=[0,0],missing=True)))
+ a.output.parent.mkdir(parents=True,exist_ok=True)
+ a.output.write_text('struct DitingAmpField {unsigned field,value;};\n'
+  'static constexpr DitingAmpField kDitingAmp0[]={{0xffffffffu,0u}};\n'
+  'static constexpr DitingAmpField kDitingAmp1[]={{0xffffffffu,0u}};\n')
+ raise SystemExit(0)
+b=a.container.read_bytes()
 if len(b)<54 or b[:2]!=b'PM' or struct.unpack_from('<H',b,40)[0]!=2:raise RuntimeError('Diting two-amplifier container required')
 def ptr(o):
  if o<0 or o+4>len(b):raise RuntimeError('CNT pointer outside file')

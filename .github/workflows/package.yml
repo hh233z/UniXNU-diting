@@ -14,8 +14,13 @@ on:
       defconfig:
         description: "Kernel defconfig; bringup pairs with the prepared OS"
         type: choice
-        options: ["diting_ipados18_ci_defconfig", "diting_ipados18_bringup_defconfig", "diting_ipados18_bringup_power_defconfig"]
+        options: ["diting_ipados18_ci_defconfig", "diting_ipados18_bringup_defconfig", "diting_ipados18_bringup_power_defconfig", "diting_ipados18_defconfig"]
         default: "diting_ipados18_ci_defconfig"
+      firmware_tag:
+        description: "Private firmware release tag (optional; diting-firmware repo)"
+        required: false
+        type: string
+        default: ""
 
 permissions:
   contents: read
@@ -361,7 +366,7 @@ jobs:
           UNIXNU_DEVICE: ${{ github.workspace }}/device
           DITING_WIFI_SOURCE: ${{ github.workspace }}/linux
           DITING_WIFI_SHARED: ${{ github.workspace }}/sheng/drivers/Ath12kWifi
-          DITING_WIFI_FIRMWARE: ${{ github.workspace }}/device/platform-firmware/wifi
+          DITING_WIFI_FIRMWARE: ${{ inputs.firmware_tag != '' && format('{0}/diting-firmware/wifi', runner.temp) || format('{0}/device/platform-firmware/wifi', github.workspace) }}
           DITING_HARDWARE_DTB: ${{ runner.temp }}/diting-live.dtb
           # docs/guide/debugging: colour bars under the green DarwinBoot bar tell us how
           # far the kernel got; a reset once the MMU is on proves it passed that point.
@@ -383,6 +388,20 @@ jobs:
             device/platform-firmware/diting-live.dts "$RUNNER_TEMP/diting-live.dts"
           dtc -I dts -O dtb -o "$RUNNER_TEMP/diting-live.dtb" "$RUNNER_TEMP/diting-live.dts"
           ls -l "$RUNNER_TEMP/diting-live.dtb"
+      - name: private firmware
+        if: inputs.firmware_tag != ''
+        env:
+          GH_TOKEN: ${{ secrets.FIRMWARE_TOKEN }}
+        run: |
+          set -euo pipefail
+          gh release download "${{ inputs.firmware_tag }}" \
+            --repo nagatoquin33/diting-firmware \
+            --pattern 'diting-firmware.tar.gz' \
+            --dir "$RUNNER_TEMP"
+          python3 device/scripts/stage-diting-firmware.py \
+            --archive "$RUNNER_TEMP/diting-firmware.tar.gz" \
+            --dest "$RUNNER_TEMP/diting-firmware" \
+            --json-out "$RUNNER_TEMP/diting-firmware.json"
       - name: package
         working-directory: device
         env:

@@ -152,6 +152,26 @@ def report(container, image, args):
             continue
         data = volume.inode(hit[0]).contents()
         print(f'  {path}: sha256 {hashlib.sha256(data).hexdigest()} ({len(data)} bytes)')
+    if args.cat:
+        try:
+            hit = volume.lookup(args.cat)
+        except Exception as error:
+            detail = str(error)
+            if volume.sealed and 'checksum' in detail:
+                detail += '; sealed volume root resolves through a snapshot this reader does not walk'
+            print(f'  {args.cat}: unreadable ({detail})')
+            ok = False
+        else:
+            if hit is None:
+                print(f'  {args.cat}: MISSING')
+                ok = False
+            else:
+                data = volume.inode(hit[0]).contents()
+                if args.cat_out:
+                    args.cat_out.write_bytes(data)
+                    print(f'  {args.cat}: {len(data)} bytes -> {args.cat_out}')
+                else:
+                    print(f'  {args.cat}: {len(data)} bytes (use --cat-out FILE to save)')
     reads = getattr(image, 'reads', 0)
     if reads:
         print(f'  {reads} device blocks read')
@@ -171,6 +191,8 @@ def main():
     parser.add_argument('--expect-uuid')
     parser.add_argument('--stat', action='append', default=[], metavar='PATH')
     parser.add_argument('--hash', action='append', default=[], metavar='PATH')
+    parser.add_argument('--cat', metavar='PATH', help='write one file body to --cat-out')
+    parser.add_argument('--cat-out', type=Path, help='where --cat writes the file body')
     args = parser.parse_args()
     import apfs
     image = None

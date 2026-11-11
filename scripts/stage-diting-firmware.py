@@ -118,14 +118,23 @@ def wifi_dir(dest):
 
 
 def validate(dest):
+    """Validate every group the archive carries; a group it does not carry is skipped.
+
+    A build only needs the groups its defconfig selects: Wi-Fi firmware alone is a valid
+    archive (the Adreno blobs arrive through the ADRENO_FW secrets), and a board without
+    the TFA container may ship Wi-Fi plus power only.
+    """
     problems = []
     found = {}
     for group, spec in GROUPS.items():
-        base = wifi_dir(dest) if group == 'wifi' else dest / group
-        if base is None:
-            problems.append('missing the Wi-Fi directory: expected wifi/ or qca6490/ holding ' +
-                            ', '.join(spec['names']) + ' (' + spec['note'] + ')')
-            continue
+        if group == 'wifi':
+            base = wifi_dir(dest)
+            if base is None:
+                continue
+        else:
+            base = dest / group
+            if not base.is_dir():
+                continue
         for name in spec['names']:
             path = base / name
             if not path.is_file():
@@ -137,6 +146,9 @@ def validate(dest):
     if base is not None and not any(child.name.startswith('bdwlan') for child in base.iterdir() if child.is_file()):
         problems.append('missing Wi-Fi board data: no bdwlan* file under ' + base.name +
                         '/, so the ath11k board firmware has no input')
+    if not found:
+        problems.append('no firmware group found: expected wifi/ or qca6490/, audio/, '
+                        'adreno730/ or power/')
     if problems:
         fail('\n  ' + '\n  '.join(problems))
     return found
