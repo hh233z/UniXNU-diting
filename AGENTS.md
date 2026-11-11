@@ -785,3 +785,10 @@ work is the boot itself, not the inputs.
 - 保留的外部接口（不可单独改名）：`PONGFAT1` 信封、`Binaries/diting/RawFiles` 固件二进制、`pong-boot-manifest` 文件名/格式、上游 Diting 仓库 URL 与版权声明、以及**已安装 prepared OS 的 `/diting` 运行时约定**。
 - 重要：新内核要求 Diting 用户态（`/diting/init`、`/dev/diting-*`、`dev.unixnu.diting.*`）。当前已安装 prepared OS 仍是 `/diting`，只与改名前内核配对；验证界面用 `D:i\ditinguild-work\diting-boot-launchd-unsecure.img`，重装 Diting userdata 前不要用新内核启动。
 - 构建状态：本次改名后尚未完成 CI 构建。
+
+# Diting 构建通过（2026-11-11）
+
+- CI run 42963886855：`firmware` 与 `package` 两个 job 全绿，改用 `--fd` 让 package job 消费 Linux 固件 job 的卷。
+- 产物：`diting-unixnu-uefi.img` 101,191,680 B sha256 `a96a33339489ef3c8b6579db8bc3f33d8509f623579559f832f381f8008e0cd1`；`diting-xnu-initial.img` sha256 `1d7c151accad4b40d813ffd8a34a0da7da02e61bd6e44902cc93460a41df6bbc`；`kernel.macho` 51,793,920 B sha256 `c096ca2aee97ff29ab8991805ae8b4507e82a78894561b7347737739ae23c2d6`。
+- 该内核的运行时命名空间已是 Diting（`/diting/init`、`/dev/diting-*`、`dev.unixnu.diting.*`、`diting_*` 启动参数）；当前已安装 prepared OS 仍是 `/pong`，**不能直接引导新内核**。设备界面验证继续用旧内核镜像 `D:\ai\diting\build-work\diting-boot-launchd-unsecure.img`（sha256 `cb56ac9d…`）；要上机新内核必须先重编并重装 Diting userdata。
+- 保留的外部接口：`PONGFAT1` 信封、`Binaries/pong/RawFiles` 固件二进制、`pong-boot-manifest` 格式/文件名、上游 Pong 仓库 URL 与版权声明。
