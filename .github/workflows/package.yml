@@ -256,10 +256,12 @@ jobs:
             exit 1
           fi
       - name: volume layout
+        env:
+          DEFCONFIG: ${{ inputs.defconfig }}
         run: |
           set -euo pipefail
           python3 - "$RUNNER_TEMP/volume-layout.json" <<'PY'
-          import json, sys, tomllib
+          import json, os, sys, tomllib
           from pathlib import Path
           profile = tomllib.loads(Path('device/os-profiles/ipados-18.7.10-22H374/profile.toml').read_text())
           root = profile['root']
@@ -276,7 +278,7 @@ jobs:
           Path(sys.argv[1]).write_text(json.dumps(layout, indent=2))
           # The UUIDs are compiled into the kernel (kern_exec selects the volumes by them), so
           # write the same values into the CI defconfig before the build reads it.
-          conf = Path('device/configs/diting_ipados18_ci_defconfig')
+          conf = Path('device/configs') / os.environ['DEFCONFIG']
           text = conf.read_text()
           for key, value in (('CONFIG_XNU_OWNER_ROOT_VOLUME_UUID', root['os_volume_uuid']),
                              ('CONFIG_XNU_OWNER_CACHE_VOLUME_UUID', root['systemos_volume_uuid']),
@@ -398,9 +400,11 @@ jobs:
         working-directory: device
         env:
           UNIXNU_UNIQUE_CHIP_ID: ${{ secrets.UNIXNU_UNIQUE_CHIP_ID }}
+          DEFCONFIG: ${{ inputs.defconfig }}
         run: |
           set -euo pipefail
-          WORK="$GITHUB_WORKSPACE/UniXNU/out/diting/${{ inputs.os }}/diting_ipados18_ci"
+          CONFIG="${DEFCONFIG%_defconfig}"
+          WORK="$GITHUB_WORKSPACE/UniXNU/out/diting/${{ inputs.os }}/$CONFIG"
           python3 scripts/check-storage-bindings.py "$WORK/kernel/kernel.macho"
           DTB="$WORK/device-tree/build/diting/hardware.dtb"
           [ -f "$DTB" ] || { echo "missing hardware DTB: $DTB" >&2; exit 1; }
@@ -417,11 +421,14 @@ jobs:
         # firmware from its own partition. A fastboot-boot candidate needs the shim and the
         # volume in that slot, which scripts/build-bootimg.py already builds.
         working-directory: device
+        env:
+          DEFCONFIG: ${{ inputs.defconfig }}
         run: |
           set -euo pipefail
           # llvm is keg-only in Homebrew; llvm-objcopy was not on PATH.
           export PATH="/usr/local/opt/llvm/bin:/usr/local/opt/lld/bin:$PATH"
-          WORK="$GITHUB_WORKSPACE/UniXNU/out/diting/${{ inputs.os }}/diting_ipados18_ci"
+          CONFIG="${DEFCONFIG%_defconfig}"
+          WORK="$GITHUB_WORKSPACE/UniXNU/out/diting/${{ inputs.os }}/$CONFIG"
           # The firmware built two steps above, not the Diting baseline.
           FD="$GITHUB_WORKSPACE/firmware-fd/SILICIUM_UEFI.fd"
           DTB="$WORK/device-tree/build/diting/hardware.dtb"
