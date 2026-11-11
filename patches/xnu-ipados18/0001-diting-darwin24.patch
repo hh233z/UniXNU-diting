@@ -1605,7 +1605,7 @@ index fc185bb..131a47d 100644
 +				printf("DITING DEVELOPMENT: allow unsealed read-only root; APFS rootauth error=%d\n", autherr);
 +			}
 +#endif
-+			if (autherr && !owner_authorized && !pong_development_root) {
++			if (autherr && !owner_authorized && !diting_development_root) {
  				panic("rootvp not authenticated after mounting");
  			}
 +#if defined(XNU_OWNER_ROOT_TRUST) && XNU_OWNER_ROOT_TRUST
@@ -4309,7 +4309,7 @@ index fe34d1b..eab9b59 100644
  
 +
 +#if defined(DITING) && (DEVELOPMENT || DEBUG)
-+	pong_init_note("open vnode authorization begin");
++	diting_init_note("open vnode authorization begin");
 +#endif
  	if ((error = vn_open_auth(ndp, &flags, vap, authvp))) {
  		if (authvp != NULLVP) {
@@ -4320,7 +4320,7 @@ index fe34d1b..eab9b59 100644
  
 +
 +#if defined(DITING) && (DEVELOPMENT || DEBUG)
-+	pong_init_note("open vnode authorization returned");
++	diting_init_note("open vnode authorization returned");
 +#endif
  	uu->uu_dupfd = 0;
  	vp = ndp->ni_vp;
