@@ -60,7 +60,7 @@ roots = ["com.apple.kec.corecrypto", "com.apple.kec.pthread", "com.apple.filesys
          "com.apple.kec.Compression", "com.apple.AppleFSCompression.AppleFSCompressionTypeZlib"]
 [firmware]
 config = "diting"
-dsc = "Platforms/Nothing/ditingPkg/diting.dsc"
+dsc = "Platforms/Xiaomi/ditingPkg/diting.dsc"
 fd = "Build/ditingPkg/{target}_CLANGPDB/FV/SILICIUM_UEFI.fd"
 # Runs in the build tree before the firmware build and writes the device tree the boot image
 # carries; [bootimg] dtb names the same path.
@@ -81,13 +81,13 @@ packages = [
   "{tree}/package",
   "{tree}/drivers/DarwinBoot24",
   "{edk2}",
-  "{uefi}/Platforms/Nothing",
+  "{uefi}/Platforms/Xiaomi",
   "{uefi}/Common/Mu",
   "{uefi}/Common/Mu_OEM_Sample",
   "{uefi}/Silicon/Qualcomm",
   "{uefi}/Silicon/Silicium",
   "{uefi}/Silicium-ACPI",
-  "{uefi}/Silicium-ACPI/Platforms/Nothing",
+  "{uefi}/Silicium-ACPI/Platforms/Xiaomi",
   "{uefi}/Silicium-ACPI/Silicon/Qualcomm",
 ]
 

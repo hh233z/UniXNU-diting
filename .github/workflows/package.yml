@@ -196,12 +196,25 @@ jobs:
           submodules: recursive
       - uses: actions/checkout@v4
         with:
-          repository: Chengdong-Yu/uefi-diting
+          repository: Emilelu/uefi-mondrian
+          ref: e06211de59325bbd086c312324bdbf40e21d1045
           path: uefi-diting
-          # Not recursive: the checkout pulled openssl's gost-engine/libprov and krb5 and
-          # failed on github.com twice. [firmware] submodules in board.toml lists the ones
-          # the firmware build actually needs, and the core initializes exactly those.
           submodules: false
+      - name: diting firmware tree
+        # One firmware source for local and CI: the pinned Mu-Silicium tree plus the device's
+        # ditingPkg, DT and config; the DarwinBoot driver patch is applied before EDK II runs.
+        run: |
+          set -euo pipefail
+          cd uefi-diting
+          git submodule update --init --depth 1 Binaries Common/Mu Common/Mu_OEM_Sample Mu_Basecore Silicium-ACPI
+          git -C Mu_Basecore submodule update --init --depth 1 --recursive
+          mkdir -p Platforms/Xiaomi/ditingPkg
+          cp -R ../device/platform-firmware/ditingPkg/. Platforms/Xiaomi/ditingPkg/
+          mkdir -p Resources/DTBs
+          cp ../device/platform-firmware/ditingPkg/FdtBlob/sm8475-xiaomi-diting.dtb Resources/DTBs/diting.dtb
+          : > Resources/ramdisk
+          cp ../device/platform-firmware/diting.toml Resources/Configs/diting.toml
+          git apply ../device/platform-firmware/darwin-boot-diting.patch
       - name: tools
         run: |
           brew install dtc llvm lld cmake mtools
