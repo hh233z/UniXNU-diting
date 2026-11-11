@@ -1,5 +1,7 @@
 # Pong probe policy
 
+> 当前状态以 `D:\ai\diting\交接-2026-11-11-准备用户态.md` 为准，执行步骤见 `D:\ai\diting\DeepSeek执行计划-进系统与Diting整理-20261111.md`。下方带日期的段落是历史实机与构建记录。
+
 - Optional probes must record PASS, FAIL, SKIP or RUNNING and return to the normal boot path. Never terminate boot with panic, halt or an unbounded loop to display a probe result.
 - On failed prerequisites, log the reason and skip dependent MMIO/DMA work. Do not fabricate successful services, media or hardware resources to keep boot moving.
 - Save bounded result snapshots through PongProbeRecord. The early panic hook must print completed snapshots before the real panic message, without allocating, taking registry locks or accessing hardware.
@@ -755,3 +757,22 @@ work is the boot itself, not the inputs.
   corrected to Diting. Component identity PongPlatform24 stays: the drivers are the community Pong
   SM8475 implementations, not the upstream A740/WCN7850 source.
 - No device access this round (phone disconnected); nothing was written or booted.
+
+## 2026-11-11：DeepSeek 执行计划
+
+- 33 将任务改为编写接手计划，不继续试验。计划位于 `D:\ai\diting\DeepSeek执行计划-进系统与Diting整理-20261111.md`；优先把现有准备用户态所需的 `launchd_unsecure_cache=1` 放入实际 payload，然后推进系统界面。Diting 命名迁移列出 board/kit/firmware/组件/机器配置/脚本/产物的完整调用链，全部在 main 完成。
+- 原 OS 窗口写入后台任务已确认完整结束；本轮写计划时没有新增设备写入或启动。较新的准备用户态与 cache loader 状态见 `交接-2026-11-11-准备用户态.md` 及上方 09:50 记录，不能再以旧空 Data 状态继续。
+
+## 2026-11-11 09:55 — launchd_unsecure_cache=1 is in an actual boot image
+
+- `scripts/patch-boot-payload-args.py` (commit b995b82) rewrites the xnu args in
+  `EFI/UniXNU/unixnu.toml`, the development boot manifest, the ADT's `boot-manifest-hash` (SHA-384) and
+  the PONGFAT1 CRC, leaving the kernel, ADT tree and firmware untouched.
+- Output: `D:\ai\diting\build-work\diting-boot-launchd-unsecure.img`, 101,191,680 bytes, sha256
+  `cb56ac9de5b4573c8ddcbbfc24215b38742a4dfe5b194251145492ffb31a412b`. Verified: same size, kernel
+  slot byte-identical, only the ramdisk region changed; TOML and manifest `boot_args` both contain
+  `launchd_unsecure_cache=1`; the ADT digest equals the manifest SHA-384; the envelope CRC is valid.
+- Action 42941361215 was cancelled: it used the SystemOS-union CI defconfig, not the pairing of the
+  installed prepared userland.
+- Next device step: `fastboot boot` this image after the product/slot checks, then read the previous
+  XNU console through the ramoops/Advanced Logger QR export on the next boot. No screen photo.
