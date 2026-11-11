@@ -1,5 +1,5 @@
 {
-  "Pong PMIC volume keys": {
+  "Diting PMIC volume keys": {
     "CFBundleIdentifier": "com.apple.iokit.IOHIDFamily",
     "IOClass": "IOHIDEventDriver",
     "IOProviderClass": "IOHIDInterface",
@@ -7,8 +7,8 @@
     "IOMatchDefer": false,
     "HIDDefaultBehavior": true,
     "Transport": "SPMI",
-    "Manufacturer": "Pong",
-    "Product": "Pong PMIC volume keys",
+    "Manufacturer": "Diting",
+    "Product": "Diting PMIC volume keys",
     "DeviceUsagePairs": [
       {"DeviceUsagePage": 12, "DeviceUsage": 1}
     ]

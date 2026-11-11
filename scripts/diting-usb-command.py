@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Send an explicit Pong CDC command (never an automatic reboot timer)."""
+"""Send an explicit Diting CDC command (never an automatic reboot timer)."""
 import argparse
 import fcntl
 import glob
@@ -15,7 +15,7 @@ p.add_argument('command',choices=['rec','fastboot','help'])
 p.add_argument('--port')
 a=p.parse_args()
 ports=[a.port] if a.port else serial_ports()
-if len(ports)!=1:p.error('expected one Pong CDC port; use --port')
+if len(ports)!=1:p.error('expected one Diting CDC port; use --port')
 fd=os.open(ports[0],os.O_RDWR|os.O_NOCTTY|os.O_NONBLOCK)
 try:
     attributes=termios.tcgetattr(fd)

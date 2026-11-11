@@ -27,7 +27,7 @@ def expand_framework_shaders(root, primelist):
         if info.st_size + (128 << 20) > space.f_bavail * space.f_frsize:
             changes.append(dict(path=entry, skipped='host OS filesystem free space'))
             continue
-        temporary = path.with_name(path.name + '.pong-uncompressed')
+        temporary = path.with_name(path.name + '.diting-uncompressed')
         if temporary.exists():
             raise RuntimeError('unexpected shader staging temporary file')
         # macOS reads the native decmpfs payload and writes ordinary bytes.

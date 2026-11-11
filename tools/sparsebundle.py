@@ -41,7 +41,7 @@ def storage_for(raw_image):
     if not record.exists():
         return None
     state = json.loads(record.read_text())
-    if state.get('format') != 'pong-os-sparsebundle-v1' or not state.get('ready'):
+    if state.get('format') != 'diting-os-sparsebundle-v1' or not state.get('ready'):
         raise RuntimeError('OS storage conversion is incomplete')
     band, size = describe(state['image'])
     if (state['logical_bytes'], state['band_bytes']) != (size, band):

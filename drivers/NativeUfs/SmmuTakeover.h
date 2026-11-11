@@ -37,7 +37,7 @@ static UfsSmmuPlan planUfsSmmuBank(uint16_t stream, uint64_t dma, uint64_t bytes
   uint32_t idr1 = read(0x24);
   unsigned banks = idr1 & 255;
   // DT and ID registers are independent upper bounds. Firmware can expose
-  // fewer resources than the Android DT describes (Pong ID1.NUMCB=75,
+  // fewer resources than the Android DT describes (Diting ID1.NUMCB=75,
   // DT limit=78). Intersect the bounds; never expand the hardware range.
   if (!ownedBanks || !ownedGroups || !banks || !count) {
     p.error = "empty SMMU ownership/capability range"; return p;
@@ -92,7 +92,7 @@ static UfsSmmuPlan planUfsSmmuBank(uint16_t stream, uint64_t dma, uint64_t bytes
   return p;
 }
 
-// Upstream's bounded warm-reset fallback, intersected with Pong's owned
+// Upstream's bounded warm-reset fallback, intersected with Diting's owned
 // ranges above. Keep exact SID matching, firmware migration and VA64 checks.
 template <class Read>
 static UfsSmmuPlan planUfsSmmu(uint16_t stream, uint64_t dma, uint64_t bytes, Read read,
@@ -104,7 +104,7 @@ static UfsSmmuPlan planUfsSmmu(uint16_t stream, uint64_t dma, uint64_t bytes, Re
     return !__builtin_strcmp(error, "reserved context bank already used") ||
            !__builtin_strcmp(error, "reserved context bank not bypass");
   };
-  // An inexact/masked SID is still an unconditional refusal on Pong; the
+  // An inexact/masked SID is still an unconditional refusal on Diting; the
   // existing planner already migrates an exact mapping from another bank.
   if (!retryable(first.error)) return first;
   for (unsigned attempt = 1; attempt < 8; ++attempt) {

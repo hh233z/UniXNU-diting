@@ -8,14 +8,14 @@
 #include <AudioToolbox/AudioFormat.h>
 #include <stdatomic.h>
 
-static bool pong_audio_codec_process(const char *p) {
+static bool diting_audio_codec_process(const char *p) {
     return p && (!strcmp(p,"audiomxd") || !strcmp(p,"AudioConverterService") ||
                  !strcmp(p,"AUHostingServiceXPC_arrow") || !strcmp(p,"Preferences") ||
                  !strcmp(p,"tonelibraryd") || !strcmp(p,"SpringBoard"));
 }
-static OSStatus pong_software_decoder(const AudioStreamBasicDescription *in,
+static OSStatus diting_software_decoder(const AudioStreamBasicDescription *in,
     const AudioStreamBasicDescription *out,AudioConverterRef *converter,OSStatus original,bool preferred) {
-    if(!pong_audio_codec_process(getprogname()) || !in || !out || !converter ||
+    if(!diting_audio_codec_process(getprogname()) || !in || !out || !converter ||
        in->mFormatID==kAudioFormatLinearPCM || out->mFormatID!=kAudioFormatLinearPCM ||
        (!preferred && original!=kAudioConverterErr_FormatNotSupported &&
         original!=kAudioConverterErr_OperationNotSupported &&
@@ -45,28 +45,28 @@ static OSStatus pong_software_decoder(const AudioStreamBasicDescription *in,
     OSStatus status=specific(in,out,count,descriptions,&actual);
     static atomic_uint reports;
     if(atomic_fetch_add(&reports,1)<8)
-        fprintf(stderr,"Pong codec18: %s format=%08x original=%d installed software decoder result=%d\n",
+        fprintf(stderr,"Diting codec18: %s format=%08x original=%d installed software decoder result=%d\n",
             preferred?"software-first":"native-open-fallback",(unsigned)in->mFormatID,(int)original,(int)status);
     if(!status && actual){*converter=actual;return noErr;}
     if(actual)AudioConverterDispose(actual);
     return original;
 }
-static OSStatus pong_audio_converter_new(const AudioStreamBasicDescription *in,
+static OSStatus diting_audio_converter_new(const AudioStreamBasicDescription *in,
     const AudioStreamBasicDescription *out,AudioConverterRef *converter) {
     OSStatus (*native)(const AudioStreamBasicDescription *,const AudioStreamBasicDescription *,AudioConverterRef *)=
         dlsym(RTLD_NEXT,"AudioConverterNew");
     if(!native)return kAudioConverterErr_OperationNotSupported;
     // Hardware AAC converters can defer hardware allocation until the first
-    // fill. On Pong choose an actually installed software decoder at creation
+    // fill. On Diting choose an actually installed software decoder at creation
     // for the default request; explicit class requests keep their contract.
     AudioConverterRef software=NULL;
-    if(converter && !pong_software_decoder(in,out,&software,0,true) && software) {
+    if(converter && !diting_software_decoder(in,out,&software,0,true) && software) {
         *converter=software;return noErr;
     }
     OSStatus status=native(in,out,converter);
-    return status?pong_software_decoder(in,out,converter,status,false):status;
+    return status?diting_software_decoder(in,out,converter,status,false):status;
 }
-static OSStatus pong_audio_converter_specific(const AudioStreamBasicDescription *in,
+static OSStatus diting_audio_converter_specific(const AudioStreamBasicDescription *in,
     const AudioStreamBasicDescription *out,UInt32 count,const AudioClassDescription *descriptions,
     AudioConverterRef *converter) {
     OSStatus (*native)(const AudioStreamBasicDescription *,const AudioStreamBasicDescription *,UInt32,
@@ -74,23 +74,23 @@ static OSStatus pong_audio_converter_specific(const AudioStreamBasicDescription 
     if(!native)return kAudioConverterErr_OperationNotSupported;
     // Native alerts may explicitly ask for Apple's hardware AAC decoder,
     // whose allocation is deferred until FillComplexBuffer. That hardware
-    // codec is not implemented on Pong. For these qualified native clients,
+    // codec is not implemented on Diting. For these qualified native clients,
     // select an actually installed software decoder before accepting such
     // a deferred hardware handle. Other explicit codec requests stay native.
     const char *process=getprogname();
-    bool hardware=pong_audio_codec_process(process) && count && count<=64 && descriptions && in && out;
+    bool hardware=diting_audio_codec_process(process) && count && count<=64 && descriptions && in && out;
     for(UInt32 i=0;hardware && i<count;i++)
         hardware=descriptions[i].mManufacturer==kAppleHardwareAudioCodecManufacturer &&
             descriptions[i].mSubType==in->mFormatID;
     if(hardware && converter) {
         AudioConverterRef software=NULL;
-        if(!pong_software_decoder(in,out,&software,0,true) && software){*converter=software;return noErr;}
+        if(!diting_software_decoder(in,out,&software,0,true) && software){*converter=software;return noErr;}
     }
     OSStatus status=native(in,out,count,descriptions,converter);
-    return status?pong_software_decoder(in,out,converter,status,false):status;
+    return status?diting_software_decoder(in,out,converter,status,false):status;
 }
 __attribute__((used,section("__DATA,__interpose")))
-static const struct {const void *replacement,*original;} pong_audio_codec_interpose[]={
-    {(const void *)pong_audio_converter_new,(const void *)AudioConverterNew},
-    {(const void *)pong_audio_converter_specific,(const void *)AudioConverterNewSpecific}
+static const struct {const void *replacement,*original;} diting_audio_codec_interpose[]={
+    {(const void *)diting_audio_converter_new,(const void *)AudioConverterNew},
+    {(const void *)diting_audio_converter_specific,(const void *)AudioConverterNewSpecific}
 };

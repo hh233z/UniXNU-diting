@@ -1,4 +1,4 @@
-# Darwin 24 source dependencies for the Pong iPadOS 18 branch.
+# Darwin 24 source dependencies for the Diting iPadOS 18 branch.
 
 [[source]]
 name = "xnu"

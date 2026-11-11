@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Cross-build Pong's Metal objects for the selected 20G81 or 22H374 guest.
+"""Cross-build Diting's Metal objects for the selected 20G81 or 22H374 guest.
 Translator source must already contain the upstream NativeMetal bridge patches.
 Output is a library only: no plugin publication or claim of acceleration.
 """
@@ -21,17 +21,17 @@ p.add_argument('--developer-dir',type=Path,default=diting_paths.developer_dir())
 a=p.parse_args();out=a.output_dir.resolve();out.mkdir(parents=True,exist_ok=True)
 policy=a.translator/'crates/metal2vulkan-runtime/src/metal_level.rs'
 if 'IOS16_6_1' not in policy.read_text():
-    subprocess.run(['git','apply',str(ROOT/'patches/metal2vulkan/0008-pong-ios16-20G81-policy.patch')],
+    subprocess.run(['git','apply',str(ROOT/'patches/metal2vulkan/0008-diting-ios16-20G81-policy.patch')],
         cwd=a.translator,check=True)
 surface=a.translator/'crates/metal2vulkan-runtime/src/buffer_texture.rs'
 if 'surface_row_padding' not in surface.read_text():
-    subprocess.run(['git','apply',str(ROOT/'patches/metal2vulkan/0009-pong-owned-iosurface-row-padding.patch')],
+    subprocess.run(['git','apply',str(ROOT/'patches/metal2vulkan/0009-diting-owned-iosurface-row-padding.patch')],
         cwd=a.translator,check=True)
 if a.guest_build=='22H374' and 'IOS18_7_10' not in policy.read_text():
-    subprocess.run(['git','apply',str(ROOT/'patches/metal2vulkan/0010-pong-ipados18-22H374-policy.patch')],cwd=a.translator,check=True)
+    subprocess.run(['git','apply',str(ROOT/'patches/metal2vulkan/0010-diting-ipados18-22H374-policy.patch')],cwd=a.translator,check=True)
 memory=a.translator/'crates/metal2vulkan-runtime/src/memory.rs'
 if 'fn trim_empty_blocks' not in memory.read_text():
-    subprocess.run(['git','apply',str(ROOT/'patches/metal2vulkan/0011-pong-scoped-memory-pressure.patch')],cwd=a.translator,check=True)
+    subprocess.run(['git','apply',str(ROOT/'patches/metal2vulkan/0011-diting-scoped-memory-pressure.patch')],cwd=a.translator,check=True)
 optimizations=[
  ('0012-data-a-live-final-pass-cache.patch','render_target.rs','struct KeptFinal'),
  ('0013-data-a-live-fewer-allocations-a-draw.patch','render_state.rs','struct PerViewport'),
@@ -49,17 +49,17 @@ minimum='18.0' if a.guest_build=='22H374' else '16.6.1'
 target='arm64-apple-ios'+minimum
 env=dict(os.environ,DEVELOPER_DIR=str(a.developer_dir),IPHONEOS_DEPLOYMENT_TARGET=minimum)
 sdk=subprocess.check_output(['xcrun','--sdk','iphoneos','--show-sdk-path'],env=env,text=True).strip()
-frontend=out/'PongMetalFrontend.o'
+frontend=out/'DitingMetalFrontend.o'
 cmd=['xcrun','clang++','-target',target,'-isysroot',sdk,
     *(['-DDITING_GUEST_22H374=1'] if a.guest_build=='22H374' else []),
     '-std=c++17','-fobjc-arc','-fblocks','-Os','-Wall','-Wextra','-Werror',
-    '-Wno-deprecated-declarations','-I'+str(ROOT/'drivers/PongMetal'),
-    '-c',str(ROOT/'drivers/PongMetal/NativeBridgeMetalFrontend.mm'),'-o',str(frontend)]
+    '-Wno-deprecated-declarations','-I'+str(ROOT/'drivers/DitingMetal'),
+    '-c',str(ROOT/'drivers/DitingMetal/NativeBridgeMetalFrontend.mm'),'-o',str(frontend)]
 subprocess.run(cmd,env=env,check=True)
 manifest=out/'Cargo.toml'
 manifest.write_text('\n'.join([
-    '[package]','name="pong-metal-bridge"','version="0.1.0"','edition="2024"','rust-version="1.98"','[workspace]',
-    '[lib]','crate-type=["staticlib"]','path='+json.dumps(str(ROOT/'drivers/PongMetal/bridge/lib.rs')),
+    '[package]','name="diting-metal-bridge"','version="0.1.0"','edition="2024"','rust-version="1.98"','[workspace]',
+    '[lib]','crate-type=["staticlib"]','path='+json.dumps(str(ROOT/'drivers/DitingMetal/bridge/lib.rs')),
     '[features]','ipados18=[]','[dependencies]',
     'metal2vulkan={path='+json.dumps(str(a.translator/'crates/metal2vulkan'))+',features=["ash"]}',
     'metal2vulkan-runtime={path='+json.dumps(str(a.translator/'crates/metal2vulkan-runtime'))+'}',
@@ -74,10 +74,10 @@ if a.guest_build=='22H374':cargo+=['--features','ipados18']
 with (out/'cargo-build.log').open('w') as log:
     r=subprocess.run(cargo,env=env,stdout=log,stderr=subprocess.STDOUT)
 if r.returncode:raise SystemExit('Rust bridge build failed: '+str(out/'cargo-build.log'))
-archive=out/'target/aarch64-apple-ios/release/libpong_metal_bridge.a'
-library=out/'PongMetalBridge.dylib'
+archive=out/'target/aarch64-apple-ios/release/libditing_metal_bridge.a'
+library=out/'DitingMetalBridge.dylib'
 link=['xcrun','clang++','-target',target,'-isysroot',sdk,
-    '-dynamiclib','-Wl,-install_name,@rpath/PongMetalBridge.dylib',
+    '-dynamiclib','-Wl,-install_name,@rpath/DitingMetalBridge.dylib',
     str(frontend),'-Wl,-force_load,'+str(archive),
     '-framework','Foundation','-framework','Metal','-framework','IOSurface',
     '-framework','QuartzCore','-framework','CoreGraphics','-liconv','-lresolv',

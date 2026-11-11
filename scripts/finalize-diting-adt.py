@@ -9,13 +9,13 @@ step repeats them with the local parameters so the artifacts agree:
 * The ADT comes from scripts/make-diting-adt-ipados18.py, the generator the local
   chain uses. The shared converter expresses root, chosen, defaults, options,
   product and buttons, but not the properties this board's kernel reads from
-  /arm-io (the pong,ufs-* windows NativeUfs validates, the touch and button
+  /arm-io (the diting,ufs-* windows NativeUfs validates, the touch and button
   resources, the PMIC metadata). The parameters are the ones a local run passes:
   12 GiB of physical DRAM, a 4 GiB DarwinBoot window, one CPU, the J171 chip ID,
   the development policy and the boot manifest hash.
 * The boot image is the container a local run writes: Android boot v4 with an
   empty kernel slot (this device boots the firmware from its own partition),
-  the payload wrapped in the PONGFAT1 envelope PongBootMemoryDxe publishes, and
+  the payload wrapped in the PONGFAT1 envelope DitingBootMemoryDxe publishes, and
   an empty signature area. The firmware refuses an initrd above 128 MiB, which
   is why board.toml [payload] size_mib is 96.
 
@@ -41,7 +41,7 @@ BOOT_ARGS_BYTES = 1536       # BOOT_ARGS_SIZE 512 + BOOT_EXTRA_ARGS_SIZE 1024
 MAGIC = b'PONGFAT1'
 
 MANIFEST_FORMAT = 'pong-development-boot-manifest-v1'
-BOARD = 'Nothing Phone (2) / Pong / SM8475'
+BOARD = 'Nothing Phone (2) / Diting / SM8475'
 
 
 def sha256(path):
@@ -53,7 +53,7 @@ def sha256(path):
 
 
 def envelope(fat):
-    """PONGFAT1 header followed by the FAT volume, as PongBootMemoryDxe validates it.
+    """PONGFAT1 header followed by the FAT volume, as DitingBootMemoryDxe validates it.
 
     The firmware scans a bounded initrd for this header, then checks the version,
     the header length, a 512-byte multiple length, the FAT signature, the sector
@@ -172,7 +172,7 @@ def main():
     manifest_file = work / 'payload/pong-boot-manifest.json'
     manifest_file.write_bytes(manifest)
 
-    generated = work / 'payload/kernel.macho.adt.pong'
+    generated = work / 'payload/kernel.macho.adt.diting'
     command = [sys.executable, str(device / 'scripts/make-diting-adt-ipados18.py'),
                '--cpus', str(args.cpus),
                '--dram-size', hex(args.dram_size),
@@ -236,7 +236,7 @@ def main():
               'payload_bytes': payload.stat().st_size, 'payload_sha256': sha256(payload),
               'image_sha256': sha256(target), 'hardware_tested': False}
     (work / 'boot/diting-boot.json').write_text(json.dumps(record, indent=2) + '\n')
-    (work / 'payload/pong-adt.json').write_text(json.dumps(record, indent=2) + '\n')
+    (work / 'payload/diting-adt.json').write_text(json.dumps(record, indent=2) + '\n')
     manifest_path = work / 'package.manifest.json'
     if manifest_path.is_file():
         package = json.loads(manifest_path.read_text())

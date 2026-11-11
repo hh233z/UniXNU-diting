@@ -4,7 +4,7 @@ Redmi K50 至尊版（`diting` / Qualcomm SM8475）的 UniXNU 格式 2 设备仓
 **iPadOS 18.7.10（22H374）/ Darwin 24.6.0**，系统输入为 iPad7,11 / J171AP。
 
 - 核心构建工具：[UniXNU](https://github.com/UniXNU/UniXNU)
-- 固件：本机 `uefi-diting` 开发树；`uefi-pong` 只作参考，其 FDF 内嵌的是 Nothing Phone (2) 的 DTB
+- 固件：本机 `uefi-diting` 开发树；`uefi-diting` 只作参考，其 FDF 内嵌的是 Nothing Phone (2) 的 DTB
 - 官方说明：[仓库迁移](https://unixnu.com/zh/porting/migration)、[设备仓库](https://unixnu.com/zh/porting/device-repository)、
   [驱动适配](https://unixnu.com/zh/porting/drivers)、[启动验证顺序](https://unixnu.com/zh/porting/bring-up)、
   [日志抓取](https://unixnu.com/zh/porting/log-capture)
@@ -26,8 +26,8 @@ Redmi K50 至尊版（`diting` / Qualcomm SM8475）的 UniXNU 格式 2 设备仓
 
 ## 组件与来源
 
-`drivers/` 是社区 Pong SM8475 实现（A730 / QCA6490 / SM8475 UFS 等）的子模块，本设备复用其
-板级代码。组件 ID 保持 `PongPlatform24` 以保留来源、ABI 与验证记录；不要把它标成上游
+`drivers/` 是社区 Diting SM8475 实现（A730 / QCA6490 / SM8475 UFS 等）的子模块，本设备复用其
+板级代码。组件 ID 保持 `DitingPlatform24` 以保留来源、ABI 与验证记录；不要把它标成上游
 A740/WCN7850 实现。Diting 的板级配置在 `board.toml`、`dts/diting.dts` 和 `drivers/`。
 
 ## 构建

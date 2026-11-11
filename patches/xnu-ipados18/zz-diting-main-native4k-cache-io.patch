@@ -32,7 +32,7 @@
  	kr = kmem_alloc(kernel_map, &storage, allocation,
  	    KMA_KOBJECT | KMA_DATA | KMA_ZERO, VM_KERN_MEMORY_SECURITY);
  	if (kr != KERN_SUCCESS) {
-+		printf("Pong native4K: digest allocation failed bytes=%lu kr=%d\n", (unsigned long)allocation, kr);
++		printf("Diting native4K: digest allocation failed bytes=%lu kr=%d\n", (unsigned long)allocation, kr);
  		return ENOMEM;
  	}
 -	buffer = kalloc_data(16384, Z_WAITOK);

@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Prelink matching 22H374 kexts and package them with Pong DarwinBoot24."""
+"""Prelink matching 22H374 kexts and package them with Diting DarwinBoot24."""
 import argparse,json,os,subprocess,sys,time
 from pathlib import Path
 ROOT=Path(__file__).resolve().parents[1]
@@ -17,14 +17,14 @@ def main():
  p.add_argument('--volume-layout',type=Path,default=diting_paths.volume_layout())
  p.add_argument('--output-dir',type=Path,required=True)
  p.add_argument('--cpus',type=int,choices=range(1,9),default=8,
-                help='actual Pong CPU nodes; use --cpus 1 for isolated bring-up')
+                help='actual Diting CPU nodes; use --cpus 1 for isolated bring-up')
  p.add_argument('--window-size',type=lambda s:int(s,0),default=0x100000000)
  p.add_argument('--kernel-arg',action='append',default=[])
  a=p.parse_args()
- if (a.output_dir/'pong-xnu-initial.img').exists():raise SystemExit('Existing boot image retained; choose another --output-dir before prelinking')
+ if (a.output_dir/'diting-xnu-initial.img').exists():raise SystemExit('Existing boot image retained; choose another --output-dir before prelinking')
  a.output_dir.mkdir(parents=True,exist_ok=True)
  report=json.loads((a.artifact_dir/'DITING_BUILD_RESULT.json').read_text())
- if not report['build_complete'] or report['profile']!='Pong-iPadOS18-22H374-Darwin24':raise SystemExit('A completed Darwin 24 build is required')
+ if not report['build_complete'] or report['profile']!='Diting-iPadOS18-22H374-Darwin24':raise SystemExit('A completed Darwin 24 build is required')
  active=Path(report['tree']).parent/'DITING_BUILD_RESULT.json'
  if active.exists():
   current=json.loads(active.read_text())
@@ -51,25 +51,25 @@ def main():
  report['base_kernel']=report['kernel'];report['kernel']={'path':str(kernel),'bytes':len(candidate)};report['prelink']={'components':selection['components'],'library_only_components':selection['library_only_components']};report['image_verification']='skipped by request'
  result=a.output_dir/'DITING_BUILD_RESULT.json';result.write_text(json.dumps(report,indent=2)+'\n')
  layout=json.loads(a.volume_layout.read_text())
- opts=['pong_allow_unauthenticated_root=1','cs_enforcement_disable=1','cs_library_val_enable=0','amfi_get_out_of_my_way=1','-apfs_shared_datavolume','debug=0x14e','serial=0','pong_disable_swap=1','pong_skip_setup=1','pong_ufs_readwrite=1','ignition_level=1','dyld_flags=0x8','launchd_rd=md0','pong_init_trace=1','applog=1','applog_name=launchd,backboardd,SpringBoard,containermanagerd,lsd,runningboardd,logd_helper,powerd','pong_software_keybag=1','pong_display=1','pong_software_ui=1','pong_ui_software=1','pong_touch=1','pong_buttons=1','pong_init_path=/pong/init','pong_build=ipados18-22H374','epoch='+str(int(time.time()))]
+ opts=['diting_allow_unauthenticated_root=1','cs_enforcement_disable=1','cs_library_val_enable=0','amfi_get_out_of_my_way=1','-apfs_shared_datavolume','debug=0x14e','serial=0','diting_disable_swap=1','diting_skip_setup=1','diting_ufs_readwrite=1','ignition_level=1','dyld_flags=0x8','launchd_rd=md0','diting_init_trace=1','applog=1','applog_name=launchd,backboardd,SpringBoard,containermanagerd,lsd,runningboardd,logd_helper,powerd','diting_software_keybag=1','diting_display=1','diting_software_ui=1','diting_ui_software=1','diting_touch=1','diting_buttons=1','diting_init_path=/diting/init','diting_build=ipados18-22H374','epoch='+str(int(time.time()))]
  # Keep real, non-boost SM8475 EPSS requests at each domain's allowed maximum.
  # Firmware/LMh still owns actual voltage and thermal frequency limits.
- opts+=['pong_cpu_policy=2']
+ opts+=['diting_cpu_policy=2']
  # The existing CPU scanout scaler divides independent rows among workers.
  # Leave CPU time for the software compositor and stock service startup.
  if gpu:
-  opts=[x for x in opts if x not in ('pong_ui_software=1','pong_software_ui=1')]
-  opts+=['pong_ui_software=0','pong_software_ui=0','pong_adreno_start=1','pong_metal=1',
-         'pong_gpu_scanout=1','pong_gpu_pool_mib=256','pong_metal_global=1',
-         'pong_gpu_pwrlevel=0']
+  opts=[x for x in opts if x not in ('diting_ui_software=1','diting_software_ui=1')]
+  opts+=['diting_ui_software=0','diting_software_ui=0','diting_adreno_start=1','diting_metal=1',
+         'diting_gpu_scanout=1','diting_gpu_pool_mib=256','diting_metal_global=1',
+         'diting_gpu_pwrlevel=0']
  # PCM stays optional and publishes only after the real APM/amp/DMA route
  # is ready. Do not silently disable it in an otherwise audio-enabled build.
  # Select peripheral workers from the compiled configuration. Keep the
  # wallpaper policy independent of optional network/audio support.
- if report['settings'].get('XNU_DITING_POWER')=='1':opts+=['pong_adsp=2','pong_audio=2']
- if report['settings'].get('XNU_DITING_WIFI')=='1':opts+=['pong_wifi=1']
- opts+=['pong_ram_banks=1','launchd_unsecure_cache=1','pong_poster_snapshot=1',f'fb_threads={min(a.cpus,4)}']
- if report['settings'].get('XNU_DITING_BACKLIGHT')=='1':opts+=['pong_backlight=1']
+ if report['settings'].get('XNU_DITING_POWER')=='1':opts+=['diting_adsp=2','diting_audio=2']
+ if report['settings'].get('XNU_DITING_WIFI')=='1':opts+=['diting_wifi=1']
+ opts+=['diting_ram_banks=1','launchd_unsecure_cache=1','diting_poster_snapshot=1',f'fb_threads={min(a.cpus,4)}']
+ if report['settings'].get('XNU_DITING_BACKLIGHT')=='1':opts+=['diting_backlight=1']
  # PE_parse_boot_argn can select the first duplicate. Apply command-line
  # overrides before packaging so there is exactly one value per named key.
  for value in a.kernel_arg:

@@ -17,7 +17,7 @@ def late_init(obj, filename, symbol):
    for i in range(struct.unpack_from('<I',raw,at+64)[0]):
     sc=at+72+80*i
     if raw[sc:sc+16].rstrip(b'\0')==b'__mod_init_func':
-     raw[sc:sc+16]=b'__pong_init'.ljust(16,b'\0');v=struct.unpack_from('<I',raw,sc+64)[0];struct.pack_into('<I',raw,sc+64,v&~255)
+     raw[sc:sc+16]=b'__diting_init'.ljust(16,b'\0');v=struct.unpack_from('<I',raw,sc+64)[0];struct.pack_into('<I',raw,sc+64,v&~255)
   elif kind==2:sym=at
   at+=length
  if sym is None:raise RuntimeError('Battery object has no symbol table')
@@ -32,29 +32,29 @@ def late_init(obj, filename, symbol):
 
 def main():
  p=argparse.ArgumentParser(description=__doc__);p.add_argument('--tree',type=Path,required=True)
- p.add_argument('--resources-only',action='store_true',help='compile only PongPlatformResources.cpp: the shared SMMU/power locks the UFS transport takes, without the audio firmware input')
+ p.add_argument('--resources-only',action='store_true',help='compile only DitingPlatformResources.cpp: the shared SMMU/power locks the UFS transport takes, without the audio firmware input')
  a=p.parse_args()
- out=a.tree/'build/pong-power';out.mkdir(parents=True,exist_ok=True)
+ out=a.tree/'build/diting-power';out.mkdir(parents=True,exist_ok=True)
  framework=a.tree/'.cache/fakeroot/System/Library/Frameworks/Kernel.framework/Versions/A'
  env=build_env()
  sdk=subprocess.check_output(['xcrun','--sdk','iphoneos','--show-sdk-path'],env=env,text=True).strip()
  shared=input_path('sheng_source')/'package'
- flags=['-target','arm64-apple-ios18.0','-isysroot',sdk,'-mkernel','-ffreestanding','-fno-builtin','-fno-stack-protector','-mgeneral-regs-only','-fblocks','-O2','-DKERNEL=1','-DKERNEL_PRIVATE=1','-DXNU_KERNEL_PRIVATE=1','-DARM64_BOARD_CONFIG_DITING=1','-I'+str(framework/'PrivateHeaders'),'-I'+str(framework/'Headers'),'-I'+str(ROOT/'drivers/PongPower'),'-I'+str(out),'-I'+str(shared),'-Wno-deprecated-declarations']
+ flags=['-target','arm64-apple-ios18.0','-isysroot',sdk,'-mkernel','-ffreestanding','-fno-builtin','-fno-stack-protector','-mgeneral-regs-only','-fblocks','-O2','-DKERNEL=1','-DKERNEL_PRIVATE=1','-DXNU_KERNEL_PRIVATE=1','-DARM64_BOARD_CONFIG_DITING=1','-I'+str(framework/'PrivateHeaders'),'-I'+str(framework/'Headers'),'-I'+str(ROOT/'drivers/DitingPower'),'-I'+str(out),'-I'+str(shared),'-Wno-deprecated-declarations']
  if not a.resources_only:
-  subprocess.run([os.sys.executable,str(ROOT/'scripts/prepare-diting-audio.py'),'--container',str(input_path('audio_container')),'--output',str(out/'PongAmpProfiles.h')],check=True)
+  subprocess.run([os.sys.executable,str(ROOT/'scripts/prepare-diting-audio.py'),'--container',str(input_path('audio_container')),'--output',str(out/'DitingAmpProfiles.h')],check=True)
  objects=[]
- NAMES=('PongPlatformResources.cpp',) if a.resources_only else ('QcomRpmh.c','QcomSmem.c','QcomSmp2p.c','QcomGlink.c','QcomMdt.c','QcomQmp.c','ShengBattmgr.c','ShengGpr.c','ShengAudioReach.c','GeniI2c.c','PongFirmware.c','PongAdsp.cpp','PongBattery.cpp','PongAudio.cpp','PongAudioService.cpp','PongPlatformResources.cpp','PongPower.cpp','PongBacklight.cpp')
+ NAMES=('DitingPlatformResources.cpp',) if a.resources_only else ('QcomRpmh.c','QcomSmem.c','QcomSmp2p.c','QcomGlink.c','QcomMdt.c','QcomQmp.c','ShengBattmgr.c','ShengGpr.c','ShengAudioReach.c','GeniI2c.c','DitingFirmware.c','DitingAdsp.cpp','DitingBattery.cpp','DitingAudio.cpp','DitingAudioService.cpp','DitingPlatformResources.cpp','DitingPower.cpp','DitingBacklight.cpp')
  for name in NAMES:
-  source=(shared if name=='QcomRpmh.c' else ROOT/'drivers/PongPower')/name;obj=out/(source.stem+'.o');cpp=source.suffix=='.cpp'
+  source=(shared if name=='QcomRpmh.c' else ROOT/'drivers/DitingPower')/name;obj=out/(source.stem+'.o');cpp=source.suffix=='.cpp'
   cmd=['xcrun','clang++' if cpp else 'clang',*flags,*(['-std=gnu++17','-fno-exceptions','-fno-rtti'] if cpp else []),'-c',str(source),'-o',str(obj)]
   r=subprocess.run(cmd,env=env,capture_output=True,text=True);(out/(source.stem+'.log')).write_text(r.stdout+r.stderr)
   if r.returncode:raise SystemExit(r.stderr)
-  if name=='PongBattery.cpp':obj=late_init(obj,name,'PongBatteryStaticInit')
-  if name=='PongAudioService.cpp':obj=late_init(obj,name,'PongAudioServiceStaticInit')
-  if name=='PongBacklight.cpp':obj=late_init(obj,name,'PongBacklightStaticInit')
+  if name=='DitingBattery.cpp':obj=late_init(obj,name,'DitingBatteryStaticInit')
+  if name=='DitingAudioService.cpp':obj=late_init(obj,name,'DitingAudioServiceStaticInit')
+  if name=='DitingBacklight.cpp':obj=late_init(obj,name,'DitingBacklightStaticInit')
   objects.append(obj)
- archive=out/'libPongPower.a';archive.unlink(missing_ok=True)
+ archive=out/'libDitingPower.a';archive.unlink(missing_ok=True)
  subprocess.run(['xcrun','libtool','-static','-o',str(archive),*map(str,objects)],env=env,check=True)
- (out/'build-report.json').write_text(json.dumps(dict(board='SM8475 Pong',guest='22H374',adsp_pas=1,adsp_carveout=[0x85700000,0x2800000],ipcc=0xed18000,smem=0x80900000,battery='Nothing standard PMIC GLINK, single pack, read only',audio='adsp_apps APM graphs, SID1801, TFA9873 stereo PCM ring; no microphone endpoint',firmware='Local REC image staged to /pong/firmware/adsp.mbn',runtime_observed=False),indent=2)+'\n')
+ (out/'build-report.json').write_text(json.dumps(dict(board='SM8475 Diting',guest='22H374',adsp_pas=1,adsp_carveout=[0x85700000,0x2800000],ipcc=0xed18000,smem=0x80900000,battery='Nothing standard PMIC GLINK, single pack, read only',audio='adsp_apps APM graphs, SID1801, TFA9873 stereo PCM ring; no microphone endpoint',firmware='Local REC image staged to /diting/firmware/adsp.mbn',runtime_observed=False),indent=2)+'\n')
  print(archive)
 if __name__=='__main__':main()

@@ -106,8 +106,8 @@ def main():
         record('kernel arguments line found in the image', False)
     else:
         print('    args: ' + arguments)
-        record('args keep pong_ufs_readwrite=1', 'pong_ufs_readwrite=1' in arguments)
-        record('args do not set pong_init_path', 'pong_init_path=' not in arguments)
+        record('args keep diting_ufs_readwrite=1', 'diting_ufs_readwrite=1' in arguments)
+        record('args do not set diting_init_path', 'diting_init_path=' not in arguments)
 
     if not args.skip_window_samples:
         for window, image in (('OS', args.os), ('Data', args.data)):

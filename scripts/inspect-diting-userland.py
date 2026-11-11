@@ -4,9 +4,9 @@
 Reads the OS, Data and (optionally) SystemOS window sources with the in-tree APFS
 reader and reports the items phase 6 depends on.
 
-The prepared userland puts a copy of the Pong static init at /sbin/launchd and
+The prepared userland puts a copy of the Diting static init at /sbin/launchd and
 keeps Apple's launchd as /sbin/launchd.ios, so the kernel's native init path runs
-the Pong init (Data seed, preferences, environment) and that init execs the real
+the Diting init (Data seed, preferences, environment) and that init execs the real
 launchd. The Data volume is the data partition: its root is /private/var, so the
 seed entries (tmp, keybags, mobile, db) sit at the volume root.
 
@@ -80,14 +80,14 @@ def check_os(path, expect_uuid):
         print(f'OS {path}: {kind_of(path)}, volume {volume.volname!r} UUID {found}')
         if expect_uuid and found != expect_uuid:
             ok = fail(f'OS UUID {found} != expected {expect_uuid}')
-        init = entry_at(volume, '/pong/init')
+        init = entry_at(volume, '/diting/init')
         if init is None or not init.is_reg:
-            ok = fail('OS /pong/init missing or not a regular file')
+            ok = fail('OS /diting/init missing or not a regular file')
         elif not init.mode & 0o111:
-            ok = fail(f'OS /pong/init mode {oct(init.mode)} is not executable')
+            ok = fail(f'OS /diting/init mode {oct(init.mode)} is not executable')
         else:
-            print(f'  /pong/init mode {oct(init.mode)} size {init.size}')
-        for name in ('/pong/etc/var.skel', '/pong/var-seed'):
+            print(f'  /diting/init mode {oct(init.mode)} size {init.size}')
+        for name in ('/diting/etc/var.skel', '/diting/var-seed'):
             inode = entry_at(volume, name)
             if inode is None or not (inode.is_reg or inode.is_dir):
                 ok = fail(f'OS {name} missing')
@@ -102,9 +102,9 @@ def check_os(path, expect_uuid):
                 ok = fail('/sbin/launchd.ios exists but the wrapper contract is incomplete')
             else:
                 same = system_launchd.contents() == init.contents()
-                print(f'  /sbin/launchd wrapper identical to /pong/init: {same}')
+                print(f'  /sbin/launchd wrapper identical to /diting/init: {same}')
                 if not same:
-                    ok = fail('/sbin/launchd is not the Pong init wrapper')
+                    ok = fail('/sbin/launchd is not the Diting init wrapper')
             target = apple_launchd
         else:
             target = system_launchd
@@ -156,9 +156,9 @@ def check_data(path, expect_uuid):
         print(f'Data {path}: {kind_of(path)}, volume {volume.volname!r} UUID {found}')
         if expect_uuid and found != expect_uuid:
             ok = fail(f'Data UUID {found} != expected {expect_uuid}')
-        marker = entry_at(volume, '/.pong-data-22H374')
+        marker = entry_at(volume, '/.diting-data-22H374')
         if marker is None:
-            ok = fail('Data /.pong-data-22H374 marker missing')
+            ok = fail('Data /.diting-data-22H374 marker missing')
         else:
             print(f'  seed marker: {marker.contents().strip().decode("ascii", "replace")}')
         for name in ('/keybags', '/mobile', '/db', '/containers', '/preferences'):

@@ -1,6 +1,6 @@
 /* SPDX-License-Identifier: MIT
  * iPadOS 18 runtime adapter. No 20G81 QuartzCore/Settings addresses or vtables.
- * Device input reuses the actual Pong kernel event queue and runtime HID APIs.
+ * Device input reuses the actual Diting kernel event queue and runtime HID APIs.
  */
 #include <CoreFoundation/CoreFoundation.h>
 #include <CoreGraphics/CoreGraphics.h>
@@ -74,9 +74,9 @@ static void phone_repair_actual_bar(void *);
 static void stui_repair_bar(id);
 static bool boot_option(const char *option);
 static bool own_directory(const char *path);
-void pong_boot_snapshot_start(const char *name);
-void pong_settings18_start(void);
-void pong_audio_volume18_start(void);
+void diting_boot_snapshot_start(const char *name);
+void diting_settings18_start(void);
+void diting_audio_volume18_start(void);
 
 static char abi_type_kind(const char *type)
 {
@@ -138,7 +138,7 @@ static id poster_jetsam_properties(id self,SEL selector,int pid,id identity,id b
                 ((void(*)(id,SEL))objc_msgSend)(view,sel_registerName("release"));
                 static unsigned reported;
                 if(__atomic_fetch_add(&reported,1,__ATOMIC_RELAXED)<3)
-                    fprintf(stderr,"Pong Poster18: native Angel memory policy selected for PosterBoard\n");
+                    fprintf(stderr,"Diting Poster18: native Angel memory policy selected for PosterBoard\n");
                 return result;
             }
         }
@@ -155,7 +155,7 @@ static void poster_jetsam_image(const struct mach_header *header,intptr_t slide)
     Method method=manager?class_getInstanceMethod(manager,query):NULL;
     Method type=identity?class_getInstanceMethod(identity,sel_registerName("osServiceType")):NULL;
     if(!method_abi(method,"@",4,"i@@B") || !method_abi(type,"C",0,""))return;
-    Class view=objc_allocateClassPair(objc_lookUpClass("NSObject"),"PongPosterJetsamIdentity18",0);
+    Class view=objc_allocateClassPair(objc_lookUpClass("NSObject"),"DitingPosterJetsamIdentity18",0);
     if(!view)return;
     if(!class_addMethod(view,sel_registerName("osServiceType"),(IMP)poster_jetsam_service_type,method_getTypeEncoding(type)) ||
        !class_addMethod(view,sel_registerName("isApplication"),(IMP)poster_jetsam_is_application,"B16@0:8") ||
@@ -168,7 +168,7 @@ static void poster_jetsam_image(const struct mach_header *header,intptr_t slide)
     poster_jetsam_original=method_setImplementation(method,(IMP)poster_jetsam_properties);
 }
 
-/* Phone identity still uses Pong's real screen. The native provider factory
+/* Phone identity still uses Diting's real screen. The native provider factory
  * falls back to a diagnostic label for an unlisted width/height tuple. Reuse
  * its real 1080px phone layout only for this main display, with the factory's
  * normal initialization and the supplied 22H374 Objective-C signatures. */
@@ -176,7 +176,7 @@ static double phone_reference_scale(id self,SEL selector)
 {
     (void)self;(void)selector;
     /* This class method also runs during UIKit's screen/provider discovery.
-     * Reentering +mainScreen here can wait on that same initialization. Pong's
+     * Reentering +mainScreen here can wait on that same initialization. Diting's
      * ADT and framebuffer use scale 3; no UIKit calls are needed to report it. */
     return 3.0;
 }
@@ -218,7 +218,7 @@ static id phone_fallback_setup(id self,SEL selector,id container)
     id regions=((id(*)(id,SEL,id))objc_msgSend)(delegate,selector,container);
     static unsigned reported;
     if(__atomic_fetch_add(&reported,1,__ATOMIC_RELAXED)<3)
-        fprintf(stderr,"Pong UI18: diagnostic provider replaced by native phone regions\n");
+        fprintf(stderr,"Diting UI18: diagnostic provider replaced by native phone regions\n");
     return regions;
 }
 static id phone_fallback_placements(id self,SEL selector,id region)
@@ -281,7 +281,7 @@ static void phone_fallback_policy(void)
     method_setImplementation(sm,(IMP)phone_fallback_class_size);
     class_addMethod(meta,sel_registerName("referenceScreenScale"),(IMP)phone_reference_scale,"d16@0:8");
     statusbar_fallback_bridge_installed=true;
-    fprintf(stderr,"Pong UI18: rdar diagnostic layout removed; native clock/battery layout connected\n");
+    fprintf(stderr,"Diting UI18: rdar diagnostic layout removed; native clock/battery layout connected\n");
 }
 static BOOL phone_diagnostic_item_enabled(id self,SEL selector,id item,id data)
 { (void)self;(void)selector;(void)item;(void)data;return NO; }
@@ -296,10 +296,10 @@ static void phone_remove_diagnostic_item(void)
 }
 static Class phone_statusbar(unsigned index,id self,SEL selector,id screen,id info)
 {
-    /* Resolve the known Pong screen before entering the native candidate
+    /* Resolve the known Diting screen before entering the native candidate
      * enumerator, matching the order used before services42. */
     // UIKit uses nil for its default display during screen construction.
-    // This adapter is already restricted to Pong; do not reenter mainScreen.
+    // This adapter is already restricted to Diting; do not reenter mainScreen.
     if(!screen && statusbar_provider)return statusbar_provider;
     if(screen && statusbar_provider) {
         CGRect bounds=((CGRect(*)(id,SEL))objc_msgSend)(screen,sel_registerName("nativeBounds"));
@@ -308,14 +308,14 @@ static Class phone_statusbar(unsigned index,id self,SEL selector,id screen,id in
             (bounds.size.height==1080 && bounds.size.width==2412)) && scale>0 && scale<=4) {
             static unsigned reported;
             if(__atomic_fetch_add(&reported,1,__ATOMIC_RELAXED)<3)
-                fprintf(stderr,"Pong UI18: actual 1080x2412 phone status bar selected\n");
+                fprintf(stderr,"Diting UI18: actual 1080x2412 phone status bar selected\n");
             return statusbar_provider;
         }
     }
     return ((Class(*)(id,SEL,id,id))statusbar_factories[index].original)(self,selector,screen,info);
 }
 /* Darwin24 compares a candidate's IMP with its parent's IMP. Each factory
- * must have a distinct wrapper, even though the Pong screen policy is shared. */
+ * must have a distinct wrapper, even though the Diting screen policy is shared. */
 #define PHONE_FACTORY(N) static Class phone_factory##N(id s,SEL c,id screen,id info) \
     { return phone_statusbar(N,s,c,screen,info); }
 PHONE_FACTORY(0)
@@ -333,9 +333,9 @@ static void phone_presentation(void)
     if(!base)base=objc_lookUpClass("_UIStatusBarVisualProvider_Split1080");
     if(!base)return;
     // DynamicSplitMedium does not declare referenceScreenScale in 22H374.
-    // It is an optional class query, which this concrete Pong subclass adds.
+    // It is an optional class query, which this concrete Diting subclass adds.
     // Requiring it on the base silently skipped the entire provider adapter.
-    Class provider=objc_allocateClassPair(base,"PongStatusBar18Phone1080",0);
+    Class provider=objc_allocateClassPair(base,"DitingStatusBar18Phone1080",0);
     if(!provider)return;
     if(!class_addMethod(object_getClass((id)provider),sel_registerName("referenceScreenScale"),(IMP)phone_reference_scale,"d16@0:8")) {
         objc_disposeClassPair(provider);return;
@@ -355,7 +355,7 @@ static void phone_presentation(void)
      * services44 overrides ran before any scanout and never completed the
      * main-queue wake. Keep child factory discovery native during boot;
      * the extended candidate policy remains an explicit development option. */
-    unsigned count=boot_option("pong_statusbar_factories=1")?4:1;
+    unsigned count=boot_option("diting_statusbar_factories=1")?4:1;
     for(unsigned i=0;i<count;i++) {
         Class factory=objc_lookUpClass(names[i]);
         Method method=factory?class_getClassMethod(factory,selector):NULL;
@@ -369,12 +369,12 @@ static void phone_presentation(void)
         statusbar_factories[i].original=method_setImplementation(method,replacements[i]);
         statusbar_factory_count++;
     }
-    fprintf(stderr,"Pong UI18: native phone status bar factories installed=%u\n",
+    fprintf(stderr,"Diting UI18: native phone status bar factories installed=%u\n",
         statusbar_factory_count);
 }
 
 /* This restore supplies iPad artwork. Use 22H374 WallpaperKit's own
- * compatibility selectors for its real catalogs on Pong, rather than clone
+ * compatibility selectors for its real catalogs on Diting, rather than clone
  * collection UUIDs or change the user's selected iPhone identity. */
 static bool wallpaper_process,wallpaper_paths_process,wallpaper_policy_installed;
 static BOOL (*wallpaper_original_collection)(id,SEL,id);
@@ -407,7 +407,7 @@ static void wallpaper_resource_policy(void)
         Method method=cls?class_getClassMethod(cls,sel_registerName("shouldLoadWallpaperCollectionAtURL:")):NULL;
         if(method_abi(method,"Bc",1,"@")) {
             wallpaper_original_collection=(BOOL (*)(id,SEL,id))method_setImplementation(method,(IMP)wallpaper_collection_path);
-            fprintf(stderr,"Pong UI18: native wallpaper scan prefers installed phone path per UUID\n");
+            fprintf(stderr,"Diting UI18: native wallpaper scan prefers installed phone path per UUID\n");
         }
     }
     if(!wallpaper_process || wallpaper_policy_installed)return;
@@ -418,7 +418,7 @@ static void wallpaper_resource_policy(void)
     method_setImplementation(product,(IMP)wallpaper_resource_compat);
     method_setImplementation(screen,(IMP)wallpaper_resource_compat);
     wallpaper_policy_installed=true;
-    fprintf(stderr,"Pong UI18: original 22H374 wallpaper catalogs enabled for Pong screen\n");
+    fprintf(stderr,"Diting UI18: original 22H374 wallpaper catalogs enabled for Diting screen\n");
 }
 
 /* Same single-user container policy as the working iOS16 port. Native
@@ -438,17 +438,17 @@ static void setup_activation(id self,SEL selector)
     memcpy((char *)self+activation_offset,&state,sizeof(state));
     static unsigned reported;
     if(__atomic_fetch_add(&reported,1,__ATOMIC_RELAXED)==0)
-        fprintf(stderr,"Pong UI18: development SpringBoard activation UI selected\n");
+        fprintf(stderr,"Diting UI18: development SpringBoard activation UI selected\n");
 }
 
 /* The supplied 22H374 method is B24@0:8Q16, as on 20G81. Keep its actual
  * transition/notification implementation and return value, passing the
- * no-assistant reason requested by the Pong bring-up boot option. */
+ * no-assistant reason requested by the Diting bring-up boot option. */
 static BOOL setup_reason(id self,SEL selector,unsigned long long reason)
 {
     static unsigned reported;
     if(reason && __atomic_fetch_add(&reported,1,__ATOMIC_RELAXED)<3)
-        fprintf(stderr,"Pong UI18: development setup reason %llu skipped\n",reason);
+        fprintf(stderr,"Diting UI18: development setup reason %llu skipped\n",reason);
     return ((BOOL(*)(id,SEL,unsigned long long))setup_reason_original)(self,selector,0);
 }
 
@@ -467,7 +467,7 @@ static void springboard_setup_policy(void)
             activation_offset=offset;
             method_setImplementation(method,(IMP)setup_activation);
             activation_installed=true;
-            fprintf(stderr,"Pong UI18: 22H374 activation UI policy installed\n");
+            fprintf(stderr,"Diting UI18: 22H374 activation UI policy installed\n");
         }
     }
     if(!setup_reason_original) {
@@ -475,7 +475,7 @@ static void springboard_setup_policy(void)
         Method method=cls?class_getInstanceMethod(cls,sel_registerName("_setSetupRequiredReason:")):NULL;
         if(method_abi(method,"B",1,"Q")) {
             setup_reason_original=method_setImplementation(method,(IMP)setup_reason);
-            fprintf(stderr,"Pong UI18: 22H374 Setup Assistant UI policy installed\n");
+            fprintf(stderr,"Diting UI18: 22H374 Setup Assistant UI policy installed\n");
         }
     }
 }
@@ -496,7 +496,7 @@ static id internal_battery(id self,SEL selector)
     }
     static unsigned reported;
     if(__atomic_fetch_add(&reported,1,__ATOMIC_RELAXED)==0)
-        fprintf(stderr,"Pong UI18: no physical power source; omit unavailable battery status\n");
+        fprintf(stderr,"Diting UI18: no physical power source; omit unavailable battery status\n");
     return nil;
 }
 
@@ -521,7 +521,7 @@ static void container_persona_policy(void)
     if(!method_abi(method,"Bc",0,""))return;
     method_setImplementation(method,(IMP)no_container_personas);
     personas_installed=true;
-    fprintf(stderr,"Pong UI18: native single-user container paths selected\n");
+    fprintf(stderr,"Diting UI18: native single-user container paths selected\n");
 }
 
 /* A new unencrypted Data has no persona.kb. In 22H374 --init can finish
@@ -547,7 +547,7 @@ static void initialize_persona_manifest(void)
     if(length<=0 || length>4*1024*1024)return;
     /* Publish only a complete registry. A crash during the old direct
      * O_EXCL write left a truncated persona.kb that all later boots kept. */
-    char temporary[]="/private/var/keybags/.persona.kb.pong.XXXXXX";
+    char temporary[]="/private/var/keybags/.persona.kb.diting.XXXXXX";
     int fd=mkstemp(temporary);
     if(fd<0)return;
     (void)fcntl(fd,F_SETFD,FD_CLOEXEC);
@@ -569,15 +569,15 @@ static void initialize_persona_manifest(void)
     }
     (void)unlink(temporary);
     if(saved) {
-        fprintf(stderr,"Pong UI18: native persona registry write failed errno=%d\n",saved);
+        fprintf(stderr,"Diting UI18: native persona registry write failed errno=%d\n",saved);
     } else if(published) {
         int directory=open("/private/var/keybags",O_RDONLY|O_DIRECTORY|O_NOFOLLOW|O_CLOEXEC);
         if(directory>=0) {
             if(fsync(directory)!=0)
-                fprintf(stderr,"Pong UI18: persona registry published; directory sync errno=%d\n",errno);
+                fprintf(stderr,"Diting UI18: persona registry published; directory sync errno=%d\n",errno);
             (void)close(directory);
         }
-        fprintf(stderr,"Pong UI18: 22H374 serialized initial persona registry (%ld bytes)\n",(long)length);
+        fprintf(stderr,"Diting UI18: 22H374 serialized initial persona registry (%ld bytes)\n",(long)length);
     }
 }
 
@@ -618,17 +618,17 @@ static bool install_compositor_code(const struct mach_header *header,intptr_t sl
     if(offset>UINTPTR_MAX-(uintptr_t)header || !bytes || bytes>vm_page_size)return false;
     uintptr_t target=(uintptr_t)header+offset;
     if(!executable_image_range((const void *)header,slide,target,bytes)) {
-        fprintf(stderr,"Pong UI18: %s outside executable image range; SKIP\n",label);return false;
+        fprintf(stderr,"Diting UI18: %s outside executable image range; SKIP\n",label);return false;
     }
     if(memcmp((const void *)target,expected,bytes)) {
-        fprintf(stderr,"Pong UI18: 22H374 %s entry differs; SKIP\n",label);return false;
+        fprintf(stderr,"Diting UI18: 22H374 %s entry differs; SKIP\n",label);return false;
     }
     const vm_address_t page=target&~((vm_address_t)vm_page_size-1);
     if(target-page>vm_page_size-bytes)return false;
     kern_return_t kr=vm_protect(mach_task_self(),page,vm_page_size,FALSE,
                                VM_PROT_READ|VM_PROT_WRITE|VM_PROT_COPY);
     if(kr!=KERN_SUCCESS) {
-        fprintf(stderr,"Pong UI18: %s protection failed %d\n",label,kr);return false;
+        fprintf(stderr,"Diting UI18: %s protection failed %d\n",label,kr);return false;
     }
     memcpy((void *)target,replacement,bytes);
     sys_icache_invalidate((void *)target,bytes);
@@ -637,10 +637,10 @@ static bool install_compositor_code(const struct mach_header *header,intptr_t sl
         memcpy((void *)target,expected,bytes);
         sys_icache_invalidate((void *)target,bytes);
         (void)vm_protect(mach_task_self(),page,vm_page_size,FALSE,VM_PROT_READ|VM_PROT_EXECUTE);
-        fprintf(stderr,"Pong UI18: %s RX restore failed %d; original restored\n",label,kr);
+        fprintf(stderr,"Diting UI18: %s RX restore failed %d; original restored\n",label,kr);
         return false;
     }
-    fprintf(stderr,"Pong UI18: 22H374 %s selected\n",label);return true;
+    fprintf(stderr,"Diting UI18: 22H374 %s selected\n",label);return true;
 }
 
 /* 22H374 initializes its missing-calibration fallback limits by converting
@@ -648,12 +648,12 @@ static bool install_compositor_code(const struct mach_header *header,intptr_t sl
  * tests for a null curve, then unconditionally reads curve[0]. services84 IPS
  * records all stop there. Use that SAME selected runtime's built-in software
  * curve during this initialization window; calibrated/native mappings still
- * call the original helper. This is not measured Pong panel photometry. */
+ * call the original helper. This is not measured Diting panel photometry. */
 static float (*brightness18_slider_original)(void *,float);
 static float brightness18_defaults[3];
-struct pong_tracked_brightness_state {unsigned char a,b,c,d;};
+struct diting_tracked_brightness_state {unsigned char a,b,c,d;};
 static void brightness18_skip_uncalibrated_telemetry(id self,SEL selector,int64_t event,
-    float from,float to,struct pong_tracked_brightness_state state)
+    float from,float to,struct diting_tracked_brightness_state state)
 {
     (void)self;(void)selector;(void)event;(void)from;(void)to;(void)state;
     // This is only CBSliderCommitTelemetry's reporting entry, not the
@@ -673,7 +673,7 @@ static void brightness18_telemetry(const struct mach_header_64 *header,intptr_t 
            !method_abi(method,"v",4,"qff{") || !encoding ||
            !strstr(encoding,"{TrackedState=BBBB}"))continue;
         method_setImplementation(method,(IMP)brightness18_skip_uncalibrated_telemetry);
-        fprintf(stderr,"Pong brightness18: uncalibrated slider telemetry skipped; native brightness control retained\n");
+        fprintf(stderr,"Diting brightness18: uncalibrated slider telemetry skipped; native brightness control retained\n");
         break;
     }
     free(methods);
@@ -689,7 +689,7 @@ static float brightness18_slider(void *display,float slider)
         const unsigned lower=position>=1.0f?1:0;
         static unsigned reported;
         if(__atomic_fetch_add(&reported,1,__ATOMIC_RELAXED)==0)
-            fprintf(stderr,"Pong brightness18: native software curve used before mapping initialization\n");
+            fprintf(stderr,"Diting brightness18: native software curve used before mapping initialization\n");
         return brightness18_defaults[lower]+(position-(float)lower)*
             (brightness18_defaults[lower+1]-brightness18_defaults[lower]);
     }
@@ -717,12 +717,12 @@ static void brightness18_image(const struct mach_header *header,intptr_t slide)
     int (*release)(uint32_t)=dlsym(RTLD_DEFAULT,"IOObjectRelease");
     if(!matching||!get||!release)return;
     CFMutableDictionaryRef dict=matching("IOService");
-    const void *key=CFSTR("PongPanel"),*value=CFSTR("NT37705 Visionox / SM8475 DSI0");
+    const void *key=CFSTR("DitingPanel"),*value=CFSTR("NT37705 Visionox / SM8475 DSI0");
     CFDictionaryRef properties=CFDictionaryCreate(NULL,&key,&value,1,&kCFTypeDictionaryKeyCallBacks,&kCFTypeDictionaryValueCallBacks);
     if(!dict || !properties){if(dict)CFRelease(dict);if(properties)CFRelease(properties);return;}
     CFDictionarySetValue(dict,CFSTR("IOPropertyMatch"),properties);CFRelease(properties);
     uint32_t service=get(0,dict);if(!service)return;release(service);
-    // Same exact 22H374 CoreBrightness UUID and actual Pong panel as below.
+    // Same exact 22H374 CoreBrightness UUID and actual Diting panel as below.
     // Its optional telemetry expects DisplayBrightness/NitsPhysical to be a
     // calibration dictionary; the board's native scalar state is not one.
     brightness18_telemetry(h,slide);
@@ -804,19 +804,19 @@ static void phone_gestalt_image(const struct mach_header *header,intptr_t slide)
 /* 22H374 _prepareVisualProviderIfNeeded directly calls this C selector,
  * bypassing the iOS class factory used by 20G81. Adapt that selection point
  * before UIKit computes provider flags/scale, preserving the native result
- * for supported layouts and every screen other than Pong's real panel. */
+ * for supported layouts and every screen other than Diting's real panel. */
 static Class phone_selected_class(id screen,id info)
 {
     Class selected=phone_selector_original(screen,info);
     Class fallback=objc_lookUpClass("_UIStatusBarVisualProvider_Fallback");
     static unsigned decisions;
     if(__atomic_fetch_add(&decisions,1,__ATOMIC_RELAXED)<2)
-        fprintf(stderr,"Pong UI18: native provider decision=%s screen=%s\n",
+        fprintf(stderr,"Diting UI18: native provider decision=%s screen=%s\n",
             selected?class_getName(selected):"nil",screen?object_getClassName(screen):"default");
     if((selected && selected!=fallback) || !statusbar_provider)return selected;
     /* UIKit also asks for its default display with nil while UIScreen is
      * being initialized. Calling mainScreen here would recurse into that
-     * initialization; use the same Pong-only default as the class factory. */
+     * initialization; use the same Diting-only default as the class factory. */
     if(screen) {
         CGRect bounds=((CGRect(*)(id,SEL))objc_msgSend)(screen,sel_registerName("nativeBounds"));
         double scale=((double(*)(id,SEL))objc_msgSend)(screen,sel_registerName("nativeScale"));
@@ -825,7 +825,7 @@ static Class phone_selected_class(id screen,id info)
     }
     static unsigned reported;
     if(__atomic_fetch_add(&reported,1,__ATOMIC_RELAXED)<3)
-        fprintf(stderr,"Pong UI18: Darwin24 selector chose native 1080 phone provider\n");
+        fprintf(stderr,"Diting UI18: Darwin24 selector chose native 1080 phone provider\n");
     return statusbar_provider;
 }
 static void phone_prepare_provider(id self,SEL selector)
@@ -862,7 +862,7 @@ static void phone_repair_actual_bar(void *context)
             phone_prepare_provider(bar,sel_registerName("_prepareVisualProviderIfNeeded"));
             ((void(*)(id,SEL))objc_msgSend)(bar,sel_registerName("setNeedsLayout"));
             current=object_getIvar(bar,phone_provider_ivar);
-            fprintf(stderr,"Pong UI18: actual status bar rebuilt provider=%s\n",current?object_getClassName(current):"nil");
+            fprintf(stderr,"Diting UI18: actual status bar rebuilt provider=%s\n",current?object_getClassName(current):"nil");
         }
     }
     ((void(*)(id,SEL))objc_msgSend)(bar,sel_registerName("release"));
@@ -881,7 +881,7 @@ static void phone_layout_provider(id self,SEL selector)
         ((void(*)(id,SEL,Class))objc_msgSend)(self,sel_registerName("_setVisualProviderClass:"),Nil);
         ((void(*)(id,SEL))phone_prepare_original)(self,sel_registerName("_prepareVisualProviderIfNeeded"));
         current=object_getIvar(self,phone_provider_ivar);
-        fprintf(stderr,"Pong UI18: status layout rebuilt provider=%s\n",current?object_getClassName(current):"nil");
+        fprintf(stderr,"Diting UI18: status layout rebuilt provider=%s\n",current?object_getClassName(current):"nil");
     }
     ((void(*)(id,SEL))phone_layout_original)(self,selector);
 }
@@ -955,7 +955,7 @@ static void phone_repair_view(id view,unsigned depth,unsigned *remaining)
                 ((void(*)(id,SEL))phone_prepare_original)(view,prepare);
                 ((void(*)(id,SEL))objc_msgSend)(view,sel_registerName("setNeedsLayout"));
                 id installed=object_getIvar(view,phone_provider_ivar);
-                fprintf(stderr,"Pong UI18: existing status provider rebuilt %s -> %s\n",
+                fprintf(stderr,"Diting UI18: existing status provider rebuilt %s -> %s\n",
                     class_getName(fallback),installed?object_getClassName(installed):"nil");
             }
         }
@@ -1032,17 +1032,17 @@ static IMP stui_select_original,stui_prepare_original,stui_layout_original;
 static Class stui_selected_class(id screen,id info)
 {
     if(stui_provider) {
-        bool pong=!screen;
+        bool diting=!screen;
         if(screen) {
             CGRect bounds=((CGRect(*)(id,SEL))objc_msgSend)(screen,sel_registerName("nativeBounds"));
             double scale=((double(*)(id,SEL))objc_msgSend)(screen,sel_registerName("nativeScale"));
-            pong=((bounds.size.width==1080 && bounds.size.height==2412) ||
+            diting=((bounds.size.width==1080 && bounds.size.height==2412) ||
                   (bounds.size.width==2412 && bounds.size.height==1080)) && scale==3.0;
         }
-        if(pong) {
+        if(diting) {
             static unsigned reported;
             if(__atomic_fetch_add(&reported,1,__ATOMIC_RELAXED)<3)
-                fprintf(stderr,"Pong UI18: SystemStatusUI selected native Pong clock/battery layout\n");
+                fprintf(stderr,"Diting UI18: SystemStatusUI selected native Diting clock/battery layout\n");
             return stui_provider;
         }
     }
@@ -1119,7 +1119,7 @@ static void stui_phone_image(const struct mach_header *header,intptr_t slide)
     Ivar ivar=cls?class_getInstanceVariable(cls,"_visualProvider"):NULL;
     if(!base || !method_abi(prepare,"v",0,"") || !method_abi(reset,"v",0,"") ||
        !method_abi(set,"v",1,"#") || !ivar || ivar_getTypeEncoding(ivar)[0]!='@')return;
-    Class provider=objc_allocateClassPair(base,"PongSystemStatus18Phone1080",0);
+    Class provider=objc_allocateClassPair(base,"DitingSystemStatus18Phone1080",0);
     if(!provider)return;
     if(!class_addMethod(object_getClass((id)provider),sel_registerName("referenceScreenScale"),(IMP)phone_reference_scale,"d16@0:8")) {
         objc_disposeClassPair(provider);return;
@@ -1222,7 +1222,7 @@ static void wake_home(void *unused)
         CGRect logical=((CGRect(*)(id,SEL))objc_msgSend)(screen,sel_registerName("bounds"));
         double scale=((double(*)(id,SEL))objc_msgSend)(screen,sel_registerName("scale"));
         double nativeScale=((double(*)(id,SEL))objc_msgSend)(screen,sel_registerName("nativeScale"));
-        fprintf(stderr,"Pong UI18: screen native=%.0fx%.0f logical=%.2fx%.2f scale=%.2f nativeScale=%.2f\n",
+        fprintf(stderr,"Diting UI18: screen native=%.0fx%.0f logical=%.2fx%.2f scale=%.2f nativeScale=%.2f\n",
             native.size.width,native.size.height,logical.size.width,logical.size.height,scale,nativeScale);
     }
     id backlight=singleton("SBBacklightController"),lock=singleton("SBLockScreenManager");
@@ -1237,9 +1237,9 @@ static void wake_home(void *unused)
        ((BOOL(*)(id,SEL))objc_msgSend)(lock,locked) &&
        method_abi(class_getInstanceMethod(object_getClass(lock),unlock),"Bc",2,"i@")) {
         BOOL accepted=((BOOL(*)(id,SEL,int,id))objc_msgSend)(lock,unlock,24,nil);
-        fprintf(stderr,"Pong UI18: native home request accepted=%d\n",accepted);
+        fprintf(stderr,"Diting UI18: native home request accepted=%d\n",accepted);
     }
-    fprintf(stderr,"Pong UI18: main queue wake completed backlight=%d lockscreen=%d\n",backlight!=nil,lock!=nil);
+    fprintf(stderr,"Diting UI18: main queue wake completed backlight=%d lockscreen=%d\n",backlight!=nil,lock!=nil);
 }
 
 static bool own_directory(const char *path)
@@ -1274,17 +1274,17 @@ static void pluginkit_directory(void)
     pluginkit_directory_attempted=true;
     const char *home=uid==0?"/private/var/root/Library":"/private/var/mobile/Library";
     char parent[128],path[160];
-    snprintf(parent,sizeof(parent),"%s/Pong",home);
+    snprintf(parent,sizeof(parent),"%s/Diting",home);
     snprintf(path,sizeof(path),"%s/PlugInKit",parent);
     if(!own_directory(home) || !own_directory(parent) || !own_directory(path)) {
-        fprintf(stderr,"Pong PK18: annotation directory unavailable uid=%u errno=%d\n",uid,errno);
+        fprintf(stderr,"Diting PK18: annotation directory unavailable uid=%u errno=%d\n",uid,errno);
         return;
     }
     pluginkit_container=CFURLCreateFromFileSystemRepresentation(NULL,
         (const UInt8 *)path,strlen(path),true);
     if(!pluginkit_container)return;
     method_setImplementation(method,(IMP)plugin_state_container);
-    fprintf(stderr,"Pong PK18: native annotations use %s uid=%u\n",path,uid);
+    fprintf(stderr,"Diting PK18: native annotations use %s uid=%u\n",path,uid);
 }
 
 /* 22H374 InstalledContentLibrary's daemonUserDataLibraryDirectory queries
@@ -1308,7 +1308,7 @@ static void installd_directory(void)
         "/private/var/installd/Library/Caches"};
     for(unsigned i=0;i<sizeof(dirs)/sizeof(dirs[0]);i++) {
         if(!own_directory(dirs[i])) {
-            fprintf(stderr,"Pong MI18: daemon directory unavailable %s errno=%d\n",dirs[i],errno);
+            fprintf(stderr,"Diting MI18: daemon directory unavailable %s errno=%d\n",dirs[i],errno);
             return;
         }
     }
@@ -1317,7 +1317,7 @@ static void installd_directory(void)
     if(!installd_library)return;
     method_setImplementation(method,(IMP)installation_library);
     installd_directory_installed=true;
-    fprintf(stderr,"Pong MI18: native installd uses writable _installd Library\n");
+    fprintf(stderr,"Diting MI18: native installd uses writable _installd Library\n");
 }
 
 static id ls_directory(id self,SEL selector)
@@ -1348,20 +1348,20 @@ static void launchservices_directories(void)
         if(!method_abi(methods[i],"@",0,""))return;
     }
     const char *dirs[]={
-        "/private/var/mobile/Library/Pong",
-        "/private/var/mobile/Library/Pong/LaunchServices",
-        "/private/var/mobile/Library/Pong/LaunchServices/Library",
-        "/private/var/mobile/Library/Pong/LaunchServices/Library/Caches",
-        "/private/var/mobile/Library/Pong/LaunchServices/User",
-        "/private/var/mobile/Library/Pong/LaunchServices/User/Library",
-        "/private/var/mobile/Library/Pong/LaunchServices/User/Library/Caches",
-        "/private/var/mobile/Library/Pong/LaunchServices/Shared",
-        "/private/var/mobile/Library/Pong/LaunchServices/Shared/Library",
-        "/private/var/mobile/Library/Pong/LaunchServices/Shared/Library/Caches"
+        "/private/var/mobile/Library/Diting",
+        "/private/var/mobile/Library/Diting/LaunchServices",
+        "/private/var/mobile/Library/Diting/LaunchServices/Library",
+        "/private/var/mobile/Library/Diting/LaunchServices/Library/Caches",
+        "/private/var/mobile/Library/Diting/LaunchServices/User",
+        "/private/var/mobile/Library/Diting/LaunchServices/User/Library",
+        "/private/var/mobile/Library/Diting/LaunchServices/User/Library/Caches",
+        "/private/var/mobile/Library/Diting/LaunchServices/Shared",
+        "/private/var/mobile/Library/Diting/LaunchServices/Shared/Library",
+        "/private/var/mobile/Library/Diting/LaunchServices/Shared/Library/Caches"
     };
     for(unsigned i=0;i<sizeof(dirs)/sizeof(dirs[0]);i++) {
         if(!own_directory(dirs[i])) {
-            fprintf(stderr,"Pong LS18: writable directory unavailable %s errno=%d\n",dirs[i],errno);
+            fprintf(stderr,"Diting LS18: writable directory unavailable %s errno=%d\n",dirs[i],errno);
             return;
         }
     }
@@ -1377,7 +1377,7 @@ static void launchservices_directories(void)
     ls_base=urls[0];ls_system=urls[1];ls_user=urls[2];ls_shared=urls[3];
     for(unsigned i=0;i<4;i++)method_setImplementation(methods[i],(IMP)ls_directory);
     launchservices_installed=true;
-    fprintf(stderr,"Pong LS18: native lsd database uses writable single-user paths\n");
+    fprintf(stderr,"Diting LS18: native lsd database uses writable single-user paths\n");
 }
 
 /* Keep the real fatal signal. Retain bounded frames because ReportCrash's
@@ -1388,7 +1388,7 @@ static void lsd_abort(int number,siginfo_t *info,void *saved)
     ucontext_t *context=saved;
     char line[160];uint64_t fp=0;
     if(context && context->uc_mcontext) {
-        int n=snprintf(line,sizeof(line),"Pong LS18: fatal signal=%d pc=%llx lr=%llx\n",
+        int n=snprintf(line,sizeof(line),"Diting LS18: fatal signal=%d pc=%llx lr=%llx\n",
             number,(unsigned long long)context->uc_mcontext->__ss.__pc,
             (unsigned long long)context->uc_mcontext->__ss.__lr);
         if(n>0)(void)write(2,line,(size_t)n<sizeof(line)?(size_t)n:sizeof(line)-1);
@@ -1398,7 +1398,7 @@ static void lsd_abort(int number,siginfo_t *info,void *saved)
         uint64_t frame[2];vm_size_t size=0;
         if(vm_read_overwrite(mach_task_self(),(vm_address_t)fp,sizeof(frame),
             (vm_address_t)frame,&size)!=KERN_SUCCESS || size!=sizeof(frame))break;
-        int n=snprintf(line,sizeof(line),"Pong LS18: fatal frame[%u]=%llx\n",i,(unsigned long long)frame[1]);
+        int n=snprintf(line,sizeof(line),"Diting LS18: fatal frame[%u]=%llx\n",i,(unsigned long long)frame[1]);
         if(n>0)(void)write(2,line,(size_t)n<sizeof(line)?(size_t)n:sizeof(line)-1);
         if(frame[0]<=fp || frame[0]-fp>0x100000)break;
         fp=frame[0];
@@ -1418,7 +1418,7 @@ static IMP poster_base_original,poster_store_original;
 static IMP poster_database_original;
 static IMP poster_resource_original,poster_resource_tree_original,poster_resource_update_original;
 
-/* The Pong Data volume is ordinary unencrypted APFS. Its real inode class
+/* The Diting Data volume is ordinary unencrypted APFS. Its real inode class
  * is 0 and it does not advertise MNT_CPROTECT. It cannot persist a class-D
  * encryption policy. Adapt PosterBoard's expected attributes to that volume
  * capability instead of claiming a successful protection class transition.
@@ -1431,7 +1431,7 @@ static bool poster_unprotected_data(id url)
     const char *p=(const char *)path;
     const char *roots[]={"/private/var/mobile/Library/Application Support/PRBPosterExtensionDataStore",
         "/var/mobile/Library/Application Support/PRBPosterExtensionDataStore",
-        "/private/var/mobile/Library/Pong/PosterBoard", "/var/mobile/Library/Pong/PosterBoard"};
+        "/private/var/mobile/Library/Diting/PosterBoard", "/var/mobile/Library/Diting/PosterBoard"};
     bool scoped=false;
     for(unsigned i=0;i<sizeof(roots)/sizeof(roots[0]);i++) {
         size_t n=strlen(roots[i]);
@@ -1454,7 +1454,7 @@ static CFMutableDictionaryRef poster_volume_resources(id url,id resources)
     if(actual)CFDictionaryRemoveValue(actual,*key);
     static unsigned reported;
     if(actual && __atomic_fetch_add(&reported,1,__ATOMIC_RELAXED)<3)
-        fprintf(stderr,"Pong Poster18: native resource validation uses unencrypted Data capabilities\n");
+        fprintf(stderr,"Diting Poster18: native resource validation uses unencrypted Data capabilities\n");
     return actual;
 }
 static BOOL poster_resource_values(id self,SEL selector,id values,id *error)
@@ -1503,9 +1503,9 @@ static id poster_database(id self,SEL selector,id url,unsigned long long options
     if(options==1 && url && CFURLGetFileSystemRepresentation((CFURLRef)url,true,path,sizeof(path))) {
         const char *p=(const char *)path;
         const char *native="/private/var/mobile/Library/Application Support/PRBPosterExtensionDataStore/";
-        const char *port="/private/var/mobile/Library/Pong/PosterBoard/";
+        const char *port="/private/var/mobile/Library/Diting/PosterBoard/";
         const char *native_alias="/var/mobile/Library/Application Support/PRBPosterExtensionDataStore/";
-        const char *port_alias="/var/mobile/Library/Pong/PosterBoard/";
+        const char *port_alias="/var/mobile/Library/Diting/PosterBoard/";
         bool own_path=!strncmp(p,native,strlen(native)) || !strncmp(p,port,strlen(port)) ||
             !strncmp(p,native_alias,strlen(native_alias)) || !strncmp(p,port_alias,strlen(port_alias));
         struct stat st;
@@ -1514,7 +1514,7 @@ static id poster_database(id self,SEL selector,id url,unsigned long long options
             char *slash=strrchr(parent,'/');if(slash)*slash=0;
             if(slash && lstat(parent,&st)==0 && S_ISDIR(st.st_mode) && st.st_uid==geteuid()) {
                 options|=8;
-                fprintf(stderr,"Pong Poster18: initialize absent database with native schema %s\n",p);
+                fprintf(stderr,"Diting Poster18: initialize absent database with native schema %s\n",p);
             }
         }
     }
@@ -1522,7 +1522,7 @@ static id poster_database(id self,SEL selector,id url,unsigned long long options
     if(!result) {
         id text=error && *error?((id(*)(id,SEL))objc_msgSend)(*error,sel_registerName("description")):nil;
         char detail[768]={0};if(text)CFStringGetCString((CFStringRef)text,detail,sizeof(detail),kCFStringEncodingUTF8);
-        fprintf(stderr,"Pong Poster18: native database initialization failed: %s errno=%d\n",detail,errno);
+        fprintf(stderr,"Diting Poster18: native database initialization failed: %s errno=%d\n",detail,errno);
     }
     return result;
 }
@@ -1539,7 +1539,7 @@ static void poster_directory_protection(id url)
     const char *p=(const char *)path;
     const char *roots[]={"/private/var/mobile/Library/Application Support/PRBPosterExtensionDataStore",
         "/var/mobile/Library/Application Support/PRBPosterExtensionDataStore",
-        "/private/var/mobile/Library/Pong/PosterBoard/", "/var/mobile/Library/Pong/PosterBoard/"};
+        "/private/var/mobile/Library/Diting/PosterBoard/", "/var/mobile/Library/Diting/PosterBoard/"};
     bool owned=false;for(unsigned i=0;i<sizeof(roots)/sizeof(roots[0]);i++) {
         size_t n=strlen(roots[i]);
         if(!strncmp(p,roots[i],n) && (roots[i][n-1]=='/' || !p[n] || p[n]=='/'))owned=true;
@@ -1583,7 +1583,7 @@ static void poster_directory_protection(id url)
                 if(text)CFStringGetCString((CFStringRef)text,detail,sizeof(detail),kCFStringEncodingUTF8);
                 static unsigned reported;
                 if(!applied || __atomic_fetch_add(&reported,1,__ATOMIC_RELAXED)<8)
-                    fprintf(stderr,"Pong Poster18: native directory protection %s %s %s\n",applied?"set":"failed",target,detail);
+                    fprintf(stderr,"Diting Poster18: native directory protection %s %s %s\n",applied?"set":"failed",target,detail);
             }
         }
         CFRelease(directory);
@@ -1599,10 +1599,10 @@ static void poster_base_directory_protection(id base)
     const char *p=(const char *)path;
     const char *allowed[]={"/private/var/mobile/Library/Application Support",
         "/var/mobile/Library/Application Support",
-        "/private/var/mobile/Library/Pong/PosterBoard/Shared",
-        "/private/var/mobile/Library/Pong/PosterBoard/Legacy",
-        "/var/mobile/Library/Pong/PosterBoard/Shared",
-        "/var/mobile/Library/Pong/PosterBoard/Legacy"};
+        "/private/var/mobile/Library/Diting/PosterBoard/Shared",
+        "/private/var/mobile/Library/Diting/PosterBoard/Legacy",
+        "/var/mobile/Library/Diting/PosterBoard/Shared",
+        "/var/mobile/Library/Diting/PosterBoard/Legacy"};
     bool owned=false;
     for(unsigned i=0;i<sizeof(allowed)/sizeof(allowed[0]);i++)
         if(!strcmp(p,allowed[i]))owned=true;
@@ -1634,7 +1634,7 @@ static id poster_store(id self,SEL selector)
         id description=error?((id(*)(id,SEL))objc_msgSend)(error,sel_registerName("description")):nil;
         char detail[768]={0};
         if(description)CFStringGetCString((CFStringRef)description,detail,sizeof(detail),kCFStringEncodingUTF8);
-        fprintf(stderr,"Pong Poster18: native DataStore unavailable: %s\n",detail);
+        fprintf(stderr,"Diting Poster18: native DataStore unavailable: %s\n",detail);
         if(poster_log>=0){(void)write(poster_log,detail,strlen(detail));(void)write(poster_log,"\n",1);}
     }
     return store;
@@ -1655,10 +1655,10 @@ static void poster_image(const struct mach_header *header,intptr_t slide)
     Method error=cls?class_getInstanceMethod(cls,sel_registerName("_dataStoreWithError:")):NULL;
     if(!method_abi(base,"@",1,"B") || !method_abi(store,"@",0,"") ||
        !method_abi(error,"@",1,"^"))return;
-    const char *parent="/private/var/mobile/Library/Pong";
-    const char *path="/private/var/mobile/Library/Pong/PosterBoard";
-    const char *shared="/private/var/mobile/Library/Pong/PosterBoard/Shared";
-    const char *legacy="/private/var/mobile/Library/Pong/PosterBoard/Legacy";
+    const char *parent="/private/var/mobile/Library/Diting";
+    const char *path="/private/var/mobile/Library/Diting/PosterBoard";
+    const char *shared="/private/var/mobile/Library/Diting/PosterBoard/Shared";
+    const char *legacy="/private/var/mobile/Library/Diting/PosterBoard/Legacy";
     if(!own_directory(parent) || !own_directory(path) ||
        !own_directory(shared) || !own_directory(legacy))return;
     // Native migration compares the old per-user and new shared locations;
@@ -1675,14 +1675,14 @@ static void poster_image(const struct mach_header *header,intptr_t slide)
     }
     poster_directory_installed=true;
     container_persona_policy();
-    fprintf(stderr,"Pong Poster18: native DataStore fallback uses writable %s\n",path);
+    fprintf(stderr,"Diting Poster18: native DataStore fallback uses writable %s\n",path);
 }
 static void poster_fatal(int number,siginfo_t *info,void *saved)
 {
     (void)info;ucontext_t *context=saved;
     char line[176];uint64_t fp=0;
     if(context && context->uc_mcontext) {
-        int n=snprintf(line,sizeof(line),"Pong Poster18: fatal=%d pc=%llx lr=%llx\n",number,
+        int n=snprintf(line,sizeof(line),"Diting Poster18: fatal=%d pc=%llx lr=%llx\n",number,
             (unsigned long long)context->uc_mcontext->__ss.__pc,
             (unsigned long long)context->uc_mcontext->__ss.__lr);
         if(n>0 && n<(int)sizeof(line)){(void)write(2,line,(size_t)n);if(poster_log>=0)(void)write(poster_log,line,(size_t)n);}
@@ -1691,7 +1691,7 @@ static void poster_fatal(int number,siginfo_t *info,void *saved)
     for(unsigned i=0;i<12 && fp>=0x100000000ULL && !(fp&15);i++) {
         uint64_t frame[2];vm_size_t bytes=0;
         if(vm_read_overwrite(mach_task_self(),(vm_address_t)fp,sizeof(frame),(vm_address_t)frame,&bytes)!=KERN_SUCCESS || bytes!=sizeof(frame))break;
-        int n=snprintf(line,sizeof(line),"Pong Poster18: frame[%u]=%llx\n",i,(unsigned long long)frame[1]);
+        int n=snprintf(line,sizeof(line),"Diting Poster18: frame[%u]=%llx\n",i,(unsigned long long)frame[1]);
         if(n>0 && n<(int)sizeof(line)){(void)write(2,line,(size_t)n);if(poster_log>=0)(void)write(poster_log,line,(size_t)n);}
         if(frame[0]<=fp || frame[0]-fp>0x100000)break;
         fp=frame[0];
@@ -1701,10 +1701,10 @@ static void poster_fatal(int number,siginfo_t *info,void *saved)
 }
 static void poster_fatal_capture(void)
 {
-    poster_log=open("/private/var/mobile/Library/Logs/Pong-Poster18.log",O_WRONLY|O_CREAT|O_APPEND,0644);
+    poster_log=open("/private/var/mobile/Library/Logs/Diting-Poster18.log",O_WRONLY|O_CREAT|O_APPEND,0644);
     Dl_info image={0};
     if(dladdr((const void *)objc_msgSend,&image)) {
-        char line[192];int n=snprintf(line,sizeof(line),"Pong Poster18: pid=%d libobjc base=%p\n",getpid(),image.dli_fbase);
+        char line[192];int n=snprintf(line,sizeof(line),"Diting Poster18: pid=%d libobjc base=%p\n",getpid(),image.dli_fbase);
         if(n>0 && n<(int)sizeof(line) && poster_log>=0)(void)write(poster_log,line,(size_t)n);
     }
     struct sigaction action={0};action.sa_sigaction=poster_fatal;
@@ -1730,7 +1730,7 @@ static void context_motion_image(const struct mach_header *header,intptr_t slide
     if(!method_abi(method,"Bc",0,""))return;
     method_setImplementation(method,(IMP)context_activity_unavailable);
     context_motion_installed=true;
-    fprintf(stderr,"Pong context18: activity hardware unavailable; native motion monitor remains inactive\n");
+    fprintf(stderr,"Diting context18: activity hardware unavailable; native motion monitor remains inactive\n");
 }
 
 /* The 22H374 SBRendererService aborts in NUDevice_iOS when CoreImage
@@ -1821,19 +1821,19 @@ static void backboard_container(void)
     bool valid=root_type && lib_type && root_type[0]=='@' && lib_type[0]=='@';
     free(root_type);free(lib_type);
     if(!valid)return;
-    const char *base="/private/var/mobile/Library/Pong";
-    const char *path="/private/var/mobile/Library/Pong/backboardd";
-    const char *library="/private/var/mobile/Library/Pong/backboardd/Library";
+    const char *base="/private/var/mobile/Library/Diting";
+    const char *path="/private/var/mobile/Library/Diting/backboardd";
+    const char *library="/private/var/mobile/Library/Diting/backboardd/Library";
     if(!own_directory(base) || !own_directory(path) || !own_directory(library) ||
-       !own_directory("/private/var/mobile/Library/Pong/backboardd/Library/Caches")) {
-        fprintf(stderr,"Pong UI18: backboardd Data directories unavailable errno=%d\n",errno);return;
+       !own_directory("/private/var/mobile/Library/Diting/backboardd/Library/Caches")) {
+        fprintf(stderr,"Diting UI18: backboardd Data directories unavailable errno=%d\n",errno);return;
     }
     container_root=CFURLCreateFromFileSystemRepresentation(NULL,(const UInt8 *)path,strlen(path),true);
     container_library=CFURLCreateFromFileSystemRepresentation(NULL,(const UInt8 *)library,strlen(library),true);
     if(!container_root || !container_library)return;
     class_replaceMethod(cls,root_sel,(IMP)process_root,method_getTypeEncoding(root));
     class_replaceMethod(cls,lib_sel,(IMP)process_library,method_getTypeEncoding(lib));
-    fprintf(stderr,"Pong UI18: backboardd container uses writable %s\n",path);
+    fprintf(stderr,"Diting UI18: backboardd container uses writable %s\n",path);
 }
 
 /* Sileo is a no-container system app. Resolve its real mobile directories before
@@ -1866,7 +1866,7 @@ static BOOL sileo_mkdir(id self,SEL selector,id url,BOOL parents,id attributes,i
     BOOL result=((BOOL(*)(id,SEL,id,BOOL,id,id *))sileo_mkdir_original)(self,selector,url,parents,
         sanitized?(id)sanitized:attributes,error);
     if(sanitized)CFRelease(sanitized);
-    if(!result)fprintf(stderr,"Pong Sileo: directory create failed: %s\n",url?(const char *)path:"(nil)");
+    if(!result)fprintf(stderr,"Diting Sileo: directory create failed: %s\n",url?(const char *)path:"(nil)");
     return result;
 }
 static void sileo_directories(void)
@@ -1881,7 +1881,7 @@ static void sileo_directories(void)
         sileo_urls_original=method_getImplementation(um);sileo_mkdir_original=method_getImplementation(dm);
         class_replaceMethod(cls,urls,(IMP)sileo_urls,method_getTypeEncoding(um));
         class_replaceMethod(cls,mkdir,(IMP)sileo_mkdir,method_getTypeEncoding(dm));
-        fprintf(stderr,"Pong Sileo: writable mobile database directories selected\n");
+        fprintf(stderr,"Diting Sileo: writable mobile database directories selected\n");
     }
 }
 
@@ -1924,14 +1924,14 @@ static void keyboard_defaults(void)
     Boolean saved=CFPreferencesSynchronize(kCFPreferencesAnyApplication,
         kCFPreferencesCurrentUser,kCFPreferencesAnyHost);
     CFRelease(list);
-    fprintf(stderr,"Pong keyboard: native Pinyin/English/emoji defaults saved=%u\n",saved);
+    fprintf(stderr,"Diting keyboard: native Pinyin/English/emoji defaults saved=%u\n",saved);
 }
 
 static bool keyboard_native_scheduled;
 static bool keyboard_phone_installed;
 static void keyboard_retire_old_images(void)
 {
-    const char *marker="/private/var/mobile/Library/Caches/.pong-keyboard-phone152";
+    const char *marker="/private/var/mobile/Library/Caches/.diting-keyboard-phone152";
     struct stat st={0};if(lstat(marker,&st)==0)return;
     // Only rendered key images are disposable. Do not touch learned words,
     // replacements, input modes or the keyboard dictionaries/databases.
@@ -1965,7 +1965,7 @@ static void keyboard_phone_image(const struct mach_header *header,intptr_t slide
     // Use UIKit's phone layout/resources, not a coordinate/123-key emulation.
     method_setImplementation(method,(IMP)keyboard_phone_idiom);
     keyboard_phone_installed=true;
-    fprintf(stderr,"Pong keyboard: InputUI native phone idiom selected\n");
+    fprintf(stderr,"Diting keyboard: InputUI native phone idiom selected\n");
 }
 static void keyboard_native_refresh(void *unused)
 {
@@ -1990,7 +1990,7 @@ static void keyboard_native_refresh(void *unused)
         ((void(*)(id,SEL,BOOL))objc_msgSend)(prefs,shown,YES);
         if(method_abi(class_getInstanceMethod(cls,sync),"v",0,""))
             ((void(*)(id,SEL))objc_msgSend)(prefs,sync);
-        fprintf(stderr,"Pong keyboard: native TextInput modes refreshed count=%ld; touch keyboard enabled\n",(long)CFArrayGetCount(list));
+        fprintf(stderr,"Diting keyboard: native TextInput modes refreshed count=%ld; touch keyboard enabled\n",(long)CFArrayGetCount(list));
     }
     CFRelease(list);
 }
@@ -2003,7 +2003,7 @@ static void keyboard_native_image(const struct mach_header *header,intptr_t slid
     dispatch_after_f(dispatch_time(DISPATCH_TIME_NOW,2*NSEC_PER_SEC),dispatch_get_main_queue(),NULL,keyboard_native_refresh);
 }
 
-__attribute__((constructor)) static void pong_ui18_start(void)
+__attribute__((constructor)) static void diting_ui18_start(void)
 {
     const char *name=getprogname();
     if(!name)return;
@@ -2017,7 +2017,7 @@ __attribute__((constructor)) static void pong_ui18_start(void)
     if(!strcmp(name,"SpringBoard")) {
         keyboard_retire_old_images();
         keyboard_defaults();_dyld_register_func_for_add_image(keyboard_native_image);
-        pong_audio_volume18_start();
+        diting_audio_volume18_start();
     }
     phone_ui_process=!strcmp(name,"Preferences") || !strcmp(name,"SpringBoard") || !strcmp(name,"MobilePhone");
     // Install the capability answer before status-provider +initialize can
@@ -2033,11 +2033,11 @@ __attribute__((constructor)) static void pong_ui18_start(void)
     wallpaper_paths_process=phone_ui_process || !strcmp(name,"PosterBoard") ||
         !strcmp(name,"CollectionsPoster") || !strcmp(name,"LegacyPoster") ||
         !strcmp(name,"WallpaperSettingsIntents");
-    wallpaper_process=boot_option("pong_wallpaper_catalog_override=1") && wallpaper_paths_process;
+    wallpaper_process=boot_option("diting_wallpaper_catalog_override=1") && wallpaper_paths_process;
     (void)dup2(2,1);setvbuf(stdout,NULL,_IONBF,0);setvbuf(stderr,NULL,_IONBF,0);
-    fprintf(stderr,"Pong iPadOS18 adapter: %s (22H374)\n",name);
+    fprintf(stderr,"Diting iPadOS18 adapter: %s (22H374)\n",name);
     if(!strcmp(name,"wifid")) {
-        if(boot_option("pong_boot_snapshot=1"))pong_boot_snapshot_start(name);
+        if(boot_option("diting_boot_snapshot=1"))diting_boot_snapshot_start(name);
         return;
     }
     if(!strcmp(name,"PowerUIAgent")) {
@@ -2050,18 +2050,18 @@ __attribute__((constructor)) static void pong_ui18_start(void)
         _dyld_register_func_for_add_image(context_motion_image);
         return;
     }
-    if(strcmp(name,"Preferences")==0)pong_settings18_start();
+    if(strcmp(name,"Preferences")==0)diting_settings18_start();
     // Keep SpringBoard/compositor adapters out of the poster renderer.
     // Only its native storage path and single-user identity are adapted.
     if(!strcmp(name,"PosterBoard")){
         _dyld_register_func_for_add_image(poster_ci_image);
         poster_fatal_capture();_dyld_register_func_for_add_image(poster_image);
-        if(boot_option("pong_poster_snapshot=1"))pong_boot_snapshot_start(name);
+        if(boot_option("diting_poster_snapshot=1"))diting_boot_snapshot_start(name);
         return;
     }
     if(strcmp(name,"runningboardd")==0) {
         _dyld_register_func_for_add_image(poster_jetsam_image);
-        if(boot_option("pong_boot_snapshot=1"))pong_boot_snapshot_start(name);
+        if(boot_option("diting_boot_snapshot=1"))diting_boot_snapshot_start(name);
         return;
     }
     installd_process=strcmp(name,"installd")==0;
@@ -2079,17 +2079,17 @@ __attribute__((constructor)) static void pong_ui18_start(void)
     if(strcmp(name,"SpringBoard")==0) {
         springboard_process=true;
         // Physical volume keys stay on the native HID/system event route.
-        skip_setup=boot_option("pong_skip_setup=1");
+        skip_setup=boot_option("diting_skip_setup=1");
         CFPreferencesSetAppValue(CFSTR("SBDisableAutoDim"),kCFBooleanTrue,kCFPreferencesCurrentApplication);
         dispatch_after_f(dispatch_time(DISPATCH_TIME_NOW,10*NSEC_PER_SEC),dispatch_get_main_queue(),NULL,wake_home);
     }
     if(strcmp(name,"backboardd")==0) {
-        software_composition=boot_option("pong_ui_software=1");
+        software_composition=boot_option("diting_ui_software=1");
         scanout_format=true;
         backboard_container();
         _dyld_register_func_for_add_image(brightness18_image);
-        pong_touch_start();
+        diting_touch_start();
     }
     _dyld_register_func_for_add_image(compositor_image);
-    if(boot_option("pong_boot_snapshot=1"))pong_boot_snapshot_start(name);
+    if(boot_option("diting_boot_snapshot=1"))diting_boot_snapshot_start(name);
 }

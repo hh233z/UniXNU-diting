@@ -8,7 +8,7 @@ soc_source = "sm8475"
 # UniXNU checkout before resolving (scripts/install-device-profile.py), because
 # UniXNU/profiles/os/ has no 18.x profile yet.
 os_profile = "ipados-18.7.10-22H374"
-description = "Redmi K50 Ultra (diting/SM8475): UniXNU bring-up from the Pong baseline"
+description = "Redmi K50 Ultra (diting/SM8475): UniXNU bring-up from the Diting baseline"
 kit = "diting"
 
 # iPadOS 18.7.10 restore selected from the matching J171 BuildIdentity.
@@ -23,7 +23,7 @@ board_id = 0x1c
 fetch = ["KernelCache", "DeviceTree", "StaticTrustCache", "Cryptex1,SystemOS", "Cryptex1,SystemTrustCache", "Cryptex1,AppOS", "Cryptex1,AppTrustCache", "OS"]
 
 [components]
-# This is the community Pong A730/QCA6490/Darwin24 implementation, not the A740/WCN7850 source.
+# This is the community Diting A730/QCA6490/Darwin24 implementation, not the A740/WCN7850 source.
 # The kit lives in this repository at kits/DitingPlatform24 and declares no archive recipe: the
 # kernel step of this board builds the aggregate itself, see [kernel] below.
 include = ["DitingPlatform24", "XnuPrelink"]
@@ -59,9 +59,9 @@ slide = "0x5ed0000"
 roots = ["com.apple.kec.corecrypto", "com.apple.kec.pthread", "com.apple.filesystems.apfs",
          "com.apple.kec.Compression", "com.apple.AppleFSCompression.AppleFSCompressionTypeZlib"]
 [firmware]
-config = "pong"
-dsc = "Platforms/Nothing/pongPkg/pong.dsc"
-fd = "Build/pongPkg/{target}_CLANGPDB/FV/SILICIUM_UEFI.fd"
+config = "diting"
+dsc = "Platforms/Nothing/ditingPkg/diting.dsc"
+fd = "Build/ditingPkg/{target}_CLANGPDB/FV/SILICIUM_UEFI.fd"
 # Runs in the build tree before the firmware build and writes the device tree the boot image
 # carries; [bootimg] dtb names the same path.
 preflight = ["scripts/build-diting-hardware-dtb.py"]
@@ -104,7 +104,7 @@ tools = true
 # The boot menu entry the firmware's DarwinBoot lists first, and the volume label of payload.img.
 title = "Diting iPadOS 18.7.10"
 volume = "UNIXNU"
-# 96 MiB, the --fat-mib a local run packs: PongBootMemoryDxe refuses an initrd
+# 96 MiB, the --fat-mib a local run packs: DitingBootMemoryDxe refuses an initrd
 # above DITING_FAT_MAX_INITRD (128 MiB), and the 4096-byte PONGFAT1 header is
 # inside the payload image the package step repacks, so the volume stays well
 # below that bound.
@@ -117,44 +117,44 @@ kernel_args = [
   "-v",
   "keepsyms=1",
   "cpus=1",
-  "pong_allow_unauthenticated_root=1",
+  "diting_allow_unauthenticated_root=1",
   "cs_enforcement_disable=1",
   "cs_library_val_enable=0",
   "amfi_get_out_of_my_way=1",
   "-apfs_shared_datavolume",
   "debug=0x14e",
   "serial=0",
-  "pong_disable_swap=1",
-  "pong_skip_setup=1",
-  "pong_adsp=2",
-  "pong_audio=2",
-  "pong_ufs_readwrite=1",
+  "diting_disable_swap=1",
+  "diting_skip_setup=1",
+  "diting_adsp=2",
+  "diting_audio=2",
+  "diting_ufs_readwrite=1",
   # Temporary bring-up aid: on a UFS failure the driver logs the report and then holds the CPU,
   # so the panel keeps the failing line long enough to photograph. Remove once root mounts.
-  "pong_ufs_stall=1",
+  "diting_ufs_stall=1",
   "ignition_level=1",
   "dyld_flags=0x8",
   "launchd_rd=md0",
   "launchd_unsecure_cache=1",
-  "pong_init_trace=1",
-  "pong_exec_diag=1",
+  "diting_init_trace=1",
+  "diting_exec_diag=1",
   "applog=1",
   "applog_name=launchd,backboardd,SpringBoard,containermanagerd,lsd,runningboardd,logd_helper,powerd",
-  "pong_software_keybag=1",
-  "pong_display=1",
-  "pong_software_ui=1",
-  "pong_ui_software=1",
-  "pong_touch=1",
-  "pong_buttons=1",
-  "pong_build=ipados18-22H374",
-  "pong_gpu_scanout=1",
-  "pong_gpu_pool_mib=0",
-  "pong_metal_global=1",
-  "pong_gpu_lock_max=1",
-  "pong_usb=1",
-  "pong_usb_mux=1",
-  "pong_usb_iphone=1",
-  "pong_rootful=1",
+  "diting_software_keybag=1",
+  "diting_display=1",
+  "diting_software_ui=1",
+  "diting_ui_software=1",
+  "diting_touch=1",
+  "diting_buttons=1",
+  "diting_build=ipados18-22H374",
+  "diting_gpu_scanout=1",
+  "diting_gpu_pool_mib=0",
+  "diting_metal_global=1",
+  "diting_gpu_lock_max=1",
+  "diting_usb=1",
+  "diting_usb_mux=1",
+  "diting_usb_iphone=1",
+  "diting_rootful=1",
 ]
 
 [payload.adt]
@@ -178,7 +178,7 @@ chip_id = "0x8010"
 #   /sys/class/block/sda37/start = 24924160 (512-byte sectors) = 3115520 4K
 #   /sys/class/block/sda37/size  = 468930520 (512-byte sectors) = 58616315 4K
 #   240,092,426,240 bytes = 223.6 GiB; sda queue logical_block_size = 4096
-# The values this table carried before were inherited from the Pong baseline.
+# The values this table carried before were inherited from the Diting baseline.
 first_lba = 0x2F8A00
 last_lba = 0x3ADF3FA
 lba_bytes = 4096
@@ -197,14 +197,14 @@ unixnu = "../UniXNU"
 [bootimg]
 # Compiled by scripts/build-diting-hardware-dtb.py at the firmware preflight step, relative to the
 # build tree (docs/porting/packaging.md).
-dtb = "build/pong/pong.dtb"
+dtb = "build/diting/diting.dtb"
 
 [bootimg.image]
-# Resources/Configs/pong.toml in the firmware records the Android build system's v4, but unixnu
+# Resources/Configs/diting.toml in the firmware records the Android build system's v4, but unixnu
 # packs and verifies v0-v2 headers only: verify() reads header_version and pagesize at the v0/v1/v2
 # offsets and a v4 header carries them elsewhere. This header therefore describes boot/boot.img,
 # the spec product whose ramdisk is the bare payload.img. The flashable v4 image the firmware
-# accepts is boot/pong-xnu-initial.img, written by scripts/finalize-diting-adt.py with the same
+# accepts is boot/diting-xnu-initial.img, written by scripts/finalize-diting-adt.py with the same
 # container the local flow produces; see the payload section above.
 header_version = 0
 pagesize = 4096

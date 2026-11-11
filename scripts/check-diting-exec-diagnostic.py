@@ -87,7 +87,7 @@ def build_and_run(compiler, directory, name, code, diagnostic):
     return subprocess.check_output([str(exe), str(diagnostic)], text=True)
 
 
-with tempfile.TemporaryDirectory(prefix='pong-exec-test-') as temporary:
+with tempfile.TemporaryDirectory(prefix='diting-exec-test-') as temporary:
     tmp = Path(temporary)
     path = tmp / 'bsd/kern/kern_exec.c'
     path.parent.mkdir(parents=True)
@@ -108,7 +108,7 @@ with tempfile.TemporaryDirectory(prefix='pong-exec-test-') as temporary:
 int main(int argc, char **argv) {
     if (argc > 2) strcpy(caller.p_comm, "other");
 #ifdef WITH_DIAG
-    pong_exec_diag = (unsigned)(argv[1][0] == '1');
+    diting_exec_diag = (unsigned)(argv[1][0] == '1');
 #else
     (void)argv;
 #endif
@@ -149,7 +149,7 @@ int main(void) {
     struct image_params img = { .ip_vfs_context = &context }, *imgp = &img;
     struct action item = {2, {2, "/dev/null"}}, *psfa = &item;
     kauth_cred_t p_cred = &cred; void *ndp = NULL, *vap = NULL; int origfd = 0, error;
-    pong_exec_diag = 1;
+    diting_exec_diag = 1;
     if (strcmp(exec_applog_path(2, "/dev/null", O_RDWR), "/dev/null") != 0 ||
         strcmp(exec_applog_path(2, "/dev/null", O_WRONLY), "/dev/console") != 0 ||
         strcmp(exec_applog_path(0, "/dev/null", O_WRONLY), "/dev/null") != 0) return 1;
@@ -186,9 +186,9 @@ volatile int native_owner_data_status = 0, native_owner_data_stage = 4, native_o
 '''
     spawn_main = r'''
 int main(void) {
-    int error = EACCES; const char *pong_spawn_phase = "file-actions";
+    int error = EACCES; const char *diting_spawn_phase = "file-actions";
     struct posix_spawn_args args = {"/usr/libexec/timed"}, *uap = &args;
-    pong_exec_diag = 1;
+    diting_exec_diag = 1;
 '''+spawn_block+r'''
     printf("RESULT %d\n", error); return 0;
 }
@@ -214,7 +214,7 @@ static int mac_proc_check_launch_constraints(proc_t p, struct image_params *i, o
     signature_main = r'''
 int main(void) {
     struct image_params image = {.ip_csflags = 0x1234}, *imgp = &image; proc_t p = &caller;
-    os_reason_t signature_failure_reason = 0; int error = 0; scenario = EACCES; pong_exec_diag = 1;
+    os_reason_t signature_failure_reason = 0; int error = 0; scenario = EACCES; diting_exec_diag = 1;
     strcpy(caller.p_comm, "timed");
 '''+signature+r'''
 done:

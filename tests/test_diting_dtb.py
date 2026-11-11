@@ -18,7 +18,7 @@ class DitingDtbTests(unittest.TestCase):
                 cwd=work, env={**os.environ, "UNIXNU_DEVICE": str(DEVICE)},
                 check=True, capture_output=True, text=True,
             )
-            dtb = work / "build/pong/pong.dtb"
+            dtb = work / "build/diting/diting.dtb"
             expected = {
                 ("/soc/spi@990000", "reg"): "0 990000 0 4000",
                 ("/soc/qcom,mdss_mdp@ae00000", "reg"):
@@ -47,8 +47,8 @@ class DitingDtbTests(unittest.TestCase):
             target = firmware / "Platforms/Xiaomi/ditingPkg/FdtBlob"
             target.mkdir(parents=True)
             board = (DEVICE / "board.toml").read_text()
-            self.assertEqual(board.count('config = "pong"'), 1)
-            (device / "board.toml").write_text(board.replace('config = "pong"', 'config = "diting"'))
+            self.assertEqual(board.count('config = "diting"'), 1)
+            (device / "board.toml").write_text(board.replace('config = "diting"', 'config = "diting"'))
             (device / "feeds.toml").symlink_to(DEVICE / "feeds.toml")
             (device / "dts").symlink_to(DEVICE / "dts", target_is_directory=True)
             (device / "migration").symlink_to(DEVICE / "migration", target_is_directory=True)
@@ -57,7 +57,7 @@ class DitingDtbTests(unittest.TestCase):
                 cwd=work, env={**os.environ, "UNIXNU_DEVICE": str(device), "UNIXNU_UEFI": str(firmware)},
                 check=True, capture_output=True, text=True,
             )
-            self.assertEqual((work / "build/pong/pong.dtb").read_bytes(),
+            self.assertEqual((work / "build/diting/diting.dtb").read_bytes(),
                              (target / "sm8475-xiaomi-diting.dtb").read_bytes())
 
 

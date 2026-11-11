@@ -1,4 +1,4 @@
-"""Validate Pong loader inputs consumed by Darwin 22 and AppleImage4 5.0.0.
+"""Validate Diting loader inputs consumed by Darwin 22 and AppleImage4 5.0.0.
 
 Missing optional identity/fuse/manifest inputs must remain missing. A software
 loader cannot manufacture Apple hardware identity or prior-stage authorization.
@@ -83,7 +83,7 @@ def audit_adt(blob, *, require_manifest=True, boot_manifest=None):
     if packed_ramdisk != bool(ephemeral) or (packed_ramdisk and len(memory_map['PackedRAMDisk']) != 16):
         raise ValueError('PackedRAMDisk range and ephemeral-storage marker must appear together')
     if 'RAMDisk' in memory_map:
-        raise ValueError('Pong scratch Data uses the PackedRAMDisk contract only')
+        raise ValueError('Diting scratch Data uses the PackedRAMDisk contract only')
     if chosen.get('crypto-hash-method') != b'sha2-384\0':
         raise ValueError('Expected SHA-384 loader digest policy')
     width(manifest, 'BNCH', 48)
@@ -120,7 +120,7 @@ def audit_adt(blob, *, require_manifest=True, boot_manifest=None):
             raise ValueError('DT system-volume-auth-blob disagrees with boot manifest')
         if actual_auth_blob is not None and hashlib.sha256(actual_auth_blob).hexdigest() != expected_auth_blob:
             raise ValueError('DT system-volume-auth-blob hash differs from boot manifest')
-        dev_args = {'pong_allow_unauthenticated_root=1', 'cs_enforcement_disable=1',
+        dev_args = {'diting_allow_unauthenticated_root=1', 'cs_enforcement_disable=1',
                     'cs_library_val_enable=0'}
         if dev_args.intersection(description.get('boot_args', '').split()) and not debug:
             raise ValueError('Development security options require /chosen/debug-enabled=1')
@@ -160,7 +160,7 @@ def audit_adt(blob, *, require_manifest=True, boot_manifest=None):
                  path.rsplit('/', 1)[1].startswith('cpu') and
                  path.rsplit('/', 1)[1] != 'cpu-map']
     if cpu_paths != ['/cpus/cpu0']:
-        raise ValueError('Pong single-core ADT must expose only /cpus/cpu0')
+        raise ValueError('Diting single-core ADT must expose only /cpus/cpu0')
     cpu_phys_ids = set()
     boot_cpus = 0
     for path in cpu_paths:
@@ -168,15 +168,15 @@ def audit_adt(blob, *, require_manifest=True, boot_manifest=None):
         width(cpu, 'reg', 4)
         width(cpu, 'timebase-frequency', 4)
         if struct.unpack('<I', cpu['timebase-frequency'])[0] != 19200000:
-            raise ValueError('Pong CNTV frequency must come from the SM8475 DT')
+            raise ValueError('Diting CNTV frequency must come from the SM8475 DT')
         phys_id = struct.unpack('<I', cpu['reg'])[0]
         if phys_id in cpu_phys_ids:
-            raise ValueError('Duplicate Pong MPIDR affinity in /cpus')
+            raise ValueError('Duplicate Diting MPIDR affinity in /cpus')
         cpu_phys_ids.add(phys_id)
         if cpu.get('state') == b'running\0':
             boot_cpus += 1
     if boot_cpus != 1 or struct.unpack('<I', nodes['/cpus/cpu0']['reg'])[0] != 0:
-        raise ValueError('Pong ADT must mark CPU0 as its unique running boot CPU')
+        raise ValueError('Diting ADT must mark CPU0 as its unique running boot CPU')
     return {'status': 'PASS', 'nodes': len(nodes),
             'adt_sha256': hashlib.sha256(blob).hexdigest(),
             'nonce_digest_bytes': 48, 'nonce_scope': 'development image',
@@ -192,4 +192,4 @@ def audit_adt(blob, *, require_manifest=True, boot_manifest=None):
             'checks': ['ADT structure', 'Image4 mandatory inputs',
                        'optional getter buffer widths', 'root match XML/UUID',
                        'AMFI policy cell', '20G81 SystemVolume auth blob',
-                       'DRAM cell widths', 'Pong timer cell', 'ephemeral Data RAMDisk range']}
+                       'DRAM cell widths', 'Diting timer cell', 'ephemeral Data RAMDisk range']}

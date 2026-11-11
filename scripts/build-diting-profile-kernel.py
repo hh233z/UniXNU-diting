@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Compile the community Pong Darwin24 aggregate with resolved format2 inputs."""
+"""Compile the community Diting Darwin24 aggregate with resolved format2 inputs."""
 import argparse
 import json
 from pathlib import Path
@@ -17,7 +17,7 @@ def main():
     p.add_argument('--jobs', type=int, default=4)
     a = p.parse_args(); source = a.source.resolve()
     local = source / 'local.toml'
-    opts = tomllib.loads(local.read_text()).get('pong_build', {}) if local.exists() else {}
+    opts = tomllib.loads(local.read_text()).get('diting_build', {}) if local.exists() else {}
     command = [sys.executable, str(source / 'scripts/build-ipados18-diting-macos.py'),
                '--artifact-dir', str(a.artifact_dir.resolve()), '--jobs', str(a.jobs), '--skip-image-verification']
     for key in ('tree', 'developer_dir', 'volume_layout'):

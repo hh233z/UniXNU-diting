@@ -14,7 +14,7 @@ spec.loader.exec_module(module)
 
 
 class FirmwareMemoryTests(unittest.TestCase):
-    def test_pong_fd_overlaps_diting_ramoops(self):
+    def test_diting_fd_overlaps_diting_ramoops(self):
         with tempfile.TemporaryDirectory() as directory:
             work = Path(directory)
             subprocess.run(
@@ -22,7 +22,7 @@ class FirmwareMemoryTests(unittest.TestCase):
                 cwd=work, env={**os.environ, "UNIXNU_DEVICE": str(DEVICE)},
                 check=True, capture_output=True, text=True,
             )
-            reserved = module.reserved_regions(work / "build/pong/pong.dtb")
+            reserved = module.reserved_regions(work / "build/diting/diting.dtb")
             memory_map = work / "MemoryMapLib.c"
             memory_map.write_text(
                 '{"UEFI FD", 0xA7100000, 0x00300000, AddMem, SYS_MEM, SYS_MEM_CAP, BsData, WRITE_BACK},\n'

@@ -22,15 +22,15 @@
 #include <kern/clock.h>
 #include <uuid/uuid.h>
 
-extern "C" bool pong_cpu_start(IOService *platform);
+extern "C" bool diting_cpu_start(IOService *platform);
 #if XNU_DITING_WIFI
-extern "C" void pong_wifi_start_optional(void);
+extern "C" void diting_wifi_start_optional(void);
 #endif
 #if XNU_DITING_POWER
-extern "C" void pong_power_start_optional(void);
+extern "C" void diting_power_start_optional(void);
 #endif
 #if XNU_DITING_ADRENO_PLATFORM
-extern "C" void pong_adreno_start_optional(void);
+extern "C" void diting_adreno_start_optional(void);
 #endif
 
 // Observation counters describe actual published nubs, not started drivers.
@@ -186,14 +186,14 @@ bool ArmDTPlatform::configure (IOService *provider)
     return false;
   }
 
-  // gethostuuid() waits for this real platform resource. Pong has no Apple
+  // gethostuuid() waits for this real platform resource. Diting has no Apple
   // ECID/chip-id pair, so native Apple UUID generation has no input. Accept
   // an explicitly supplied, stable software platform UUID derived by the
   // local build from this phone's SoC identity. Do not invent an Apple ECID
   // or let IPConfiguration hold configd's startup indefinitely.
   char platformUUID[37] = {};uuid_t parsed;
   if (!provider->getProperty(kIOPlatformUUIDKey) &&
-      PE_parse_boot_argn("pong_platform_uuid",platformUUID,sizeof platformUUID) &&
+      PE_parse_boot_argn("diting_platform_uuid",platformUUID,sizeof platformUUID) &&
       platformUUID[36]==0 && uuid_parse(platformUUID,parsed)==0 && !uuid_is_null(parsed)) {
     provider->setProperty(kIOPlatformUUIDKey,platformUUID);
     IOService::publishResource(kIOPlatformUUIDKey,provider->getProperty(kIOPlatformUUIDKey));
@@ -235,22 +235,22 @@ bool ArmDTPlatform::configure (IOService *provider)
     return false;
   }
   // All CPU nubs now exist. Register them together before PSCI CPU_ON.
-  if (!pong_cpu_start(this)) {
+  if (!diting_cpu_start(this)) {
     IOLog("ArmDTPlatform: boot CPU startup failed\n");
     return false;
   }
   armdt_platform_configured = 1;
 #if XNU_DITING_POWER
-  pong_power_start_optional();
+  diting_power_start_optional();
 #endif
 #if XNU_DITING_WIFI
-  pong_wifi_start_optional();
+  diting_wifi_start_optional();
 #endif
   IOLog ("ArmDTPlatform: registered platform cpus=%u arm-io=%u devices=%u nvram-proxy=%u\n",
          cpuCount, busCount, armdt_platform_device_count, armdt_platform_nvram_proxy);
   registerService ();
 #if XNU_DITING_ADRENO_PLATFORM
-  pong_adreno_start_optional();
+  diting_adreno_start_optional();
 #endif
   return true;
 }

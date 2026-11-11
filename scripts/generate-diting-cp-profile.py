@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Translate Nothing's gen7-4-0 register facts into the Pong CP build input."""
+"""Translate Nothing's gen7-4-0 register facts into the Diting CP build input."""
 import argparse
 from pathlib import Path
 import re
@@ -19,17 +19,17 @@ lines=['/* SPDX-License-Identifier: GPL-2.0-only */',
        '#ifndef DITING_ADRENO_CP_PROFILE_H','#define DITING_ADRENO_CP_PROFILE_H',
        '#include <stdint.h>']
 lines += [f'#define {k} 0x{v:x}u' for k,v in sorted(values.items())]
-for name,vendor in [('PongCpHwcg','gen7_0_0_hwcg_regs'),('PongCpGbif','gen7_0_0_gbif_regs')]:
+for name,vendor in [('DitingCpHwcg','gen7_0_0_hwcg_regs'),('DitingCpGbif','gen7_0_0_gbif_regs')]:
     pairs=re.findall(r'\{\s*(GEN7_\w+),\s*(0x[\da-fA-F]+)\s*\}',array(catalog,vendor))
     if not pairs:raise RuntimeError('missing '+vendor)
     lines += [f'static const uint32_t {name}[][2]={{']
     lines += [f'    {{{reg},{value}}},' for reg,value in pairs]
     lines += ['};']
-lines += ['static const uint32_t PongCpProtect[][2]={']
+lines += ['static const uint32_t DitingCpProtect[][2]={']
 for slot,start,end,noaccess in re.findall(r'\{\s*GEN7_CP_PROTECT_REG\s*\+\s*(\d+),\s*(0x[\da-fA-F]+),\s*(0x[\da-fA-F]+),\s*([01])\s*\}',array(catalog,'gen7_0_0_protected_regs')):
     value=int(start,16)|((int(end,16)-int(start,16))<<18)|(int(noaccess)<<31)
     lines += [f'    {{GEN7_CP_PROTECT_REG+{slot},0x{value:08x}u}},']
-lines += ['};','static const uint32_t PongCpRestore[]={']
+lines += ['};','static const uint32_t DitingCpRestore[]={']
 lines += ['    '+reg+',' for reg in re.findall(r'\bGEN7_\w+\b',array(source,'gen7_pwrup_reglist'))]
 lines += ['};','#endif','']
 a.output.parent.mkdir(parents=True,exist_ok=True)

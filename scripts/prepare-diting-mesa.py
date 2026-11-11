@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Prepare the complete, pinned A730/22H374 Mesa source in a new directory.
 
-The patch includes the public Darwin backend and Pong's accumulated fixes.
+The patch includes the public Darwin backend and Diting's accumulated fixes.
 Existing source checkouts are read only; no firmware or system images are used.
 """
 import argparse
@@ -13,7 +13,7 @@ import tarfile
 
 ROOT = Path(__file__).resolve().parents[1]
 PIN = '85fda3b36405bcaea8bffc64aa4f2651dc90770d'
-PATCH = 'patches/mesa/parity167/pong-darwin22h374.patch'
+PATCH = 'patches/mesa/parity167/diting-darwin22h374.patch'
 
 
 def main():
@@ -30,7 +30,7 @@ def main():
         archive.extractall(destination, filter='data')
     subprocess.run(['git', 'apply', '--whitespace=nowarn', str(ROOT / PATCH)],
                    cwd=destination, check=True)
-    (destination / '.pong-mesa.json').write_text(json.dumps({
+    (destination / '.diting-mesa.json').write_text(json.dumps({
         'schema': 1, 'mesa': PIN, 'guest': '22H374', 'native_abi': 1,
         'patch': PATCH, 'snapshot': 'services167',
     }, indent=2) + '\n')

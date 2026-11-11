@@ -958,10 +958,10 @@
 };
 
 /* UFS: the ADT generator reads three board properties from this node
-   (make-diting-adt-ipados18.py: pong,gcc-ufs-page, pong,smmu-stream-id, pong,ufs-spi).
+   (make-diting-adt-ipados18.py: diting,gcc-ufs-page, diting,smmu-stream-id, diting,ufs-spi).
    Values cross-checked against the stock diting tree (merged /soc/ufshc@1d84000):
    interrupts = <0x00 0x109 0x04> gives SPI 265, iommus = <.. 0xe0 ..> gives stream id
-   0xe0, and 0x187000 is the SM8475 GCC UFS page register the Pong port uses. */
+   0xe0, and 0x187000 is the SM8475 GCC UFS page register the Diting port uses. */
 &ufs {
     status = "okay";
     reg = <0x0 0x1d84000 0x0 0x3000>,
@@ -972,18 +972,18 @@
     interrupts = <0 0x109 4>;
     /* 当前 NativeUfs 轮询完成；标准中断映射待完整验证。 */
     unixnu,adt-no-interrupts;
-    unixnu,adt-u64 = "pong,ufs-hc-base", "pong,ufs-hc-size", "pong,gcc-ufs-page",
-                     "pong,smmu-base", "pong,smmu-size";
-    unixnu,adt-u32 = "pong,smmu-stream-id", "pong,smmu-context-banks",
-                     "pong,smmu-match-groups", "pong,ufs-spi";
-    pong,ufs-hc-base = /bits/ 64 <0x1d84000>;
-    pong,ufs-hc-size = /bits/ 64 <0x3000>;
-    pong,gcc-ufs-page = /bits/ 64 <0x187000>;
-    pong,smmu-stream-id = <0xe0>;
-    pong,smmu-base = /bits/ 64 <0x15000000>;
-    pong,smmu-size = /bits/ 64 <0x100000>;
-    pong,smmu-context-banks = <78>;
-    /* 该值继承自同 SoC 的 Pong，尚未通过 Diting 寄存器核实。 */
-    pong,smmu-match-groups = <120>;
-    pong,ufs-spi = <265>;
+    unixnu,adt-u64 = "diting,ufs-hc-base", "diting,ufs-hc-size", "diting,gcc-ufs-page",
+                     "diting,smmu-base", "diting,smmu-size";
+    unixnu,adt-u32 = "diting,smmu-stream-id", "diting,smmu-context-banks",
+                     "diting,smmu-match-groups", "diting,ufs-spi";
+    diting,ufs-hc-base = /bits/ 64 <0x1d84000>;
+    diting,ufs-hc-size = /bits/ 64 <0x3000>;
+    diting,gcc-ufs-page = /bits/ 64 <0x187000>;
+    diting,smmu-stream-id = <0xe0>;
+    diting,smmu-base = /bits/ 64 <0x15000000>;
+    diting,smmu-size = /bits/ 64 <0x100000>;
+    diting,smmu-context-banks = <78>;
+    /* 该值继承自同 SoC 的 Diting，尚未通过 Diting 寄存器核实。 */
+    diting,smmu-match-groups = <120>;
+    diting,ufs-spi = <265>;
 };

@@ -8,7 +8,7 @@ Cryptex1,SystemTrustCache
 Cryptex1,AppOS
 Cryptex1,AppTrustCache
 OS
-# Pong firmware comes from this phone's REC modem/vendor partitions:
+# Diting firmware comes from this phone's REC modem/vendor partitions:
 # adsp.mbn, QCA6490 amss/amss20/m3/regdb and selected board data,
 # TFA9873 tfa98xx.cnt, Adreno730/GMU/ZAP and Goodix firmware.
 # No firmware binaries are stored in this repository.

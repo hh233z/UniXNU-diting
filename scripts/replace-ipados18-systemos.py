@@ -21,7 +21,7 @@ old=previous.get('layout',previous.get('new_layout'))
 if old is None:raise SystemExit('The previous installation has no completed layout')
 windows={w['name']:w for w in new['windows']};before={w['name']:w for w in old['windows']}
 report=json.loads((a.boot_image.parent/'DITING_BUILD_RESULT.json').read_text())
-if not a.boot_image.is_file() or not report['build_complete'] or report['profile']!='Pong-iPadOS18-22H374-Darwin24' or report['settings']['XNU_OWNER_CACHE_VOLUME_UUID']!=windows['SystemOS']['volume_uuid']:raise SystemExit('Build the matching SystemOS boot package first')
+if not a.boot_image.is_file() or not report['build_complete'] or report['profile']!='Diting-iPadOS18-22H374-Darwin24' or report['settings']['XNU_OWNER_CACHE_VOLUME_UUID']!=windows['SystemOS']['volume_uuid']:raise SystemExit('Build the matching SystemOS boot package first')
 if old['windows'][0]!=new['windows'][0] or before['Data']['size']!=windows['Data']['size'] or before['Data']['volume_uuid']!=windows['Data']['volume_uuid']:raise SystemExit('OS and Data identity must be preserved')
 system=windows['SystemOS'];src=before['Data'];dst=windows['Data'];target='/dev/block/by-name/userdata'
 delta=dst['offset']-src['offset']
@@ -33,7 +33,7 @@ def run(args,**kw):return subprocess.run(args,check=True,**kw)
 def shell(s):return run(cmd+['shell',s],capture_output=True,text=True).stdout.strip()
 if run(cmd+['get-state'],capture_output=True,text=True).stdout.strip()!='recovery':raise SystemExit('Enter recovery first')
 if a.stream_compression=='gzip':shell('command -v gzip >/dev/null && set -o pipefail')
-if shell('readlink -f '+target)!='/dev/block/sda13' or int(shell('blockdev --getsize64 '+target))!=(new['partition_last_4k']-new['partition_first_4k']+1)*4096 or int(shell('cat /sys/class/block/sda13/start'))!=new['partition_first_4k']*8:raise SystemExit('Pong userdata geometry differs')
+if shell('readlink -f '+target)!='/dev/block/sda13' or int(shell('blockdev --getsize64 '+target))!=(new['partition_last_4k']-new['partition_first_4k']+1)*4096 or int(shell('cat /sys/class/block/sda13/start'))!=new['partition_first_4k']*8:raise SystemExit('Diting userdata geometry differs')
 if shell('ls /sys/class/block/sda13/holders') or any(l.split()[0] in (target,'/dev/block/sda13') for l in shell('cat /proc/mounts').splitlines()):raise SystemExit('userdata must have no active mounts or holders')
 if dst['offset']+dst['size']>int(shell('blockdev --getsize64 '+target)) or system['offset']+system['size']>dst['offset']:raise SystemExit('Window bounds overlap or exceed userdata')
 a.output_dir.mkdir(parents=True,exist_ok=True);record=a.output_dir/'replacement.json'
@@ -55,7 +55,7 @@ def save():
  temp=record.with_suffix('.next')
  with temp.open('w') as f:f.write(json.dumps(state,indent=2)+'\n');f.flush();os.fsync(f.fileno())
  os.replace(temp,record)
-save();remote='/tmp/pong-data-relocate.part'
+save();remote='/tmp/diting-data-relocate.part'
 while state['data_moved']<src['size']:
  amount=min(64*MIB,src['size']-state['data_moved']);relative=src['size']-state['data_moved']-amount
  read=(src['offset']+relative)//MIB;write=(dst['offset']+relative)//MIB
@@ -93,6 +93,6 @@ with Path(system['image']).open('rb',buffering=0) as f:
    if proc.poll() is None:proc.kill()
    proc.wait();raise
   state['systemos_written']+=amount;state['device_write_receipts']=state.get('device_write_receipts',0)+1;save();print(f'SystemOS device acknowledged: {state["systemos_written"]}/{system["size"]}',flush=True)
-run(cmd+['push',str(a.layout.parent/'shngroot-ipados18.bin'),'/tmp/pong-systemos-header.bin'])
-shell(f'dd if=/tmp/pong-systemos-header.bin of={target} bs=4096 count=1 conv=notrunc,fsync status=none && sync')
+run(cmd+['push',str(a.layout.parent/'shngroot-ipados18.bin'),'/tmp/diting-systemos-header.bin'])
+shell(f'dd if=/tmp/diting-systemos-header.bin of={target} bs=4096 count=1 conv=notrunc,fsync status=none && sync')
 state['state']='complete';save();print('SystemOS replaced; existing 8 GiB Data preserved; directory committed last',flush=True)

@@ -82,11 +82,11 @@ def main():
     board = board_spec(device)
     spec = board.get('device_tree', {})
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument('--source', default=spec.get('source', 'device:dts/pong.dts'),
+    parser.add_argument('--source', default=spec.get('source', 'device:dts/diting.dts'),
                         help='board DTS as board.toml names it (device:dts/<board>.dts)')
     parser.add_argument('--include', action='append', default=None,
                         help='include directory as board.toml names it (device:/soc:/tree:); repeatable')
-    parser.add_argument('--output', default=board.get('bootimg', {}).get('dtb', 'build/pong/pong.dtb'),
+    parser.add_argument('--output', default=board.get('bootimg', {}).get('dtb', 'build/diting/diting.dtb'),
                         help='output, relative to the build tree')
     args = parser.parse_args()
     source = resolve(device, tree, args.source)

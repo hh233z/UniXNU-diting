@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
-"""Pack Pong's v4 boot image and verify its contents without touching a device.
+"""Pack Diting's v4 boot image and verify its contents without touching a device.
 
 UniXNU's current bootimg.verify assumes the legacy header layout. Use the same
-verified shim compiler and Mu-Silicium mkbootimg with a Pong-specific v4 reader.
+verified shim compiler and Mu-Silicium mkbootimg with a Diting-specific v4 reader.
 """
 import argparse
 import gzip
@@ -31,7 +31,7 @@ def verify(data, combined, dtb, ramdisk):
         raise ValueError('Missing Android boot header')
     kernel_size, ramdisk_size, _, header_size = struct.unpack_from('<4I', data, 8)
     if header_size != 1584 or struct.unpack_from('<I', data, 40)[0] != 4:
-        raise ValueError('Expected Pong boot header v4')
+        raise ValueError('Expected Diting boot header v4')
     if ramdisk_size != len(ramdisk):
         raise ValueError('Ramdisk size differs')
     kernel = data[4096:4096 + kernel_size]
@@ -58,28 +58,28 @@ def main():
     parser.add_argument('--output-dir', type=Path, help='Keep staged bring-up images in separate directories')
     parser.add_argument('--fd', type=Path, help='Use a saved firmware volume for controlled comparisons')
     parser.add_argument('--uefi', type=Path, help='Firmware checkout (default Mu-Silicium)')
-    parser.add_argument('--config', type=Path, help='Firmware config TOML (default Resources/Configs/pong.toml)')
-    parser.add_argument('--dtb', type=Path, help='Board DTB appended after the shim+volume (default Resources/DTBs/pong.dtb)')
+    parser.add_argument('--config', type=Path, help='Firmware config TOML (default Resources/Configs/diting.toml)')
+    parser.add_argument('--dtb', type=Path, help='Board DTB appended after the shim+volume (default Resources/DTBs/diting.dtb)')
     parser.add_argument('--shim', type=Path, help='Prebuilt BootShim.bin instead of compiling one')
     parser.add_argument('--mkbootimg', type=Path, help='mkbootimg.py path (default uefi/Resources/Scripts/mkbootimg.py)')
     args = parser.parse_args()
     uefi = args.uefi.resolve() if args.uefi else ROOT / 'Mu-Silicium'
-    config_path = args.config if args.config else uefi / 'Resources/Configs/pong.toml'
+    config_path = args.config if args.config else uefi / 'Resources/Configs/diting.toml'
     config = tomllib.loads(config_path.read_text())
     base, size = config['uefi_fd']['base'], config['uefi_fd']['size']
-    fd = args.fd or uefi / 'Build/pongPkg/RELEASE_CLANGPDB/FV/SILICIUM_UEFI.fd'
+    fd = args.fd or uefi / 'Build/ditingPkg/RELEASE_CLANGPDB/FV/SILICIUM_UEFI.fd'
     firmware = fd.read_bytes()
     if len(firmware) != size:
-        raise ValueError('Firmware size differs from the Pong configuration')
-    dtb_path = args.dtb if args.dtb else uefi / 'Resources/DTBs/pong.dtb'
+        raise ValueError('Firmware size differs from the Diting configuration')
+    dtb_path = args.dtb if args.dtb else uefi / 'Resources/DTBs/diting.dtb'
     dtb = dtb_path.read_bytes()
     if dtb[:4] != b'\xd0\x0d\xfe\xed' or struct.unpack_from('>I', dtb, 4)[0] != len(dtb):
-        raise ValueError('Invalid Pong DTB')
-    out = args.output_dir or ROOT / 'UniXNU/out/pong/boot'
+        raise ValueError('Invalid Diting DTB')
+    out = args.output_dir or ROOT / 'UniXNU/out/diting/boot'
     out.mkdir(parents=True, exist_ok=True)
     image = out / 'diting-unixnu-uefi.img'
     ramdisk = args.ramdisk.read_bytes() if args.ramdisk else b''
-    with tempfile.TemporaryDirectory(prefix='pong-bootimg-') as name:
+    with tempfile.TemporaryDirectory(prefix='diting-bootimg-') as name:
         scratch = Path(name)
         shim = args.shim.read_bytes() if args.shim else compile_shim(uefi, base, size, True, scratch)
         combined = shim + firmware

@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Capture Pong's actual Wi-Fi inputs from REC, without image hashes/readback.
+"""Capture Diting's actual Wi-Fi inputs from REC, without image hashes/readback.
 
 Firmware/calibration stays in --out (ignored local inputs). A board profile can
 be written separately with --profile. Never select Sheng's radio or a random
@@ -79,7 +79,7 @@ def describe(data, pci):
     region_cells = cells(host, 'reg')
     region_names = text(host, 'reg-names').split('\0')
     if len(region_cells) != len(region_names) * 2:
-        raise ValueError('Unexpected Pong PCIe resource cell layout')
+        raise ValueError('Unexpected Diting PCIe resource cell layout')
     regions = {name: {'base': region_cells[i * 2], 'bytes': region_cells[i * 2 + 1]}
                for i, name in enumerate(region_names)}
     iommu_path = next(k for k in nodes if k.startswith(host_path + '/') and 'qcom,iommu-dma-addr-pool' in nodes[k])
@@ -87,7 +87,7 @@ def describe(data, pci):
     msi_map = cells(host, 'msi-map')
     active_msi = nodes[refs[msi_map[1]]]
     phy = cells(host, 'qcom,phy-sequence')
-    if len(phy) % 3: raise ValueError('Malformed Pong PHY sequence')
+    if len(phy) % 3: raise ValueError('Malformed Diting PHY sequence')
     rails = []
     for name, raw in wlan.items():
         if not name.endswith('-supply'): continue
@@ -108,7 +108,7 @@ def describe(data, pci):
     gpio = {name: cells(wlan, name)[1] for name in
             ('wlan-en-gpio', 'qcom,bt-en-gpio', 'qcom,sw-ctrl-gpio', 'qcom,xo-clk-gpio')}
     gpio.update(perst=cells(host, 'perst-gpio')[1], wake=cells(host, 'wake-gpio')[1])
-    return dict(format='pong-qca6490-board-v1', board='pong', soc='SM8475', pci=pci,
+    return dict(format='diting-qca6490-board-v1', board='diting', soc='SM8475', pci=pci,
         radio='QCA6490', driver_family='ath11k', transport='PCIe/MHI/QRTR',
         source=dict(wlan=wlan_path, pcie=host_path, input='REC /sys/firmware/fdt and PCI sysfs'),
         pcie=dict(index=rc, regions=regions, gpio=gpio, analogue_rails=analogue,
@@ -131,8 +131,8 @@ def describe(data, pci):
                  reg=cells(active_msi, 'reg'),
                  legacy_spi_node_status=text(old_msi, 'status') if old_msi else 'absent'),
         rails=rails, nv_mac_required='use-nv-mac' in wlan,
-        firmware=dict(device_path='/mnt/pong-wifi-firmware/image/qca6490',
-                      runtime_path='/pong/firmware/qca6490',
+        firmware=dict(device_path='/mnt/diting-wifi-firmware/image/qca6490',
+                      runtime_path='/diting/firmware/qca6490',
                       required=['amss.bin', 'amss20.bin', 'm3.bin', 'regdb.bin'],
                       board_data='select from actual QMI chip/board ID; no default variant'),
         readiness=dict(board_inputs=True, ath11k_backend=False, darwin24_apple80211=False,
@@ -162,12 +162,12 @@ def main():
     resource = shell('cat ' + device + 'resource').splitlines()[0].split()
     pci['bar0'] = dict(base=int(resource[0], 16), bytes=int(resource[1], 16) - int(resource[0], 16) + 1)
     profile = describe(dtb, pci)
-    (out / 'pong-live.dtb').write_bytes(dtb)
+    (out / 'diting-live.dtb').write_bytes(dtb)
     firmware = a.firmware_dir.resolve() if a.firmware_dir else out / 'qca6490'
     owned_mount = False
     try:
         if not a.firmware_dir:
-            mountpoint = '/mnt/pong-wifi-firmware'
+            mountpoint = '/mnt/diting-wifi-firmware'
             if shell('mountpoint -q ' + mountpoint + '; echo $?') != '0':
                 shell('mkdir -p ' + mountpoint + ' && mount -t vfat -o ro /dev/block/by-name/modem_a ' + mountpoint)
                 owned_mount = True
@@ -183,7 +183,7 @@ def main():
         destination.write_text(json.dumps(profile, indent=2) + '\n')
         print(destination)
     finally:
-        if owned_mount: shell('umount /mnt/pong-wifi-firmware')
+        if owned_mount: shell('umount /mnt/diting-wifi-firmware')
 
 
 if __name__ == '__main__': main()

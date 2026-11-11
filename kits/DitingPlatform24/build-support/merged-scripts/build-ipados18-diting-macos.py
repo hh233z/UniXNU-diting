@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Build Pong Darwin 24 from this branch's scripts and pinned source feeds."""
+"""Build Diting Darwin 24 from this branch's scripts and pinned source feeds."""
 import argparse, datetime, json, os, shutil, subprocess, sys, tomllib
 from pathlib import Path
 import tomllib
@@ -23,7 +23,7 @@ def main():
     p.add_argument('--volume-layout',type=Path,default=diting_paths.volume_layout())
     p.add_argument('--prepare-only',action='store_true')
     p.add_argument('--config-path',type=Path,help='resolved format2 configuration')
-    p.add_argument('--hardware-dtb',type=Path,help='compiled format2 SM8475/Pong hardware description')
+    p.add_argument('--hardware-dtb',type=Path,help='compiled format2 SM8475/Diting hardware description')
     p.add_argument('--skip-image-verification',action='store_true',default=True)
     a=p.parse_args();tree=a.tree.resolve()
     tree.mkdir(parents=True,exist_ok=True)
@@ -71,7 +71,7 @@ def main():
         # The board names its defconfig in [kernel] defconfig; do not assume the
         # shipping one (the CI runs the reduced configuration).
         board=tomllib.loads((DEVICE/'board.toml').read_text())
-        config_path=DEVICE/'configs'/(board.get('kernel',{}).get('defconfig') or 'pong_ipados18_defconfig')
+        config_path=DEVICE/'configs'/(board.get('kernel',{}).get('defconfig') or 'diting_ipados18_defconfig')
     resolved=config_path.read_text()
     print(f"recipe config: {config_path}", flush=True)
     for probe in ('CONFIG_XNU_DITING_WIFI=', 'CONFIG_XNU_DITING_BACKLIGHT=', 'CONFIG_XNU_DITING_ADRENO_PLATFORM='):
@@ -83,7 +83,7 @@ def main():
     # Fail at the configuration boundary, before building an archive whose
     # startup entry or platform helper would otherwise be omitted at link.
     dependencies = {
-        # Wi-Fi itself needs the shared SMMU lease, which PongPlatformResources provides;
+        # Wi-Fi itself needs the shared SMMU lease, which DitingPlatformResources provides;
         # that object is built by the full power archive or by --resources-only when
         # NATIVE_UFS is set, so the power/audio archive is not required to build it.
         'XNU_DITING_WIFI': ('XNU_ARMCPU', 'XNU_NATIVE_UFS'),
@@ -111,7 +111,7 @@ def main():
     env['XNU_OWNER_DATA_VOLUME_UUID']=layout['data']['uuid']
     env['XNU_OWNER_CACHE_VOLUME_UUID']=layout['systemos']['uuid']
     settings={k:v for k,v in env.items() if k.startswith(('XNU_','UNIXNU_'))}
-    report=dict(profile='Pong-iPadOS18-22H374-Darwin24',tree=str(tree),settings=settings,
+    report=dict(profile='Diting-iPadOS18-22H374-Darwin24',tree=str(tree),settings=settings,
         debug_symbols_generated=a.debug_symbols,reference_commits={r['name']:r['commit'] for r in refs},image_verification='skipped by request',build_complete=False)
     if a.hardware_dtb:
         report['hardware_dtb']=str(a.hardware_dtb.resolve())

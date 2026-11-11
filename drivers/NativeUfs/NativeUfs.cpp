@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: BSD-2-Clause-Patent
-// SM8475/Pong frontend. Optional register/registry probes default off;
+// SM8475/Diting frontend. Optional register/registry probes default off;
 // the functional transport only issues read-only storage commands.
 #include <IOKit/IOService.h>
 #include <IOKit/IOMemoryDescriptor.h>
@@ -9,8 +9,8 @@
 #include <libkern/c++/OSIterator.h>
 #include <kern/thread.h>
 #include <pexpert/pexpert.h>
-#include "../PongProbe.h"
-extern "C" bool pong_ufs_transport_start(IOService *);
+#include "../DitingProbe.h"
+extern "C" bool diting_ufs_transport_start(IOService *);
 
 extern "C" {
 volatile uint32_t native_ufs_probe_calls;
@@ -18,7 +18,7 @@ volatile uint32_t native_ufs_matched;
 volatile uint32_t native_ufs_probe_requested;
 volatile uint32_t native_ufs_mapped;
 volatile uint32_t native_ufs_status;
-volatile uint32_t pong_ufs_report[16];
+volatile uint32_t diting_ufs_report[16];
 extern volatile uint64_t armcpu_timer_interrupts;
 }
 
@@ -91,37 +91,37 @@ static unsigned serviceCount (const char *name)
 static void registrationReport (void *, wait_result_t)
 {
   IOLog ("DITING REGISTRY: observer started, waiting for scheduler tick\n");
-  PongProbeRecord (1, "timer-scheduler", PongProbeRunning, "waiting for one-second sleep");
+  DitingProbeRecord (1, "timer-scheduler", DitingProbeRunning, "waiting for one-second sleep");
   uint64_t before = armcpu_timer_interrupts;
   IOSleep (1000);
   uint64_t after = armcpu_timer_interrupts;
   IOLog ("DITING REGISTRY: timer IRQ before=%llu after=%llu\n", before, after);
-  PongProbeRecord (1, "timer-scheduler", after > before ? PongProbePass : PongProbeFail,
+  DitingProbeRecord (1, "timer-scheduler", after > before ? DitingProbePass : DitingProbeFail,
                    after > before ? "sleep returned and timer IRQ advanced" : "sleep returned without timer IRQ growth", after - before);
   unsigned platform = serviceCount ("ArmDTPlatform"), cpu = serviceCount ("ArmCpu");
   unsigned controller = serviceCount ("IOCPUInterruptController"), nvram = serviceCount ("IODTNVRAM");
   unsigned ufs = serviceCount ("NativeUfs"), media = serviceCount ("IOMedia");
   IOLog ("DITING REGISTRY: platform=%u cpu=%u cpu-intc=%u nvram=%u ufs-probe=%u\n",
          platform, cpu, controller, nvram, ufs);
-  PongProbeRecord (2, "core-registry", platform && cpu && controller && nvram ? PongProbePass : PongProbeFail,
+  DitingProbeRecord (2, "core-registry", platform && cpu && controller && nvram ? DitingProbePass : DitingProbeFail,
                    "platform/cpu/intc/nvram counts packed as bytes",
                    ((uint64_t)platform << 24) | ((uint64_t)cpu << 16) | ((uint64_t)controller << 8) | nvram);
   IOLog ("DITING REGISTRY: block-device=%u media=%u; diagnostic-only mode skips block transport\n",
          serviceCount ("IOBlockStorageDevice"), media);
-  PongProbeRecord (3, "root-media", media ? PongProbePass : PongProbeSkip,
+  DitingProbeRecord (3, "root-media", media ? DitingProbePass : DitingProbeSkip,
                    media ? "published IOMedia observed" : "no block transport; waiting for real root media", media);
 }
 
 static bool probeFailure (const char *reason, uint64_t detail = 0)
 {
   native_ufs_status |= 0x80000000U;
-  PongProbeRecord (0, "ufs-registers", PongProbeFail, reason, detail);
+  DitingProbeRecord (0, "ufs-registers", DitingProbeFail, reason, detail);
   // Without this driver there is no root media and the boot panics later at IOKitBSDInit
-  // with no explanation, so log the failing board property and let pong_ufs_stall hold
+  // with no explanation, so log the failing board property and let diting_ufs_stall hold
   // the console for a photograph.
   IOLog ("DITING_UFS PROBE FAILED: %s detail=%llx status=%08x\n", reason, detail, native_ufs_status);
   uint32_t stall = 0;
-  if (PE_parse_boot_argn ("pong_ufs_stall", &stall, sizeof (stall)) && stall) { for (;;) IOSleep (1000); }
+  if (PE_parse_boot_argn ("diting_ufs_stall", &stall, sizeof (stall)) && stall) { for (;;) IOSleep (1000); }
   return false;
 }
 }
@@ -154,15 +154,15 @@ bool NativeUfs::start (IOService *provider)
   if (!enabled || !compatible (provider)) return false;
   IOLog("DITING_UFS BUILD smmu-cap-v2: optional-probe=%u; transport=%s\n", mode,
         mode == 2 ? "disabled by diagnostic mode" : "read-only");
-  if (mode == 2) PongProbeRecord (0, "ufs-registers", PongProbeRunning, "validate SM8475 DT and read registers");
+  if (mode == 2) DitingProbeRecord (0, "ufs-registers", DitingProbeRunning, "validate SM8475 DT and read registers");
   if (!IOService::start (provider)) return probeFailure ("IOService start failed");
   // Refuse a board description from a different Qualcomm generation.  These
   // windows are deliberately validated before the first MMIO read.
   struct Window { const char *name; uint64_t expected; };
   const Window windows[] = {
-    {"pong,ufs-hc-base", kUfsHost}, {"pong,ufs-hc-size", kUfsHostBytes},
-    {"pong,gcc-ufs-page", kGccUfsPage},
-    {"pong,smmu-base", 0x15000000}, {"pong,smmu-size", 0x100000}
+    {"diting,ufs-hc-base", kUfsHost}, {"diting,ufs-hc-size", kUfsHostBytes},
+    {"diting,gcc-ufs-page", kGccUfsPage},
+    {"diting,smmu-base", 0x15000000}, {"diting,smmu-size", 0x100000}
   };
   for (const auto &window : windows) {
     OSData *value = OSDynamicCast (OSData, provider->getProperty (window.name));
@@ -173,8 +173,8 @@ bool NativeUfs::start (IOService *provider)
     if (physical != window.expected) return probeFailure (window.name, physical);
   }
   struct Cell { const char *name; uint32_t expected; };
-  const Cell cells[] = {{"pong,smmu-stream-id", kUfsStreamId}, {"pong,ufs-spi", 265},
-                       {"pong,smmu-context-banks", 78}, {"pong,smmu-match-groups", 120}};
+  const Cell cells[] = {{"diting,smmu-stream-id", kUfsStreamId}, {"diting,ufs-spi", 265},
+                       {"diting,smmu-context-banks", 78}, {"diting,smmu-match-groups", 120}};
   for (const auto &cell : cells) {
     OSData *value = OSDynamicCast (OSData, provider->getProperty (cell.name));
     uint32_t observed = 0;
@@ -193,32 +193,32 @@ bool NativeUfs::start (IOService *provider)
   native_ufs_status = 2;
 
   // Offsets are from upstream gcc-sm8450.c, which also matches qcom,sm8475-gcc.
-  pong_ufs_report[ReportGdsc] = read32 (gcc, 0x004);
-  pong_ufs_report[ReportAxi] = read32 (gcc, 0x018);
-  pong_ufs_report[ReportAhb] = read32 (gcc, 0x020);
-  pong_ufs_report[ReportTx] = read32 (gcc, 0x024);
-  pong_ufs_report[ReportRx0] = read32 (gcc, 0x028);
-  pong_ufs_report[ReportRx1] = read32 (gcc, 0x0c0);
-  pong_ufs_report[ReportUnipro] = read32 (gcc, 0x064);
-  pong_ufs_report[ReportIce] = read32 (gcc, 0x06c);
-  pong_ufs_report[ReportAux] = read32 (gcc, 0x0a4);
-  pong_ufs_report[ReportAggregate] = read32 (gcc, 0x0d4);
-  pong_ufs_report[ReportStream] = kUfsStreamId;
+  diting_ufs_report[ReportGdsc] = read32 (gcc, 0x004);
+  diting_ufs_report[ReportAxi] = read32 (gcc, 0x018);
+  diting_ufs_report[ReportAhb] = read32 (gcc, 0x020);
+  diting_ufs_report[ReportTx] = read32 (gcc, 0x024);
+  diting_ufs_report[ReportRx0] = read32 (gcc, 0x028);
+  diting_ufs_report[ReportRx1] = read32 (gcc, 0x0c0);
+  diting_ufs_report[ReportUnipro] = read32 (gcc, 0x064);
+  diting_ufs_report[ReportIce] = read32 (gcc, 0x06c);
+  diting_ufs_report[ReportAux] = read32 (gcc, 0x0a4);
+  diting_ufs_report[ReportAggregate] = read32 (gcc, 0x0d4);
+  diting_ufs_report[ReportStream] = kUfsStreamId;
 
-  bool powered = (pong_ufs_report[ReportGdsc] & 0x80000000U) != 0;
-  bool buses = (pong_ufs_report[ReportAxi] & 1U) &&
-               (pong_ufs_report[ReportAhb] & 1U) &&
-               (pong_ufs_report[ReportAggregate] & 1U);
+  bool powered = (diting_ufs_report[ReportGdsc] & 0x80000000U) != 0;
+  bool buses = (diting_ufs_report[ReportAxi] & 1U) &&
+               (diting_ufs_report[ReportAhb] & 1U) &&
+               (diting_ufs_report[ReportAggregate] & 1U);
   if (powered && buses) {
     IOLog ("DITING_UFS: clocks active, read host state\n");
     uintptr_t host = mapPhysical (kUfsHost, kUfsHostBytes, hostMap);
     if (!host) return probeFailure ("host map failed");
     native_ufs_status = 3;
-    pong_ufs_report[ReportCapability] = read32 (host, 0x00);
-    pong_ufs_report[ReportVersion] = read32 (host, 0x08);
-    pong_ufs_report[ReportInterruptStatus] = read32 (host, 0x20);
-    pong_ufs_report[ReportHostStatus] = read32 (host, 0x30);
-    pong_ufs_report[ReportHostEnable] = read32 (host, 0x34);
+    diting_ufs_report[ReportCapability] = read32 (host, 0x00);
+    diting_ufs_report[ReportVersion] = read32 (host, 0x08);
+    diting_ufs_report[ReportInterruptStatus] = read32 (host, 0x20);
+    diting_ufs_report[ReportHostStatus] = read32 (host, 0x30);
+    diting_ufs_report[ReportHostEnable] = read32 (host, 0x34);
     native_ufs_status = 4;
   }
 
@@ -227,34 +227,34 @@ bool NativeUfs::start (IOService *provider)
          "tx=%08x rx0=%08x rx1=%08x unipro=%08x\n"
          "ice=%08x aux=%08x powered=%u buses=%u sid=%x\n"
          "cap=%08x ver=%08x is=%08x hcs=%08x hce=%08x\n",
-         pong_ufs_report[ReportGdsc], pong_ufs_report[ReportAxi],
-         pong_ufs_report[ReportAhb], pong_ufs_report[ReportAggregate],
-         pong_ufs_report[ReportTx], pong_ufs_report[ReportRx0],
-         pong_ufs_report[ReportRx1], pong_ufs_report[ReportUnipro],
-         pong_ufs_report[ReportIce], pong_ufs_report[ReportAux], powered, buses,
-         pong_ufs_report[ReportStream], pong_ufs_report[ReportCapability],
-         pong_ufs_report[ReportVersion], pong_ufs_report[ReportInterruptStatus],
-         pong_ufs_report[ReportHostStatus], pong_ufs_report[ReportHostEnable]);
+         diting_ufs_report[ReportGdsc], diting_ufs_report[ReportAxi],
+         diting_ufs_report[ReportAhb], diting_ufs_report[ReportAggregate],
+         diting_ufs_report[ReportTx], diting_ufs_report[ReportRx0],
+         diting_ufs_report[ReportRx1], diting_ufs_report[ReportUnipro],
+         diting_ufs_report[ReportIce], diting_ufs_report[ReportAux], powered, buses,
+         diting_ufs_report[ReportStream], diting_ufs_report[ReportCapability],
+         diting_ufs_report[ReportVersion], diting_ufs_report[ReportInterruptStatus],
+         diting_ufs_report[ReportHostStatus], diting_ufs_report[ReportHostEnable]);
   if (!powered || !buses) return probeFailure ("power/clocks unavailable; host access skipped");
-  if (!pong_ufs_report[ReportVersion] || pong_ufs_report[ReportVersion] == 0xffffffffU ||
-      !(pong_ufs_report[ReportHostEnable] & 1U))
-    return probeFailure ("host disabled or invalid version", pong_ufs_report[ReportHostEnable]);
-  setProperty ("PongProbeOnly", mode == 2);
-  setProperty ("PongUfsStatus", static_cast<unsigned long long> (native_ufs_status), 32);
+  if (!diting_ufs_report[ReportVersion] || diting_ufs_report[ReportVersion] == 0xffffffffU ||
+      !(diting_ufs_report[ReportHostEnable] & 1U))
+    return probeFailure ("host disabled or invalid version", diting_ufs_report[ReportHostEnable]);
+  setProperty ("DitingProbeOnly", mode == 2);
+  setProperty ("DitingUfsStatus", static_cast<unsigned long long> (native_ufs_status), 32);
   uint32_t snapshot[16];
-  for (unsigned index = 0; index < 16; ++index) snapshot[index] = pong_ufs_report[index];
-  setProperty ("PongUfsRegisterSnapshot", snapshot, sizeof (snapshot));
+  for (unsigned index = 0; index < 16; ++index) snapshot[index] = diting_ufs_report[index];
+  setProperty ("DitingUfsRegisterSnapshot", snapshot, sizeof (snapshot));
   if (mode != 2) {
-    if (!pong_ufs_transport_start(this)) return false;
+    if (!diting_ufs_transport_start(this)) return false;
     registerService();
     return true;
   }
   registerService ();
   IOLog ("DITING_UFS: diagnostic service registered; continue IOKit, no block media published\n");
-  PongProbeRecord (0, "ufs-registers", PongProbePass, "registers read; diagnostic service published", pong_ufs_report[ReportVersion]);
+  DitingProbeRecord (0, "ufs-registers", DitingProbePass, "registers read; diagnostic service published", diting_ufs_report[ReportVersion]);
   thread_t thread = nullptr;
   kern_return_t result = kernel_thread_start (registrationReport, nullptr, &thread);
   if (result == KERN_SUCCESS) thread_deallocate (thread);
-  else PongProbeRecord (1, "timer-scheduler", PongProbeFail, "observer thread creation failed", result);
+  else DitingProbeRecord (1, "timer-scheduler", DitingProbeFail, "observer thread creation failed", result);
   return true;
 }

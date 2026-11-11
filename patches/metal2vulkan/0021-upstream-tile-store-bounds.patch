@@ -54,7 +54,7 @@
          // where the texture only reads, by the policy (`linear_plan::holding`); else why none may.
 -        let policy = self.compile_device().policy().padded_reads;
 -        let mut holds = holding(&texels.layout, usage, policy);
--        // Pong's uncompressed single-plane 8-bit IOSurfaces own the bytes
+-        // Diting's uncompressed single-plane 8-bit IOSurfaces own the bytes
 -        // between rows. They are not arbitrary buffers with unrelated data
 -        // in their padding. Permit the native driver to render directly into
 -        // those pages instead of synchronously copying a shadow every frame.
@@ -66,7 +66,7 @@
 -            && matches!(layout.pixel_format, PixelFormat::BGRA8Unorm | PixelFormat::BGRA8UnormSRGB
 -                | PixelFormat::RGBA8Unorm | PixelFormat::RGBA8UnormSRGB)
 -            // SM8475 A730/Turnip stores linear attachments in 16x4 tiles.
--            // Alias only Pong's measured panel geometry, after checking that
+-            // Alias only Diting's measured panel geometry, after checking that
 -            // the row padding absorbs the tile edge and the last row is exact.
 -            && layout.texture_type == TextureType::Type2D
 -            && layout.extent == [1080, 2412, 1]
@@ -81,7 +81,7 @@
 -            holds = Ok(Holds::Padding);
 -        }
 +        let mut policy = self.compile_device().policy().padded_reads;
-+        // Upstream 16x4 tile-store bound check replaces the Pong-only panel
++        // Upstream 16x4 tile-store bound check replaces the Diting-only panel
 +        // geometry exception. Every written alias must fit its actual rows.
 +        if policy == PaddedReadsPolicy::AliasWrites
 +            && !tile_store_fits(&texels.layout, u64::from(layout.extent[0]), texels.buffer.length())

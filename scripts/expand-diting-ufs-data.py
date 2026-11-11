@@ -24,7 +24,7 @@ if (capture['offset'],capture['size'])!=(prior['offset'],prior['size']):raise Ru
 block,size=describe(a.bundle)
 if size!=128000000000 or a.offset%(1<<20):raise RuntimeError('explicit 128GB image and MiB-aligned position required')
 geometry=dict(device=shell('readlink -f /dev/block/by-name/userdata'),bytes=int(shell('blockdev --getsize64 /dev/block/by-name/userdata')),first_512=int(shell('cat /sys/class/block/sda13/start')),logical_block_bytes=int(shell('cat /sys/class/block/sda/queue/logical_block_size')))
-if geometry!=old['geometry']:raise RuntimeError('Pong geometry differs')
+if geometry!=old['geometry']:raise RuntimeError('Diting geometry differs')
 if shell('ls /sys/class/block/sda13/holders') or any(x.split()[0] in ('/dev/block/sda13','/dev/block/by-name/userdata') for x in shell('cat /proc/mounts').splitlines()):raise RuntimeError('userdata mounted or held')
 if a.offset+size>geometry['bytes']-(1<<30):raise RuntimeError('new Data exceeds tail reserve')
 for w in layout['windows']:
@@ -46,7 +46,7 @@ def save():
  t=receipt.with_suffix('.next');t.write_text(json.dumps(state,indent=2)+'\n');os.replace(t,receipt)
 if not a.resume:(a.output_dir/'shngroot-before.bin').write_bytes(raw)
 save()
-# BLKZEROOUT guarantees zeros, unlike ordinary discard where this Pong
+# BLKZEROOUT guarantees zeros, unlike ordinary discard where this Diting
 # reports discard_zeroes_data=0. Restrict it to the new unused Data range.
 if not state['zeroed']:
  state['state']='zeroing_new_data';save();print('Zero-initializing only new unused Data window',flush=True)
@@ -75,8 +75,8 @@ for i in range(struct.unpack_from('<I',header,12)[0]):
   struct.pack_into('<QQ',header,at+32,a.offset,size);header[at+56:at+88]=bytes(32)
 header[4064:]=hashlib.sha256(header[:4064]).digest()
 (a.output_dir/'shngroot-ipados18.bin').write_bytes(header)
-subprocess.run(cmd+['push',str(a.output_dir/'shngroot-ipados18.bin'),'/tmp/pong-data128-directory.bin'],check=True)
-shell('dd if=/tmp/pong-data128-directory.bin of=/dev/block/by-name/userdata bs=4096 count=1 conv=notrunc,fsync status=none && sync')
+subprocess.run(cmd+['push',str(a.output_dir/'shngroot-ipados18.bin'),'/tmp/diting-data128-directory.bin'],check=True)
+shell('dd if=/tmp/diting-data128-directory.bin of=/dev/block/by-name/userdata bs=4096 count=1 conv=notrunc,fsync status=none && sync')
 state.update(state='complete',os_generation_complete=True,completed=dict(OS=next(w for w in new['windows'] if w['name']=='OS')['size'],Data=size),revision='services144-data128');save()
 (a.output_dir/'ufs-layout.json').write_text(json.dumps(new,indent=2)+'\n')
 storage=json.loads(a.storage_record.read_text())

@@ -28,9 +28,9 @@ jobs:
           if-no-files-found: error
           path: |
             ${{ runner.temp }}/diting-runtime/init
-            ${{ runner.temp }}/diting-runtime/libpong-ui.dylib
+            ${{ runner.temp }}/diting-runtime/libditing-ui.dylib
             ${{ runner.temp }}/diting-runtime/sleepserver
-            ${{ runner.temp }}/diting-runtime/PongAudio.driver/
+            ${{ runner.temp }}/diting-runtime/DitingAudio.driver/
             ${{ runner.temp }}/diting-runtime/sileo-register
             ${{ runner.temp }}/diting-runtime/sileo-root
             ${{ runner.temp }}/diting-runtime/phone-register

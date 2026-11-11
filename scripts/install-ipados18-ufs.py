@@ -24,7 +24,7 @@ boot_result=a.boot_image.parent/'DITING_BUILD_RESULT.json'
 boot_manifest=a.boot_image.parent/'stage/EFI/UniXNU/pong-boot-manifest.json'
 if not boot_result.is_file() or not boot_manifest.is_file():raise SystemExit('A completed iPadOS18 boot package is required before writing')
 boot=json.loads(boot_result.read_text());manifest=json.loads(boot_manifest.read_text())
-if boot.get('profile')!='Pong-iPadOS18-22H374-Darwin24' or not boot.get('build_complete') or 'pong_build=ipados18-22H374' not in manifest.get('boot_args','').split():raise SystemExit('Boot package metadata does not select the 22H374 port')
+if boot.get('profile')!='Diting-iPadOS18-22H374-Darwin24' or not boot.get('build_complete') or 'diting_build=ipados18-22H374' not in manifest.get('boot_args','').split():raise SystemExit('Boot package metadata does not select the 22H374 port')
 if not 16<=a.chunk_mib<=1024:raise SystemExit('Use 16..1024 MiB transfer chunks')
 layout=json.loads(a.layout.read_text());header=a.layout.parent/'shngroot-ipados18.bin'
 delta=json.loads(a.os_delta.read_text()) if a.os_delta else None
@@ -33,7 +33,7 @@ tracked=storage_for(os_window['image'])
 if tracked and tracked.get('pending') and not delta and (not a.windows or 'OS' in a.windows):
  raise SystemExit('A tracked OS update is pending; finish and install its --os-delta plan')
 if delta:
- if a.windows!=['OS'] or delta.get('format')!='pong-os-delta-v1' or delta.get('build')!='22H374':
+ if a.windows!=['OS'] or delta.get('format')!='diting-os-delta-v1' or delta.get('build')!='22H374':
   raise SystemExit('A tracked delta updates only --windows OS')
  if not tracked or delta['image']!=tracked['image'] or delta['base_install']!=tracked['last_install']:
   raise SystemExit('Delta does not describe the installed OS generation')
@@ -60,7 +60,7 @@ if a.stream_compression=='gzip':shell('command -v gzip >/dev/null && set -o pipe
 target='/dev/block/by-name/userdata';real=shell('readlink -f '+target)
 geometry=dict(device=real,bytes=int(shell('blockdev --getsize64 '+target)),first_512=int(shell('cat /sys/class/block/sda13/start')),logical_block_bytes=int(shell('cat /sys/class/block/sda/queue/logical_block_size')))
 expected=(layout['partition_last_4k']-layout['partition_first_4k']+1)*4096
-if real!='/dev/block/sda13' or geometry['bytes']!=expected or geometry['first_512']!=layout['partition_first_4k']*8 or geometry['logical_block_bytes']!=4096:raise SystemExit('Pong userdata geometry differs')
+if real!='/dev/block/sda13' or geometry['bytes']!=expected or geometry['first_512']!=layout['partition_first_4k']*8 or geometry['logical_block_bytes']!=4096:raise SystemExit('Diting userdata geometry differs')
 if delta and (delta['serial']!=a.serial or delta['geometry']!=geometry):
  raise SystemExit('Delta belongs to a different device geometry')
 if shell('ls /sys/class/block/sda13/holders') or any(l.split()[0] in (target,real) for l in shell('cat /proc/mounts').splitlines()):raise SystemExit('userdata must have no active mounts or holders')
@@ -89,7 +89,7 @@ else:
                revision=delta['revision'],logical_os_bytes=os_window['size'],
                planned_transfer_bytes=delta['transfer_bytes'],completed_ranges={})
 def save():record.write_text(json.dumps(state,indent=2)+'\n')
-save();chunk=a.chunk_mib*1024**2;scratch=a.output_dir/'transfer.part';remote='/tmp/pong-ipados18.part'
+save();chunk=a.chunk_mib*1024**2;scratch=a.output_dir/'transfer.part';remote='/tmp/diting-ipados18.part'
 for w in layout['windows']:
  if a.windows and w['name'] not in a.windows:continue
  ranges=delta['ranges'] if delta else [[0,w['size']]]
@@ -134,8 +134,8 @@ for w in layout['windows']:
     print(f'{w["name"]}: {state["completed"][w["name"]]}/{total} bytes committed',flush=True)
 scratch.unlink(missing_ok=True)
 if not delta:
- run(cmd+['push',str(header),'/tmp/pong-ipados18-header.bin'])
- shell(f'dd if=/tmp/pong-ipados18-header.bin of={target} bs=4096 count=1 conv=notrunc,fsync status=none && sync')
+ run(cmd+['push',str(header),'/tmp/diting-ipados18-header.bin'])
+ shell(f'dd if=/tmp/diting-ipados18-header.bin of={target} bs=4096 count=1 conv=notrunc,fsync status=none && sync')
 else:shell('sync')
 state['state']='complete'
 if tracked and (not a.windows or 'OS' in a.windows):state['os_generation_complete']=True

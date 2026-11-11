@@ -1,7 +1,7 @@
-# UniXNU Pong iPadOS 18 / Darwin 24 initial board bring-up.
+# UniXNU Diting iPadOS 18 / Darwin 24 initial board bring-up.
 # The boot packager defaults to all 8 SM8475 CPU nodes; PSCI starts them.
 # --cpus 1 retains the isolated bring-up option. CPU composition is selected
-# separately by pong_ui_software=1 and the matching 22H374 runtime adapter.
+# separately by diting_ui_software=1 and the matching 22H374 runtime adapter.
 # Owner SystemCryptex remains mounted read-only at the path selected by the XNU hook.
 CONFIG_XNU_ADRENO_FIRMWARE_PROBE=n
 CONFIG_XNU_ADRENO_PM4_PROBE=n

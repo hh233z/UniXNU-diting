@@ -13,7 +13,7 @@ from diting_native_inputs import build_env
 DEVICE = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(DEVICE / 'scripts'))
 import diting_paths
-TREE = diting_paths.build_tree(name='Pong-iPadOS18-native')
+TREE = diting_paths.build_tree(name='Diting-iPadOS18-native')
 DEVELOPER = diting_paths.developer_dir()
 
 

@@ -84,7 +84,7 @@ gMemoryDescriptor[] = {
   {"IMEM Base",          0x14680000, 0x0002A000, NoHob , MMAP_IO  , INITIALIZED, Conv   , NS_DEVICE},
   {"IMEM Cookie Base",   0x146AA000, 0x00016000, AddDev, MMAP_IO  , INITIALIZED, Conv   , NS_DEVICE},
 
-  // Register Regions（SM8475 与 pong 同 SoC，寄存器布局相同）
+  // Register Regions（SM8475 与 diting 同 SoC，寄存器布局相同）
   {"IPC_ROUTER_TOP",     0x00400000, 0x00100000, AddDev, MMAP_IO  , UNCACHEABLE, MmIO   , NS_DEVICE},
   {"SECURITY CONTROL",   0x00780000, 0x00007000, AddDev, MMAP_IO  , UNCACHEABLE, MmIO   , NS_DEVICE},
   {"QUP",                0x00800000, 0x00300000, AddDev, MMAP_IO  , UNCACHEABLE, MmIO   , NS_DEVICE},

@@ -3,7 +3,7 @@
 
 Sources are local public Linux and UniXNU Ath12kWifi checkouts.
 The driver is not replaced by success stubs. Missing core symbols fail the
-link recipe; power/DMA/MSI remain the consuming Pong board's responsibility.
+link recipe; power/DMA/MSI remain the consuming Diting board's responsibility.
 """
 import argparse
 import sys
@@ -48,8 +48,8 @@ def main():
         content = (source / name).read_text().replace('unsigned long jiffies;', 'unsigned long bp_jiffies;').replace('bp_stats->jiffies', 'bp_stats->bp_jiffies')
         (gen / name).unlink(); (gen / name).write_text(content)
     pc = (source / 'pci.c').read_text()
-    for old, new in [('static int ath11k_pci_init(void)', 'int pong_ath11k_pci_init(void)'),
-                     ('static void ath11k_pci_exit(void)', 'void pong_ath11k_pci_exit(void)')]:
+    for old, new in [('static int ath11k_pci_init(void)', 'int diting_ath11k_pci_init(void)'),
+                     ('static void ath11k_pci_exit(void)', 'void diting_ath11k_pci_exit(void)')]:
         if pc.count(old) != 1: raise RuntimeError('Linux 7.0.14 PCI entry differs: ' + old)
         pc = pc.replace(old, new)
     (gen / 'pci.c').unlink(); (gen / 'pci.c').write_text(pc)
@@ -57,15 +57,15 @@ def main():
     # board-2 container is not part of this phone's firmware partition.
     core = (gen / 'core.c').read_text()
     needle = '\tbd->fw = ath11k_core_firmware_request(ab, name);'
-    replacement = r"""    char pong_bdf[48];
+    replacement = r"""    char diting_bdf[48];
     if (!strcmp(name, ATH11K_DEFAULT_BOARD_FILE)) {
         u32 id = ab->qmi.target.board_id;
         const char *prefix = (ab->qmi.target.chip_id & 0x10) ? "bdwlang" : "bdwlan";
-        if (id == 0xff) snprintf(pong_bdf, sizeof pong_bdf, "%s.elf", prefix);
-        else if (id < 0xff) snprintf(pong_bdf, sizeof pong_bdf, "%s.e%02x", prefix, id);
-        else snprintf(pong_bdf, sizeof pong_bdf, "bdwlan%02x.e%02x", (id >> 8) & 255, id & 255);
-        name = pong_bdf;
-        ath11k_info(ab, "Pong: actual QMI board firmware %s\n", name);
+        if (id == 0xff) snprintf(diting_bdf, sizeof diting_bdf, "%s.elf", prefix);
+        else if (id < 0xff) snprintf(diting_bdf, sizeof diting_bdf, "%s.e%02x", prefix, id);
+        else snprintf(diting_bdf, sizeof diting_bdf, "bdwlan%02x.e%02x", (id >> 8) & 255, id & 255);
+        name = diting_bdf;
+        ath11k_info(ab, "Diting: actual QMI board firmware %s\n", name);
     }
 """ + needle
     if core.count(needle) != 1: raise RuntimeError('ath11k BDF request ABI differs')
@@ -81,7 +81,7 @@ struct ieee80211_sta *ieee80211_find_sta_by_ifaddr(struct ieee80211_hw *hw, cons
 }
 void ieee80211_queue_work(struct ieee80211_hw *hw, struct work_struct *work) { if (hw == g_hw) lx_queue_work(work); }
 """
-    (out / 'nw_mac80211_pong.c').write_text(mac)
+    (out / 'nw_mac80211_diting.c').write_text(mac)
 
     pinned = out / 'pinned'; pinned.mkdir(exist_ok=True)
     inputs = {'linux/mhi.h': 'linux/mhi.h', 'linux/ieee80211.h': 'linux/ieee80211.h',
@@ -110,13 +110,13 @@ void ieee80211_queue_work(struct ieee80211_hw *hw, struct work_struct *work) { i
     env = dict(os.environ, DEVELOPER_DIR=str(diting_paths.developer_dir()))
     clang = subprocess.check_output(['xcrun', '-f', 'clang'], env=env, text=True).strip()
     resource = subprocess.check_output([clang, '-print-resource-dir'], text=True).strip() + '/include'
-    overlay = ROOT / 'drivers/PongWifi/ath11k/compat'
+    overlay = ROOT / 'drivers/DitingWifi/ath11k/compat'
     flags = ['-target', 'arm64-apple-ios18.0', '-mkernel', '-O2', '-g0', '-ffreestanding',
         '-fno-builtin', '-fno-common', '-fno-strict-aliasing', '-fwrapv', '-fno-stack-protector',
         '-fno-delete-null-pointer-checks', '-mgeneral-regs-only', '-std=gnu11',
         '-Wno-incompatible-pointer-types', '-Wno-error', '-Wno-unused-value',
         '-nostdinc', '-isystem', str(shared / 'shim/libc'), '-isystem', resource,
-        '-I', str(overlay), '-include', 'PongCompat.h', '-I', str(shared / 'shim/include'),
+        '-I', str(overlay), '-include', 'DitingCompat.h', '-I', str(shared / 'shim/include'),
         '-I', str(shared / 'include'), '-I', str(pinned), '-I', str(shared / 'src'),
         '-I', str(gen), '-I', str(out), '-I', str(source.parent), '-DCONFIG_ATH11K_PCI=1',
         '-DLX_BOOT_SETTLE_MS=0']
@@ -127,13 +127,13 @@ void ieee80211_queue_work(struct ieee80211_hw *hw, struct work_struct *work) { i
     sta = (shared / 'src/nw_sta.c').read_text()
     begin = sta.index('static void make_nonce(u8 *out) {')
     end = sta.index('static void derive_ptk(void)', begin)
-    sta = sta[:begin] + 'extern void PongWifiRandom(void *, size_t);\nstatic void make_nonce(u8 *out) { PongWifiRandom(out, 32); }\n' + sta[end:]
-    (out / 'nw_sta_pong.c').write_text(sta)
+    sta = sta[:begin] + 'extern void DitingWifiRandom(void *, size_t);\nstatic void make_nonce(u8 *out) { DitingWifiRandom(out, 32); }\n' + sta[end:]
+    (out / 'nw_sta_diting.c').write_text(sta)
     common_sources = ['src/nw_crypto.c', 'src/nw_mac80211.c', 'src/nw_net.c', 'src/nw_pci.c',
         'src/nw_qrtr.c', 'src/nw_qrtr_mhi.c', 'src/nw_sta.c', 'shim/src/lx_rt.c', 'shim/src/mhi_hook.c']
-    jobs += [((out / 'nw_sta_pong.c') if n == 'src/nw_sta.c' else (out / 'nw_mac80211_pong.c') if n == 'src/nw_mac80211.c' else shared / n, out / ('shared_' + Path(n).stem + '.o'), []) for n in common_sources]
+    jobs += [((out / 'nw_sta_diting.c') if n == 'src/nw_sta.c' else (out / 'nw_mac80211_diting.c') if n == 'src/nw_mac80211.c' else shared / n, out / ('shared_' + Path(n).stem + '.o'), []) for n in common_sources]
     jobs += [(linux / ('drivers/soc/qcom/' + n + '.c'), out / (n + '.o'), []) for n in ('qmi_interface', 'qmi_encdec')]
-    jobs += [(ROOT / 'drivers/PongWifi/ath11k/PongAth11k.c', out / 'PongAth11k.o', [])]
+    jobs += [(ROOT / 'drivers/DitingWifi/ath11k/DitingAth11k.c', out / 'DitingAth11k.o', [])]
     commands = []
     def compile(job):
         src, obj, extra = job; cmd = [clang, *flags, *extra, '-c', str(src), '-o', str(obj)]
@@ -144,21 +144,21 @@ void ieee80211_queue_work(struct ieee80211_hw *hw, struct work_struct *work) { i
     with ThreadPoolExecutor(a.jobs) as pool: failed = [r for r in pool.map(compile, jobs) if r]
     (out / 'compile-commands.json').write_text(json.dumps(commands, indent=2) + '\n')
     if failed: raise SystemExit('ath11k compile failures (retained .log): ' + ', '.join(failed))
-    archive = out / 'libPongAth11k.a'
+    archive = out / 'libDitingAth11k.a'
     linked = out / 'ath11k-combined.o'
     subprocess.run(['xcrun', 'ld', '-r', '-arch', 'arm64', *[str(o) for _, o, _ in jobs], '-o', str(linked)], env=env, check=True)
     nm = diting_paths.tool('llvm-nm', 'DITING_LLVM_NM', ('/opt/local/bin/llvm-nm-mp-18',))
     undefined = subprocess.check_output([nm, '-u', '-j', str(linked)], text=True).splitlines()
     (out / 'undefined-symbols.txt').write_text('\n'.join(undefined) + '\n')
-    allowed = {'_PongWifiRandom','_bzero','_memcmp','_memcpy','_memmove','_memset','_snprintf','_strchr','_strcmp','_strlen','_strncmp','_strncpy','_strtoul','_vsnprintf'}
+    allowed = {'_DitingWifiRandom','_bzero','_memcmp','_memcpy','_memmove','_memset','_snprintf','_strchr','_strcmp','_strlen','_strncmp','_strncpy','_strtoul','_vsnprintf'}
     if set(undefined) - allowed: raise RuntimeError('unimplemented ath11k imports: ' + repr(set(undefined) - allowed))
     # Export only the documented board/station boundary. Linux shims have the
     # same C names as XNU helpers, so namespace every other defined symbol.
-    exports = {'_PongWifiRandom', '_nw_wifi_where'}
+    exports = {'_DitingWifiRandom', '_nw_wifi_where'}
     defined = subprocess.check_output([nm, '--defined-only', '--extern-only', '-j', str(linked)], text=True).splitlines()
-    renames = {n: '_pong11_' + n[1:] for n in defined if not n.startswith('_nw_wifi_') and n not in exports}
+    renames = {n: '_diting11_' + n[1:] for n in defined if not n.startswith('_nw_wifi_') and n not in exports}
     mapping = out / 'symbol-map.txt'; mapping.write_text(''.join(k + ' ' + v + '\n' for k, v in renames.items()))
-    namespaced = out / 'PongAth11k-linked.o'
+    namespaced = out / 'DitingAth11k-linked.o'
     subprocess.run([diting_paths.tool('llvm-objcopy', 'DITING_LLVM_OBJCOPY',
                                     ('/opt/local/bin/llvm-objcopy-mp-18',)),
                     '--redefine-syms=' + str(mapping), str(linked), str(namespaced)], check=True)

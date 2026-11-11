@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Resolve the four profile layers, compile hardware and build Pong Darwin24."""
+"""Resolve the four profile layers, compile hardware and build Diting Darwin24."""
 import argparse
 import importlib.util
 import json
@@ -16,10 +16,10 @@ def main():
     p.add_argument('--out', type=Path, default=ROOT / 'out')
     p.add_argument('--jobs', type=int, default=4)
     p.add_argument('--prepare-only', action='store_true')
-    p.add_argument('--defconfig', default='pong_ipados18_defconfig',
+    p.add_argument('--defconfig', default='diting_ipados18_defconfig',
                    help='configs/<name> selected before the kernel build')
     a = p.parse_args(); up=a.unixnu.resolve(); out=a.out.resolve()
-    spec=importlib.util.spec_from_file_location('pong_format2',ROOT/'scripts/migrate-pong-format2.py')
+    spec=importlib.util.spec_from_file_location('diting_format2',ROOT/'scripts/migrate-diting-format2.py')
     migration=importlib.util.module_from_spec(spec);spec.loader.exec_module(migration)
     state=migration.install(up, ROOT.parent/'UniXNU-sm8475-common')
     command=[sys.executable,str(up/'unixnu')]

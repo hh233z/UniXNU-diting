@@ -5,7 +5,7 @@
 - 设备：红米 K50 至尊版（codename `diting`），SoC SM8475，bootloader 已解锁。
 - 目标系统：iPadOS 18.7.10 / 22H374，内核 Darwin 24.6.0（XNU 由源码 + 补丁构建）。
 - 项目：UniXNU（https://unixnu.com，仓库 https://github.com/UniXNU）。
-- 启动链：`fastboot boot pong-unixnu-uefi.img` → 自建 UEFI（ditingPkg）→ UniXNU 菜单 →
+- 启动链：`fastboot boot diting-unixnu-uefi.img` → 自建 UEFI（ditingPkg）→ UniXNU 菜单 →
   DarwinBoot（ExitBootServices、构建页表、跳转 XNU）→ XNU。
 - 构建：GitHub Actions（macOS runner）编译 XNU，约 20–25 分钟一轮；本机无法编内核。
 - 观察手段：屏幕上的内核控制台（会滚动，`printf` 可见）；真机每次 `fastboot boot` 后只能由人手动重启。
@@ -23,9 +23,9 @@ userdata 分区 `/dev/block/sda37`，4 KiB 逻辑块，容量 240,092,426,240 B�
 
 镜像总长 19,411,238,912 B，用 Android sparse 编码在 bootloader 里刷入（25 个 chunk，494 s）。
 
-驱动：自研 `drivers/NativeUfs`（源自 Pong 的 NativeUfs），每窗口发布一个 512 字节逻辑块的
-IOBlockStorageDevice/IOMedia；Data 窗口只有在块设备 `PongWritable` 且 IOMedia 可写时才被接受
-（`PongUfsTransport.cpp:392-395`）。
+驱动：自研 `drivers/NativeUfs`（源自 Diting 的 NativeUfs），每窗口发布一个 512 字节逻辑块的
+IOBlockStorageDevice/IOMedia；Data 窗口只有在块设备 `DitingWritable` 且 IOMedia 可写时才被接受
+（`DitingUfsTransport.cpp:392-395`）。
 
 ## 3. 当前状态（关键）
 
@@ -80,10 +80,10 @@ scratch Data mount SKIP error=6 step=0        ← error 6 = ENXIO
 
 ## 5. 已排除或已处理的项
 
-- `pong_init_path` 白名单：补丁里 `strcmp(pong_init_path, "/pong/init") != 0` 就 `panic("Unsupported Pong init path")`；
+- `diting_init_path` 白名单：补丁里 `strcmp(diting_init_path, "/diting/init") != 0` 就 `panic("Unsupported Diting init path")`；
   已把这个启动参数整个删掉，改走原生 `init_programs`，launchd 因此得以运行。
 - 根卷 UUID 与 SystemOS UUID 都已实测比对并修正（SystemOS 之前用了错误的旧 UUID，导致等 5 秒超时）。
-- Data 卷 UUID 已按 CI 编译进内核的值（337cf716-…）重建窗口；`pong_ufs_readwrite=0 → 1` 已做，
+- Data 卷 UUID 已按 CI 编译进内核的值（337cf716-…）重建窗口；`diting_ufs_readwrite=0 → 1` 已做，
   EACCES 症状未改变（但 Data 挂载结果未观测）。
 - 全卷 `noexec` 的可能性低：`xpcproxy` 与失败的服务在同一卷同一目录下，前者能执行。
 
@@ -102,13 +102,13 @@ scratch Data mount SKIP error=6 step=0        ← error 6 = ENXIO
 - 当前启动参数（`board.toml` 的 `kernel_args`）：
 
 ```
--v keepsyms=1 cpus=1 pong_allow_unauthenticated_root=1 cs_enforcement_disable=1
+-v keepsyms=1 cpus=1 diting_allow_unauthenticated_root=1 cs_enforcement_disable=1
 cs_library_val_enable=0 amfi_get_out_of_my_way=1 -apfs_shared_datavolume debug=0x14e
-serial=0 pong_disable_swap=1 pong_skip_setup=1 pong_adsp=2 pong_audio=2 pong_ufs_readwrite=1
-ignition_level=1 dyld_flags=0x8 launchd_rd=md0 pong_init_trace=1 applog=1 applog_name=<服务列表>
-pong_software_keybag=1 pong_display=1 pong_software_ui=1 pong_ui_software=1 pong_touch=1 pong_buttons=1
-pong_build=ipados18-22H374 pong_gpu_scanout=1 pong_gpu_pool_mib=0 pong_metal_global=1
-pong_gpu_lock_max=1 pong_usb=1 pong_usb_mux=1 pong_usb_iphone=1 pong_rootful=1
+serial=0 diting_disable_swap=1 diting_skip_setup=1 diting_adsp=2 diting_audio=2 diting_ufs_readwrite=1
+ignition_level=1 dyld_flags=0x8 launchd_rd=md0 diting_init_trace=1 applog=1 applog_name=<服务列表>
+diting_software_keybag=1 diting_display=1 diting_software_ui=1 diting_ui_software=1 diting_touch=1 diting_buttons=1
+diting_build=ipados18-22H374 diting_gpu_scanout=1 diting_gpu_pool_mib=0 diting_metal_global=1
+diting_gpu_lock_max=1 diting_usb=1 diting_usb_mux=1 diting_usb_iphone=1 diting_rootful=1
 ```
 
 - 本地已提交的相关工具：`scripts/dump-diting-adt.py`（解 payload 里的 ADT）、

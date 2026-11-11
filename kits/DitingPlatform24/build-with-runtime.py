@@ -65,7 +65,7 @@ def main():
         raise SystemExit('--artifact-dir or --overlay-dir is required')
     if not args.overlay_only and not args.artifact_dir:
         raise SystemExit('--artifact-dir is required when building the kernel')
-    target = args.overlay_dir or args.artifact_dir.resolve().parent / 'pong-runtime-source'
+    target = args.overlay_dir or args.artifact_dir.resolve().parent / 'diting-runtime-source'
     target = overlay(device, target)
     if args.overlay_only:
         print(target)

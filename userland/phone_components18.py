@@ -101,13 +101,13 @@ def stage(root, donor, manifest, runtime):
         shutil.copytree(carriers, target, dirs_exist_ok=True, symlinks=True)
         copied.append('System/Library/Carrier Bundles/iPhone')
     if applications:
-        helper = root / 'pong/phone-register'
+        helper = root / 'diting/phone-register'
         shutil.copyfile(runtime / 'phone-register', helper)
         os.chown(helper, 0, 0)
         os.chmod(helper, 0o755)
     return dict(build='22H374', products=release['SupportedProductTypes'], resources=copied,
                 applications=applications, deferred_applications=deferred, native_code='base dyld cache/kernel retained; incompatible donor application not registered',
-                cellular='carrier configuration only; real Pong baseband transport still required')
+                cellular='carrier configuration only; real Diting baseband transport still required')
 
 
 if __name__ == '__main__':

@@ -7,7 +7,7 @@ export DYLD_SHARED_CACHE_DIR=/private/preboot/System/Library/Caches/com.apple.dy
 export DYLD_FALLBACK_LIBRARY_PATH=/var/jb/usr/lib:/private/preboot/usr/lib
 prefix=/var/jb
 # This job also exists in OS copies without the optional package payload.
-[ -f "$prefix/.pong-sileo-staged" ] || exit 0
+[ -f "$prefix/.diting-sileo-staged" ] || exit 0
 # Rootless Sileo prefixes Foundation's non-container mobile directories with
 # /var/jb. Those directories are runtime data, not root-owned package files.
 for home in /var/mobile "$prefix/var/mobile"; do
@@ -20,7 +20,7 @@ for home in /var/mobile "$prefix/var/mobile"; do
 done
 # Let launchd and its original container/LaunchServices providers initialize.
 sleep 30
-if [ ! -e "$prefix/.pong-sileo-configured" ]; then
+if [ ! -e "$prefix/.diting-sileo-configured" ]; then
     "$prefix/usr/libexec/firmware"
     "$prefix/usr/sbin/pwd_mkdb" -p "$prefix/etc/master.passwd"
     for pkg in debianutils apt dash zsh bash vi; do
@@ -29,12 +29,12 @@ if [ ! -e "$prefix/.pong-sileo-configured" ]; then
     done
     # Do not rebuild every stock app with the bootstrap's older uicache.
     "$prefix/usr/bin/dpkg" --no-triggers --configure org.coolstar.sileo
-    touch "$prefix/.pong-sileo-configured"
+    touch "$prefix/.diting-sileo-configured"
 fi
 # Retry next boot if native LaunchServices has not become available yet.
 # The older uicache returned zero even when LS rejected every application.
 # Recheck the actual mobile-domain proxy on every boot, including an upgrade
 # from that incorrect marker. A failed registration remains retryable.
-rm -f "$prefix/.pong-sileo-registered"
-/pong/sileo-register
-touch "$prefix/.pong-sileo-registered"
+rm -f "$prefix/.diting-sileo-registered"
+/diting/sileo-register
+touch "$prefix/.diting-sileo-registered"

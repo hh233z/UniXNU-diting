@@ -1,9 +1,9 @@
 /*
- * Pong / UniXNU stage0 and init for the native Darwin24 APFS port.
+ * Diting / UniXNU stage0 and init for the native Darwin24 APFS port.
  * Static init; the build selects the matching restore and runtime UI adapter.
  */
 #include "mini.h"
-#include "PongTweakConfig.h"
+#include "DitingTweakConfig.h"
 #ifndef DITING_NATIVE_APFS18
 #error This init belongs to the native Darwin24 APFS recipe
 #endif
@@ -14,7 +14,7 @@
 #define DITING_SYSTEM_BUILD "22H374"
 #endif
 #ifndef DITING_UI_LIBRARY_PATH
-#define DITING_UI_LIBRARY_PATH "/pong/libpong-ui18.dylib"
+#define DITING_UI_LIBRARY_PATH "/diting/libditing-ui18.dylib"
 #endif
 #ifndef DITING_UI_EXTRA_PROCESSES
 #define DITING_UI_EXTRA_PROCESSES ""
@@ -28,7 +28,7 @@ void bzero(void *p, size_t n) { memset(p, 0, n); }
 static void
 boot_stage(const char *message)
 {
-    printf("Pong init: %s\n", message);
+    printf("Diting init: %s\n", message);
 }
 
 static unsigned long
@@ -116,21 +116,21 @@ copy_replace(const char *source, const char *dest, const char *temporary,
 static void
 prepare_setup_bypass(void)
 {
-    static const char marker[] = "/private/var/.pong-setup-bypass-22H374";
-    static const char buddy_source[] = "/pong/var-seed/mobile/Library/Preferences/com.apple.purplebuddy.plist";
-    static const char mini_source[] = "/pong/var-seed/mobile/Library/Preferences/com.apple.purplebuddy.notbackedup.plist";
-    static const char springboard_source[] = "/pong/var-seed/mobile/Library/Preferences/com.apple.springboard.plist";
+    static const char marker[] = "/private/var/.diting-setup-bypass-22H374";
+    static const char buddy_source[] = "/diting/var-seed/mobile/Library/Preferences/com.apple.purplebuddy.plist";
+    static const char mini_source[] = "/diting/var-seed/mobile/Library/Preferences/com.apple.purplebuddy.notbackedup.plist";
+    static const char springboard_source[] = "/diting/var-seed/mobile/Library/Preferences/com.apple.springboard.plist";
     struct stat st;
     if (lstat(marker, &st) == 0) return;
     if (copy_replace(buddy_source,
             "/private/var/mobile/Library/Preferences/com.apple.purplebuddy.plist",
-            "/private/var/mobile/Library/Preferences/.com.apple.purplebuddy.plist.pong-tmp",
+            "/private/var/mobile/Library/Preferences/.com.apple.purplebuddy.plist.diting-tmp",
             0600, 501, 501) != 0 ||
         copy_replace(mini_source,
             "/private/var/mobile/Library/Preferences/com.apple.purplebuddy.notbackedup.plist",
-            "/private/var/mobile/Library/Preferences/.com.apple.purplebuddy.notbackedup.plist.pong-tmp",
+            "/private/var/mobile/Library/Preferences/.com.apple.purplebuddy.notbackedup.plist.diting-tmp",
             0600, 501, 501) != 0) {
-        puts("Pong init: setup bypass preference update failed; retain current Data preferences");
+        puts("Diting init: setup bypass preference update failed; retain current Data preferences");
         return;
     }
     /* Add development watchdog defaults only if this Data has no domain
@@ -138,7 +138,7 @@ prepare_setup_bypass(void)
     if (copy_new(springboard_source,
             "/private/var/mobile/Library/Preferences/com.apple.springboard.plist",
             0600, 501, 501) != 0)
-        puts("Pong init: SpringBoard default preference seed skipped");
+        puts("Diting init: SpringBoard default preference seed skipped");
     int fd = open(marker, O_WRONLY | O_CREAT | O_EXCL, 0600);
     if (fd >= 0) {
         static const char version[] = "22H374 setup bypass applied\n";
@@ -147,9 +147,9 @@ prepare_setup_bypass(void)
         (void)close(fd);
         (void)chown(marker, 0, 0);
         (void)chmod(marker, 0600);
-        puts("Pong init: applied native 22H374 setup-complete preferences once");
+        puts("Diting init: applied native 22H374 setup-complete preferences once");
     } else {
-        printf("Pong init: setup bypass marker unavailable errno=%d\n", errno);
+        printf("Diting init: setup bypass marker unavailable errno=%d\n", errno);
     }
 }
 
@@ -163,17 +163,17 @@ prepare_var(void)
                    root.st_dev != var.st_dev;
     /* Only the Darwin24 kernel mounts the UUID-selected APFS Data volume. */
     if (!separate) {
-        puts("Pong init: no separate writable Data volume; var seed skipped (required for full iOS startup)");
+        puts("Diting init: no separate writable Data volume; var seed skipped (required for full iOS startup)");
         return;
     }
-    int fd = open("/private/var/.pong-write-check", O_CREAT | O_EXCL | O_WRONLY, 0600);
-    if (fd < 0) { printf("Pong init: Data not writable: errno=%d\n", errno); return; }
-    close(fd); unlink("/private/var/.pong-write-check");
+    int fd = open("/private/var/.diting-write-check", O_CREAT | O_EXCL | O_WRONLY, 0600);
+    if (fd < 0) { printf("Diting init: Data not writable: errno=%d\n", errno); return; }
+    close(fd); unlink("/private/var/.diting-write-check");
     int made = 0, errors = 0;
-    static const char *skeletons[] = {"/pong/etc/var.skel", "/pong/etc/preinstalled-assets.skel"};
+    static const char *skeletons[] = {"/diting/etc/var.skel", "/diting/etc/preinstalled-assets.skel"};
     for (unsigned index = 0; index < sizeof(skeletons) / sizeof(skeletons[0]); index++) {
         if (read_text(skeletons[index], buf, sizeof(buf)) < 0) {
-            if (index == 0) printf("Pong init: var.skel unavailable: errno=%d\n", errno);
+            if (index == 0) printf("Diting init: var.skel unavailable: errno=%d\n", errno);
             continue;
         }
         for (char *line = buf; *line;) {
@@ -204,7 +204,7 @@ prepare_var(void)
             line = end + 1;
         }
     }
-    printf("Pong init: writable Data ready, created=%d seed-errors=%d\n", made, errors);
+    printf("Diting init: writable Data ready, created=%d seed-errors=%d\n", made, errors);
 }
 
 /* Repair missing Data parents/timezone links without replacing valid settings. */
@@ -231,7 +231,7 @@ prepare_runtime_paths(void)
         if (lstat(root_dirs[i].path,&st)==0) continue;
         if (mkdir(root_dirs[i].path,root_dirs[i].mode)!=0 ||
             chown(root_dirs[i].path,0,0)!=0 || chmod(root_dirs[i].path,root_dirs[i].mode)!=0)
-            printf("Pong init: runtime parent unavailable %s errno=%d\n",root_dirs[i].path,errno);
+            printf("Diting init: runtime parent unavailable %s errno=%d\n",root_dirs[i].path,errno);
     }
     /* The sparse restore skeleton omits these database parents. Consumers
      * run as mobile and cannot create a multi-level path in one mkdir. */
@@ -242,16 +242,16 @@ prepare_runtime_paths(void)
         "/private/var/mobile/Library/IdentityServices/PDS",
         "/private/var/mobile/Library/Logs",
         "/private/var/mobile/Library/Logs/CrashReporter",
-        "/private/var/mobile/Library/Pong",
-        "/private/var/mobile/Library/Pong/LaunchServices",
-        "/private/var/mobile/Library/Pong/LaunchServices/Library",
-        "/private/var/mobile/Library/Pong/LaunchServices/Library/Caches"
+        "/private/var/mobile/Library/Diting",
+        "/private/var/mobile/Library/Diting/LaunchServices",
+        "/private/var/mobile/Library/Diting/LaunchServices/Library",
+        "/private/var/mobile/Library/Diting/LaunchServices/Library/Caches"
     };
     for (unsigned i=0;i<sizeof(mobile_dirs)/sizeof(mobile_dirs[0]);i++) {
         const char *p=mobile_dirs[i];
         if (lstat(p,&st)==0) continue;
         if (mkdir(p,0700)!=0 || chown(p,501,501)!=0 || chmod(p,0700)!=0)
-            printf("Pong init: mobile database parent unavailable %s errno=%d\n",p,errno);
+            printf("Diting init: mobile database parent unavailable %s errno=%d\n",p,errno);
     }
     /* 22H374 passwd: _installd uid/gid 33, home /var/installd. Root
      * creates missing parents before the original daemon drops privileges.
@@ -265,7 +265,7 @@ prepare_runtime_paths(void)
         const char *p=installation_dirs[i];
         if (lstat(p,&st)==0) continue;
         if (mkdir(p,0700)!=0 || chown(p,33,33)!=0 || chmod(p,0700)!=0)
-            printf("Pong init: installation directory unavailable %s errno=%d\n",p,errno);
+            printf("Diting init: installation directory unavailable %s errno=%d\n",p,errno);
     }
     const char *zone = "/private/var/db/timezone/zoneinfo";
     const char *local = "/private/var/db/timezone/localtime";
@@ -274,8 +274,8 @@ prepare_runtime_paths(void)
         if ((!present || (st.st_mode & S_IFMT) == S_IFLNK) &&
             (!present || unlink(zone) == 0)) {
             if (symlink("/usr/share/zoneinfo.default", zone) == 0)
-                puts("Pong init: timezone path repaired -> /usr/share/zoneinfo.default");
-            else printf("Pong init: timezone path repair failed: errno=%d\n", errno);
+                puts("Diting init: timezone path repaired -> /usr/share/zoneinfo.default");
+            else printf("Diting init: timezone path repair failed: errno=%d\n", errno);
         }
     }
     if (stat(local, &st) != 0 && stat("/usr/share/zoneinfo.default/UTC", &st) == 0) {
@@ -283,12 +283,12 @@ prepare_runtime_paths(void)
         if ((!present || (st.st_mode & S_IFMT) == S_IFLNK) &&
             (!present || unlink(local) == 0) &&
             symlink("/var/db/timezone/zoneinfo/UTC", local) != 0)
-            printf("Pong init: localtime fallback failed: errno=%d\n", errno);
+            printf("Diting init: localtime fallback failed: errno=%d\n", errno);
     }
     if (lstat("/private/var/cores", &st) != 0) {
         if (mkdir("/private/var/cores", 01775) == 0)
             (void)chmod("/private/var/cores", 01775);
-        else printf("Pong init: cores directory unavailable: errno=%d\n", errno);
+        else printf("Diting init: cores directory unavailable: errno=%d\n", errno);
     }
 }
 
@@ -309,7 +309,7 @@ prepare_calendar(void)
             if (epoch>=978307200UL) {
                 struct timeval tv={.tv_sec=(long)epoch,.tv_usec=0};
                 int result=settimeofday(&tv,NULL);
-                printf("Pong init: calendar epoch=%lu result=%d errno=%d\n",
+                printf("Diting init: calendar epoch=%lu result=%d errno=%d\n",
                        epoch,result,result?errno:0);
             }
             return;
@@ -323,17 +323,17 @@ prepare_boot_services(void)
 {
     /* Darwin24 imports the canonical Version 7 job cache from OS and uses
      * the matching Cryptex namespace. */
-    puts("Pong init: native 22H374 OS jobs and Cryptex namespace retained");
+    puts("Diting init: native 22H374 OS jobs and Cryptex namespace retained");
     /* Keep the native audiomxd session/CoreMedia service but hide physical HAL plug-ins;
      * retain all OS files and the separate VirtualAudio.plugin directory. */
     struct stat source, target;
-    const char *empty="/pong/audio-hal18";
+    const char *empty="/diting/audio-hal18";
     const char *hal="/System/Library/Audio/Plug-Ins/HAL";
     if (lstat(empty,&source)==0 && (source.st_mode&S_IFMT)==S_IFDIR &&
         source.st_uid==0 && !(source.st_mode&022) &&
         lstat(hal,&target)==0 && (target.st_mode&S_IFMT)==S_IFDIR) {
         int result=mount("bindfs",hal,MNT_RDONLY,(void *)empty);
-        printf("Pong init: Darwin24 board HAL view result=%d errno=%d\n",
+        printf("Diting init: Darwin24 board HAL view result=%d errno=%d\n",
                result,result?errno:0);
     }
 }
@@ -342,7 +342,7 @@ static void
 prepare_audio_policy(void)
 {
     /* 22H374 can host CoreMedia endpoint discovery in audiomxd or airplayd.
-     * Pong has no external AirPlay endpoint provider. Selecting airplayd
+     * Diting has no external AirPlay endpoint provider. Selecting airplayd
      * leaves audiomxd waiting on its DiscoveryMode RPC until it self-kills.
      * Use the real integrated provider selected by the native feature flag,
      * before launchd and CoreMedia cache that decision. Preserve any existing
@@ -356,11 +356,11 @@ prepare_audio_policy(void)
             if(chown(dirs[i],0,0)!=0)goto failed;
         } else if((st.st_mode&S_IFMT)!=S_IFDIR || st.st_uid!=0 || (st.st_mode&022))goto failed;
     }
-    if(copy_new("/pong/etc/AirPlay-local-audio.plist",
+    if(copy_new("/diting/etc/AirPlay-local-audio.plist",
         "/private/var/preferences/FeatureFlags/Domain/AirPlay.plist",0644,0,0)!=0)goto failed;
-    puts("Pong init: native integrated CoreMedia audio policy prepared");return;
+    puts("Diting init: native integrated CoreMedia audio policy prepared");return;
 failed:
-    printf("Pong init: audio provider policy unavailable errno=%d; existing policy retained\n",errno);
+    printf("Diting init: audio provider policy unavailable errno=%d; existing policy retained\n",errno);
 }
 
 /* An identity change must not reuse the restore's cached iPad answers.
@@ -370,7 +370,7 @@ failed:
 static void
 prepare_device_identity(void)
 {
-    static const char marker[]="/private/var/.pong-identity-iPhone17,1-22H374-island";
+    static const char marker[]="/private/var/.diting-identity-iPhone17,1-22H374-island";
     static const char *paths[]={
         "/private/var/mobile/Library/Caches/com.apple.MobileGestalt.plist",
         "/private/var/containers/Shared/SystemGroup/systemgroup.com.apple.mobilegestaltcache/Library/Caches/com.apple.MobileGestalt.plist"
@@ -392,7 +392,7 @@ prepare_device_identity(void)
             } else close(fd);
         } else ok=0;
     }
-    printf("Pong init: iPhone 16 Pro identity cache refresh %s removed=%d\n",ok?"PASS":"FAIL",removed);
+    printf("Diting init: iPhone 16 Pro identity cache refresh %s removed=%d\n",ok?"PASS":"FAIL",removed);
 }
 
 static void
@@ -404,38 +404,38 @@ configure_ui_library(void)
     const char *base=DITING_UI_LIBRARY_PATH " SpringBoard backboardd InputUI containermanagerd containermanagerd_system Preferences MobilePhone Sileo contextstored SBRendererService PowerUIAgent wifid" DITING_UI_EXTRA_PROCESSES;
     struct stat st;
     if (stat(path,&st)!=0 || (st.st_mode&S_IFMT)!=S_IFREG || st.st_uid!=0) {
-        puts("Pong init: UI compatibility library absent; SKIP");return;
+        puts("Diting init: UI compatibility library absent; SKIP");return;
     }
     char configured[1024];size_t length=strlen(base);
     if(length>=sizeof(configured)) {
-        puts("Pong init: runtime injection configuration exceeds bound; existing configuration retained");return;
+        puts("Diting init: runtime injection configuration exceeds bound; existing configuration retained");return;
     }
     memcpy(configured,base,length+1);
-    const char codec_path[]="/pong/libpong-audio-codecs18.dylib";
-    const char codec_rule[]="; /pong/libpong-audio-codecs18.dylib audiomxd AudioConverterService AUHostingServiceXPC_arrow Preferences tonelibraryd SpringBoard";
+    const char codec_path[]="/diting/libditing-audio-codecs18.dylib";
+    const char codec_rule[]="; /diting/libditing-audio-codecs18.dylib audiomxd AudioConverterService AUHostingServiceXPC_arrow Preferences tonelibraryd SpringBoard";
     if(stat(codec_path,&st)==0 && (st.st_mode&S_IFMT)==S_IFREG && st.st_uid==0 && !(st.st_mode&022)) {
         if(length+sizeof(codec_rule)<=sizeof(configured)) {
             memcpy(configured+length,codec_rule,sizeof(codec_rule));
             length+=sizeof(codec_rule)-1;
-            puts("Pong init: independent 22H374 software codec adapter selected");
-        } else puts("Pong init: codec rule exceeds bounded configuration; native decoders retained");
+            puts("Diting init: independent 22H374 software codec adapter selected");
+        } else puts("Diting init: codec rule exceeds bounded configuration; native decoders retained");
     }
-    const char usb_path[]="/pong/libpong-usb18.dylib";
-    const char usb_rule[]="; /pong/libpong-usb18.dylib lockdownd usb-mux audiomxd SpringBoard backboardd PowerUIAgent Preferences MobileGestaltHelper";
+    const char usb_path[]="/diting/libditing-usb18.dylib";
+    const char usb_rule[]="; /diting/libditing-usb18.dylib lockdownd usb-mux audiomxd SpringBoard backboardd PowerUIAgent Preferences MobileGestaltHelper";
     if(stat(usb_path,&st)==0 && (st.st_mode&S_IFMT)==S_IFREG && st.st_uid==0 && !(st.st_mode&022)) {
         if(length+sizeof(usb_rule)<=sizeof(configured)) {
             memcpy(configured+length,usb_rule,sizeof(usb_rule));
-            puts("Pong init: real USB transport/board identity adapter selected");
-        } else puts("Pong init: USB rule exceeds configuration bound; native USB retained");
+            puts("Diting init: real USB transport/board identity adapter selected");
+        } else puts("Diting init: USB rule exceeds configuration bound; native USB retained");
     }
     /* ElleKit's optional rule must remain last: tweak-refresh truncates
      * that rule before rebuilding it. Keep board codec rules before it. */
     char composed[1024];
-    int tweaks=pong_tweak_config(composed,sizeof(composed),configured);
+    int tweaks=diting_tweak_config(composed,sizeof(composed),configured);
     const char *selected=tweaks>=0?composed:configured;
-    if(tweaks<0)puts("Pong init: invalid optional tweak rule; native adapters preserved");
+    if(tweaks<0)puts("Diting init: invalid optional tweak rule; native adapters preserved");
     int result=sysctlbyname("kern.exec_inject",NULL,NULL,(void *)selected,strlen(selected)+1);
-    printf("Pong init: UI library configuration result=%d errno=%d\n",result,result?errno:0);
+    printf("Diting init: UI library configuration result=%d errno=%d\n",result,result?errno:0);
 }
 
 /* Optional package setup is a launchd job. Never fork its clients before
@@ -454,7 +454,7 @@ main(int argc, char **argv, char **envp)
     /* Upstream init does this before handing the console to non-root jobs. */
     (void)chmod("/dev/console", 0666);
     (void)chdir("/");
-    puts("Pong init: userland adapter / " DITING_SYSTEM_VERSION " " DITING_SYSTEM_BUILD " / static arm64");
+    puts("Diting init: userland adapter / " DITING_SYSTEM_VERSION " " DITING_SYSTEM_BUILD " / static arm64");
     /* maxvnodes tuning is optional; the owner mount hook already publishes
      * skipIgnition in the commpage and exec apple strings before this helper. */
     boot_stage("preparing writable Data seed");
@@ -475,7 +475,7 @@ main(int argc, char **argv, char **envp)
         "DYLD_FALLBACK_LIBRARY_PATH=/private/preboot/usr/lib",
         NULL
     };
-    puts("Pong init: exec original " DITING_SYSTEM_BUILD " launchd; stdin/stdout -> /dev/null, stderr -> /dev/console");
+    puts("Diting init: exec original " DITING_SYSTEM_BUILD " launchd; stdin/stdout -> /dev/null, stderr -> /dev/console");
     boot_stage("exec original /sbin/launchd.ios");
     /* launchd requires a non-interactive stdout before its PID 1 setup.
      * Keep diagnostics on fd 2; fd 1 must not inherit this helper's console. */
@@ -483,7 +483,7 @@ main(int argc, char **argv, char **envp)
     if (nullfd < 0 || dup2(nullfd, 0) < 0 || dup2(nullfd, 1) < 0) {
         if (nullfd > 2) close(nullfd);
         (void)dup2(2, 1);
-        printf("Pong init: non-interactive launchd descriptors failed: errno=%d\n", errno);
+        printf("Diting init: non-interactive launchd descriptors failed: errno=%d\n", errno);
         return 127;
     }
     if (nullfd > 2) close(nullfd);
@@ -492,7 +492,7 @@ main(int argc, char **argv, char **envp)
     (void)dup2(2, 1);
     errno = exec_error;
     boot_stage("original launchd exec returned an error");
-    printf("Pong init: launchd exec failed: errno=%d (%s)\n", errno, strerror(errno));
+    printf("Diting init: launchd exec failed: errno=%d (%s)\n", errno, strerror(errno));
     /* A genuine PID 1 exec failure must remain visible to normal kernel handling. */
     return 127;
 }

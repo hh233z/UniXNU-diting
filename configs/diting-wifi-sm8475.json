@@ -1,6 +1,6 @@
 {
-  "format": "pong-qca6490-board-v1",
-  "board": "pong",
+  "format": "diting-qca6490-board-v1",
+  "board": "diting",
   "soc": "SM8475",
   "pci": {
     "vendor": 6091,
@@ -571,10 +571,10 @@
     "aux_clock_mhz": 20,
     "endpoint_latency_ms": 10,
     "perst_delay_us": 1000,
-    "pinmux_source": "NothingOSS pinctrl-cape.h and Pong live Android DT; GPIO94 gpio, GPIO95 pcie0_clkreqn (mux1), GPIO96 gpio",
+    "pinmux_source": "NothingOSS pinctrl-cape.h and Diting live Android DT; GPIO94 gpio, GPIO95 pcie0_clkreqn (mux1), GPIO96 gpio",
     "target_link_speed": 2,
-    "target_link_speed_source": "Pong REC CNSS/msm_pcie IPC log: target_link_speed=2, negotiated Gen2x1; audit-services66/pcie0-long.txt",
-    "clock_sequence": "TCXO PIPE enabled during host reset/table setup, external PIPE selected before PCS reset release/start, following Sheng QMP power-on with Pong PHY table"
+    "target_link_speed_source": "Diting REC CNSS/msm_pcie IPC log: target_link_speed=2, negotiated Gen2x1; audit-services66/pcie0-long.txt",
+    "clock_sequence": "TCXO PIPE enabled during host reset/table setup, external PIPE selected before PCS reset release/start, following Sheng QMP power-on with Diting PHY table"
   },
   "dma": {
     "iova_pool": [
@@ -620,7 +620,7 @@
         "peripheral": 158,
         "type": 28,
         "subtype": 14,
-        "source": "Pong REC SPMI observer/regmap, audit-services68/rec-pmic-regulator-types.txt and rec-pmic-rails.txt; AON request observed in rec-aon-request.txt"
+        "source": "Diting REC SPMI observer/regmap, audit-services68/rec-pmic-regulator-types.txt and rec-pmic-rails.txt; AON request observed in rec-aon-request.txt"
       }
     },
     {
@@ -639,7 +639,7 @@
         "peripheral": 185,
         "type": 3,
         "subtype": 10,
-        "source": "Pong REC SPMI observer/regmap, audit-services68/rec-pmic-regulator-types.txt and rec-pmic-rails.txt; AON request observed in rec-aon-request.txt"
+        "source": "Diting REC SPMI observer/regmap, audit-services68/rec-pmic-regulator-types.txt and rec-pmic-rails.txt; AON request observed in rec-aon-request.txt"
       }
     },
     {
@@ -658,7 +658,7 @@
         "peripheral": 182,
         "type": 3,
         "subtype": 10,
-        "source": "Pong REC SPMI observer/regmap, audit-services68/rec-pmic-regulator-types.txt and rec-pmic-rails.txt; AON request observed in rec-aon-request.txt"
+        "source": "Diting REC SPMI observer/regmap, audit-services68/rec-pmic-regulator-types.txt and rec-pmic-rails.txt; AON request observed in rec-aon-request.txt"
       }
     },
     {
@@ -677,7 +677,7 @@
         "peripheral": 155,
         "type": 3,
         "subtype": 10,
-        "source": "Pong REC SPMI observer/regmap, audit-services68/rec-pmic-regulator-types.txt and rec-pmic-rails.txt; AON request observed in rec-aon-request.txt"
+        "source": "Diting REC SPMI observer/regmap, audit-services68/rec-pmic-regulator-types.txt and rec-pmic-rails.txt; AON request observed in rec-aon-request.txt"
       }
     },
     {
@@ -696,7 +696,7 @@
         "peripheral": 188,
         "type": 3,
         "subtype": 10,
-        "source": "Pong REC SPMI observer/regmap, audit-services68/rec-pmic-regulator-types.txt and rec-pmic-rails.txt; AON request observed in rec-aon-request.txt"
+        "source": "Diting REC SPMI observer/regmap, audit-services68/rec-pmic-regulator-types.txt and rec-pmic-rails.txt; AON request observed in rec-aon-request.txt"
       }
     },
     {
@@ -727,14 +727,14 @@
         "peripheral": 161,
         "type": 3,
         "subtype": 10,
-        "source": "Pong REC SPMI observer/regmap, audit-services68/rec-pmic-regulator-types.txt and rec-pmic-rails.txt; AON request observed in rec-aon-request.txt"
+        "source": "Diting REC SPMI observer/regmap, audit-services68/rec-pmic-regulator-types.txt and rec-pmic-rails.txt; AON request observed in rec-aon-request.txt"
       }
     }
   ],
   "nv_mac_required": true,
   "firmware": {
-    "device_path": "/mnt/pong-wifi-firmware/image/qca6490",
-    "runtime_path": "/pong/firmware/qca6490",
+    "device_path": "/mnt/diting-wifi-firmware/image/qca6490",
+    "runtime_path": "/diting/firmware/qca6490",
     "required": [
       "amss.bin",
       "amss20.bin",

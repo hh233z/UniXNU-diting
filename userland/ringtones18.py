@@ -37,7 +37,7 @@ def stage_software_catalog(root, work):
             shutil.copyfile(tone, backup)
         subprocess.run(['/usr/bin/afconvert', '-f', 'm4af', '-d', 'alac',
                         str(backup), str(output)], check=True)
-        temporary = tone.with_name(tone.name + '.pong-software')
+        temporary = tone.with_name(tone.name + '.diting-software')
         shutil.copyfile(output, temporary)
         os.chown(temporary, 0, 0)
         os.chmod(temporary, 0o644)

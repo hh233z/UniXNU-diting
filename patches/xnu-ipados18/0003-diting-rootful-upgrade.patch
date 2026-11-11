@@ -14,11 +14,11 @@ diff --git a/bsd/vfs/vfs_syscalls.c b/bsd/vfs/vfs_syscalls.c
 + * vfs_flags at that single call site. The mount itself retains ROOTFS;
 + * every remaining APFS/VFS write-upgrade check still runs unchanged. */
 +uint64_t
-+native_pong_apfs_upgrade_flags(mount_t mp)
++native_diting_apfs_upgrade_flags(mount_t mp)
 +{
 +	uint64_t flags = vfs_flags(mp);
 +	int rootful = 0;
-+	PE_parse_boot_argn("pong_rootful", &rootful, sizeof(rootful));
++	PE_parse_boot_argn("diting_rootful", &rootful, sizeof(rootful));
 +	if (rootful != 1 || !(flags & MNT_ROOTFS) || !rootvnode ||
 +	    vnode_mount(rootvnode) != mp || kauth_cred_getuid(kauth_cred_get()) != 0 ||
 +	    strcmp(vfs_statfs(mp)->f_fstypename, "apfs")) return flags;

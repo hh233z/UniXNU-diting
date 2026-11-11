@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Pong runtime policy layered after the upstream image builders.
+"""Diting runtime policy layered after the upstream image builders.
 
 Keep user-maintained CI/build scripts intact. This updates only job policy
 backed by actual hardware/exit evidence and retains every stock executable.
@@ -48,7 +48,7 @@ def stage(root, runtime=None):
             # redirected stderr and xpcproxy rejects the whole spawn (EACCES).
             # Preserve the working stock console, already mirrored to pstore.
             job['StandardErrorPath']='/dev/console'
-        if label == 'dev.unixnu.pong.audio-route':
+        if label == 'dev.unixnu.diting.audio-route':
             # Embedded AudioObject APIs start a HALS_System in their caller.
             # The actual ASPL now selects its route in an audiomxd worker;
             # do not start another audio server in this external helper.
@@ -86,7 +86,7 @@ def stage(root, runtime=None):
             # followed by KeepAlive/event-driven restarts. A real BT provider
             # must publish its DT node before this hardware daemon is loaded.
             job['_LimitLoadToDeviceTree'] = ['bluetooth', 'marconi-bt']
-            reason = 'requires a real Pong Bluetooth transport; none implemented'
+            reason = 'requires a real Diting Bluetooth transport; none implemented'
         elif label in ('com.apple.lskdd','com.apple.fairplayd.A2','com.apple.wifip2pd'):
             # services125: 957 lskdd exits and ~100 exits each of the other
             # jobs in retained console alone. Preserve demand/IPC and files;
@@ -108,7 +108,7 @@ def stage(root, runtime=None):
             job['Disabled'] = True
             job.pop('KeepAlive', None)
             job.pop('RunAtLoad', None)
-            reason = 'Pong OTA unsupported; repeated softwareupdated SIGSEGV in REC crash reports'
+            reason = 'Diting OTA unsupported; repeated softwareupdated SIGSEGV in REC crash reports'
         else:
             continue
         target = root / path.lstrip('/')
@@ -117,24 +117,24 @@ def stage(root, runtime=None):
         os.chmod(target, 0o644)
         changes.append(dict(label=label, reason=reason))
     if runtime is not None:
-        target=root/'pong/wifi-bootstrap'
+        target=root/'diting/wifi-bootstrap'
         shutil.copyfile(runtime/'wifi-bootstrap',target)
         os.chown(target,0,0);os.chmod(target,0o755)
-        label='dev.unixnu.pong.wifi-bootstrap'
+        label='dev.unixnu.diting.wifi-bootstrap'
         path='/System/Library/LaunchDaemons/'+label+'.plist'
-        job=dict(Label=label,ProgramArguments=['/pong/wifi-bootstrap'],UserName='root',
+        job=dict(Label=label,ProgramArguments=['/diting/wifi-bootstrap'],UserName='root',
             RunAtLoad=True,LaunchOnlyOnce=True,ProcessType='Background',
-            StandardOutPath='/private/var/logs/pong-wifi-bootstrap.log',
-            StandardErrorPath='/private/var/logs/pong-wifi-bootstrap.log')
+            StandardOutPath='/private/var/logs/diting-wifi-bootstrap.log',
+            StandardErrorPath='/private/var/logs/diting-wifi-bootstrap.log')
         target=root/path.lstrip('/')
         target.write_bytes(plistlib.dumps(job,fmt=plistlib.FMT_BINARY))
         os.chown(target,0,0);os.chmod(target,0o644)
         cache['LaunchDaemons'][path]=job
         changes.append(dict(label=label,reason='one native power request after real device discovery; no fake interface/control state'))
-    if (root/'Applications/MobilePhone.app/Info.plist').is_file() and (root/'pong/phone-register').is_file():
-        label='dev.unixnu.pong.phone-register'
+    if (root/'Applications/MobilePhone.app/Info.plist').is_file() and (root/'diting/phone-register').is_file():
+        label='dev.unixnu.diting.phone-register'
         path='/System/Library/LaunchDaemons/'+label+'.plist'
-        job=dict(Label=label,ProgramArguments=['/pong/phone-register'],UserName='mobile',
+        job=dict(Label=label,ProgramArguments=['/diting/phone-register'],UserName='mobile',
             RunAtLoad=True,LaunchOnlyOnce=True,ProcessType='Background',
             StandardOutPath='/dev/console',StandardErrorPath='/dev/console')
         target=root/path.lstrip('/')
@@ -161,7 +161,7 @@ def main():
         parser.error('--prepared and --record required for staging')
     if os.geteuid() != 0:
         raise RuntimeError('system authentication required to edit the local OS copy')
-    spec = importlib.util.spec_from_file_location('pong_runtime', Path(__file__).with_name('build-ipados18.py'))
+    spec = importlib.util.spec_from_file_location('diting_runtime', Path(__file__).with_name('build-ipados18.py'))
     runtime = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(runtime)
     root = args.prepared / 'system-mount'

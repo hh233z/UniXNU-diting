@@ -32,17 +32,17 @@ ROOT = Path(__file__).resolve().parents[1]
 APFS_TOOLS = ROOT / 'tools/apfs'
 
 REQUIRED = ('result.json', 'apply-complete.json',
-            'pong-ipados18-system.cdr', 'pong-ipados18-systemos.cdr',
-            'pong-ipados18-data.cdr')
+            'diting-ipados18-system.cdr', 'diting-ipados18-systemos.cdr',
+            'diting-ipados18-data.cdr')
 # Image name -> (volume-layout key, APFS role to prefer when the image holds
 # more than one volume, where the image comes from). 0x1 is the sealed System
 # role, 0x40 the writable Data role.
 IMAGES = {
-    'pong-ipados18-system.cdr': dict(layout_key='os', role=0x1,
+    'diting-ipados18-system.cdr': dict(layout_key='os', role=0x1,
         note='the OS copy build-ipados18.py writes beside result.json'),
-    'pong-ipados18-systemos.cdr': dict(layout_key='systemos', role=None,
+    'diting-ipados18-systemos.cdr': dict(layout_key='systemos', role=None,
         note='the image userland/build-systemos18.py produces'),
-    'pong-ipados18-data.cdr': dict(layout_key='data', role=0x40,
+    'diting-ipados18-data.cdr': dict(layout_key='data', role=0x40,
         note='the Data copy build-ipados18.py writes beside result.json'),
 }
 EXPECTED_BUILD = '22H374'
@@ -154,7 +154,7 @@ def header_kind(path):
     if len(head) >= 4096 and head[32:36] == b'NXSB':
         block_size = struct.unpack_from('<I', head, 36)[0]
         if block_size != 4096:
-            fail('%s is an APFS container with %d-byte blocks; every Pong UFS window is '
+            fail('%s is an APFS container with %d-byte blocks; every Diting UFS window is '
                  '4096-byte blocked' % (path.name, block_size))
         return 'apfs'
     if len(head) >= 1024 and head[512:520] == b'EFI PART':
@@ -217,7 +217,7 @@ def validate_tree(dest):
         fail('os-storage.json records a tracked sparsebundle OS generation. '
              'prepare-ipados18-ufs-layout.py sizes the raw image, so a tracked generation '
              'would disagree with what the installer streams. Supply the plain '
-             'pong-ipados18-system.cdr, or finish the tracked generation first.')
+             'diting-ipados18-system.cdr, or finish the tracked generation first.')
     sizes = {}
     for name in IMAGES:
         path = dest / name

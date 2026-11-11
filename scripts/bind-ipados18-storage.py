@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Link Pong UFS to the selected Darwin 24 storage family without old addresses."""
+"""Link Diting UFS to the selected Darwin 24 storage family without old addresses."""
 import argparse,json,struct,subprocess,sys
 from pathlib import Path
 ROOT=Path(__file__).resolve().parents[1];sys.path.insert(0,str(ROOT/'kits/NativePrelink'))

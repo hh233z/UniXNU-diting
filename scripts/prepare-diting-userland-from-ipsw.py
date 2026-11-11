@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Prepare the 22H374 Pong userland on a macOS runner from an Apple IPSW URL.
+"""Prepare the 22H374 Diting userland on a macOS runner from an Apple IPSW URL.
 
 The userdata layout needs a prepared userland: result.json, apply-complete.json
 and the OS, SystemOS and Data images. Until now a CI run was handed that
@@ -130,7 +130,7 @@ class Recorder:
 
     def __init__(self):
         self.report = {
-            'format': 'pong-userland-from-ipsw-v1',
+            'format': 'diting-userland-from-ipsw-v1',
             'build': '22H374',
             'started_utc': now(),
             'finished_utc': None,
@@ -434,7 +434,7 @@ def create_apfs_image(rec, path, mib, volume_name, label):
 def load_stage_module():
     """The userdata contract lives in stage-diting-userdata.py; use it, do not copy it."""
     spec = importlib.util.spec_from_file_location(
-        'stage_pong_userdata', ROOT / 'scripts/stage-diting-userdata.py')
+        'stage_diting_userdata', ROOT / 'scripts/stage-diting-userdata.py')
     module = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(module)
     return module
@@ -662,7 +662,7 @@ def main():
     # -- 4. OS: UDIF -> raw disk, then mount it as --os-root --------------
     #
     # build-ipados18.py prepare copies --os-image verbatim into
-    # pong-ipados18-system.cdr, so the input has to be the raw disk already: a
+    # diting-ipados18-system.cdr, so the input has to be the raw disk already: a
     # UDIF file would be copied as a UDIF file and the userdata stage would
     # refuse it (it looks for an APFS container or a GPT at the front).
     rec.stage('os-image')
@@ -725,12 +725,12 @@ def main():
         fail('%s holds %d split arm64 shared caches; build-ipados18.py needs at least two'
              % (cache, len(cache_files)))
 
-    systemos_sparse = work / 'PongSystemOS18.sparseimage'
+    systemos_sparse = work / 'DitingSystemOS18.sparseimage'
     systemos_sparse_bytes = create_apfs_image(
-        rec, systemos_sparse, SYSTEMOS_MIB, 'Pong-iPadOS18-SystemOS', 'create SystemOS volume')
+        rec, systemos_sparse, SYSTEMOS_MIB, 'Diting-iPadOS18-SystemOS', 'create SystemOS volume')
     rec.stage('systemos-created', image=systemos_sparse.name, bytes=systemos_sparse_bytes,
               mib=SYSTEMOS_MIB)
-    systemos_cdr = out / 'pong-ipados18-systemos.cdr'
+    systemos_cdr = out / 'diting-ipados18-systemos.cdr'
     # Root for the same reason the local recipe is run with sudo: ditto has to
     # write Apple's original uid/gid onto the copy, and hdiutil needs ownership
     # enabled on both sides for that to survive.
@@ -766,10 +766,10 @@ def main():
     # -- 7. Data: a fresh 8 GiB APFS disk, as the local recipe makes ------
     #
     # The iOS 16 writable Data is not reused. prepare copies --data-image into
-    # pong-ipados18-data.cdr, so this is also converted to a raw disk first.
+    # diting-ipados18-data.cdr, so this is also converted to a raw disk first.
     rec.stage('data-image')
-    data_sparse = work / 'PongData18.sparseimage'
-    create_apfs_image(rec, data_sparse, DATA_MIB, 'Pong-iPadOS18-Data', 'create Data volume')
+    data_sparse = work / 'DitingData18.sparseimage'
+    create_apfs_image(rec, data_sparse, DATA_MIB, 'Diting-iPadOS18-Data', 'create Data volume')
     data_raw = work / 'data-template.cdr'
     rec.require('before-data-convert', work, DATA_MIB * 1024 + 2 * GIB, 'the Data conversion')
     data_raw_bytes = materialize_raw(rec, data_sparse, data_raw, 'convert Data to raw')
@@ -797,9 +797,9 @@ def main():
                                  '--developer', str(developer),
                                  '--app-cryptex', str(appos_root)])
     rec.stage('prepared',
-              system_cdr_bytes=expect_file(out / 'pong-ipados18-system.cdr',
+              system_cdr_bytes=expect_file(out / 'diting-ipados18-system.cdr',
                                            'prepare (the OS copy)', 1 << 30),
-              data_cdr_bytes=expect_file(out / 'pong-ipados18-data.cdr',
+              data_cdr_bytes=expect_file(out / 'diting-ipados18-data.cdr',
                                          'prepare (the Data copy)', 1 << 20))
     # Nothing after prepare reads the three source volumes: apply and finish
     # work only on the copies under --out. Releasing them here is what keeps the
@@ -827,7 +827,7 @@ def main():
 
     # -- 11. drop the intermediates ---------------------------------------
     #
-    # apply refused to treat --out/pong-ipados18-{system,data}.cdr as its own
+    # apply refused to treat --out/diting-ipados18-{system,data}.cdr as its own
     # source, which needs those two raw images to have existed while it ran;
     # they are finished with now.
     attached.release_all()

@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Resolve the Pong build inputs from flags, then the environment, then a local layout.
+"""Resolve the Diting build inputs from flags, then the environment, then a local layout.
 
 Every path that used to be a hardcoded volume name goes through one of these
 resolvers, so the same scripts run on a workstation with mounted volumes and on
@@ -27,15 +27,15 @@ def _env(*names):
 
 def input_root():
     """Root of the fetched Apple content and other large local inputs."""
-    return _env('DITING_INPUTS', 'DITING_INPUT_ROOT') or Path('/Volumes/Untitled/Pong-iPadOS18')
+    return _env('DITING_INPUTS', 'DITING_INPUT_ROOT') or Path('/Volumes/Untitled/Diting-iPadOS18')
 
 
 def work_root():
     """Root of the local build scratch space."""
-    return _env('DITING_WORK', 'DITING_WORK_ROOT') or _env('DITING_ROOT') or Path('/Volumes/PongDev')
+    return _env('DITING_WORK', 'DITING_WORK_ROOT') or _env('DITING_ROOT') or Path('/Volumes/DitingDev')
 
 
-def build_tree(explicit=None, name='Pong-iPadOS18-native'):
+def build_tree(explicit=None, name='Diting-iPadOS18-native'):
     if explicit:
         return Path(explicit).expanduser()
     return _env('DITING_BUILD_TREE') or work_root() / 'build' / name / 'tree'
@@ -60,7 +60,7 @@ def developer_dir(explicit=None):
 def volume_layout(explicit=None):
     if explicit:
         return Path(explicit).expanduser()
-    return _env('DITING_VOLUME_LAYOUT') or work_root() / 'build/Pong-iPadOS18-inputs/volume-layout.json'
+    return _env('DITING_VOLUME_LAYOUT') or work_root() / 'build/Diting-iPadOS18-inputs/volume-layout.json'
 
 
 def prepared_userland(explicit=None):
@@ -84,13 +84,13 @@ def wifi_build(explicit=None):
 def wifi_firmware(explicit=None):
     if explicit:
         return Path(explicit).expanduser()
-    return _env('DITING_WIFI_FIRMWARE') or input_root() / 'pong-wifi-firmware'
+    return _env('DITING_WIFI_FIRMWARE') or input_root() / 'diting-wifi-firmware'
 
 
 def audio_inputs(explicit=None):
     if explicit:
         return Path(explicit).expanduser()
-    return _env('DITING_AUDIO_INPUTS') or input_root() / 'pong-audio-inputs'
+    return _env('DITING_AUDIO_INPUTS') or input_root() / 'diting-audio-inputs'
 
 
 def adreno_firmware(explicit=None):
@@ -144,14 +144,14 @@ def handoff_root(explicit=None):
     """A handoff bundle of prebuilt local images."""
     if explicit:
         return Path(explicit).expanduser()
-    return _env('DITING_HANDOFF') or work_root() / 'handoffs/Pong-iOS16-Mac-Next-20261020'
+    return _env('DITING_HANDOFF') or work_root() / 'handoffs/Diting-iOS16-Mac-Next-20261020'
 
 
 def boot_template(explicit=None):
     """Boot image template that the local boot packagers stage into."""
     if explicit:
         return Path(explicit).expanduser()
-    return _env('DITING_BOOT_TEMPLATE') or handoff_root() / 'images/pong-window-vectors.img'
+    return _env('DITING_BOOT_TEMPLATE') or handoff_root() / 'images/diting-window-vectors.img'
 
 
 def mu_basecore(explicit=None):

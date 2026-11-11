@@ -36,8 +36,8 @@ static _Thread_local bool asset_fallback;
 static void (*previous_exception)(id);
 static void record(const char *text)
 {
-    fprintf(stderr,"Pong Settings18: %s\n",text);
-    int fd=open("/private/var/mobile/Library/Logs/Pong-Preferences18.log",
+    fprintf(stderr,"Diting Settings18: %s\n",text);
+    int fd=open("/private/var/mobile/Library/Logs/Diting-Preferences18.log",
         O_WRONLY|O_APPEND|O_CREAT|O_CLOEXEC|O_NOFOLLOW,0600);
     if(fd<0)return;
     struct stat st;
@@ -94,7 +94,7 @@ static void about_value(id self,SEL selector,id value,id key)
 }
 static void load_device_serial(void)
 {
-    int fd=open("/pong/device-serial",O_RDONLY|O_CLOEXEC|O_NOFOLLOW);if(fd<0)return;
+    int fd=open("/diting/device-serial",O_RDONLY|O_CLOEXEC|O_NOFOLLOW);if(fd<0)return;
     struct stat st;char value[32];ssize_t n=0;
     if(!fstat(fd,&st) && S_ISREG(st.st_mode) && st.st_uid==0 && !(st.st_mode&022) && st.st_size==11)
         n=read(fd,value,sizeof(value));
@@ -355,7 +355,7 @@ static void load_icons(void *unused)
             added(_dyld_get_image_header(i),_dyld_get_image_vmaddr_slide(i));
     }
 }
-void pong_settings18_start(void)
+void diting_settings18_start(void)
 {
     char product[64]={0};size_t size=sizeof(product);
     phone_identity=sysctlbyname("hw.product",product,&size,NULL,0)==0 && !strcmp(product,"iPhone17,1");
@@ -374,7 +374,7 @@ void pong_settings18_start(void)
  * The retainFullMute setter preserves the user's native mute policy, and
  * successful categories are never overridden again at subsequent boots.
  */
-static const CFStringRef volume_domain=CFSTR("org.unixnu.pong.audio");
+static const CFStringRef volume_domain=CFSTR("org.unixnu.diting.audio");
 static unsigned volume_attempts;
 static dispatch_queue_t volume_queue;
 static const char *volume_type(const char *type)
@@ -398,11 +398,11 @@ static bool volume_method(Method m,const char *result,unsigned count,const char 
 static void volume_record(const char *category,float before,float after,bool changed,bool accepted)
 {
     char line[256];int n=snprintf(line,sizeof(line),
-        "Pong native volume: %s before=%.4f after=%.4f requested=%u accepted=%u attempt=%u\n",
+        "Diting native volume: %s before=%.4f after=%.4f requested=%u accepted=%u attempt=%u\n",
         category,(double)before,(double)after,changed,accepted,volume_attempts);
     if(n<=0 || n>=(int)sizeof(line))return;
     (void)write(STDERR_FILENO,line,(size_t)n);
-    int fd=open("/private/var/mobile/Library/Logs/Pong-audio-volume18.log",
+    int fd=open("/private/var/mobile/Library/Logs/Diting-audio-volume18.log",
         O_WRONLY|O_APPEND|O_CREAT|O_CLOEXEC|O_NOFOLLOW,0600);
     if(fd>=0) {
         struct stat st;if(!fstat(fd,&st) && S_ISREG(st.st_mode) && st.st_size<1024*1024)
@@ -427,7 +427,7 @@ static void volume_restore(void *unused)
        !volume_method(class_getInstanceMethod(cls,getter),"Bc",2,"^@") ||
        !volume_method(class_getInstanceMethod(cls,setter),"Bc",3,"f@B")) {
         if(volume_attempts==1 || volume_attempts==10)
-            fprintf(stderr,"Pong native volume: waiting for native AVSystemController ABI (attempt=%u)\n",volume_attempts);
+            fprintf(stderr,"Diting native volume: waiting for native AVSystemController ABI (attempt=%u)\n",volume_attempts);
         finished=false;goto done;
     }
     id controller=((id(*)(id,SEL))objc_msgSend)((id)cls,shared);
@@ -501,7 +501,7 @@ static void ringer_restore(void *unused)
     // Reconcile with the audio service even when the local startup cache is
     // already false; that cache did not initialize the missing board switch.
     ((void(*)(id,SEL,BOOL,BOOL,id,unsigned))objc_msgSend)(ringer,set,desired,NO,
-        (id)CFSTR("Pong native ringtone setup"),1u);
+        (id)CFSTR("Diting native ringtone setup"),1u);
     bool after=*(const unsigned char *)((const char *)ringer+offset)!=0;
     volume_record("native ringer cached muted",before,after,true,after==(bool)desired);
     if(after==(bool)desired) {
@@ -511,7 +511,7 @@ static void ringer_restore(void *unused)
         audio_mark(CFSTR("NativeRingerEnabled147"));return;
     }
 retry:
-    if(ringer_attempts==10)fprintf(stderr,"Pong native ringtone: ringer controller restore did not complete\n");
+    if(ringer_attempts==10)fprintf(stderr,"Diting native ringtone: ringer controller restore did not complete\n");
     if(ringer_attempts<10)dispatch_after_f(dispatch_time(DISPATCH_TIME_NOW,5*NSEC_PER_SEC),
         dispatch_get_main_queue(),NULL,ringer_restore);
 }
@@ -554,17 +554,17 @@ static void tone_restore(void *unused)
         current=((id(*)(id,SEL,long long))objc_msgSend)(manager,get,1);
     }
     if(tone_file(manager,path,current)) {
-        fprintf(stderr,"Pong native ringtone: incoming-call selection resolves to an installed sound\n");
+        fprintf(stderr,"Diting native ringtone: incoming-call selection resolves to an installed sound\n");
         audio_mark(CFSTR("NativeCallTone147"));return;
     }
 retry:
-    if(tone_attempts==10)fprintf(stderr,"Pong native ringtone: native catalog/preference restore did not complete\n");
+    if(tone_attempts==10)fprintf(stderr,"Diting native ringtone: native catalog/preference restore did not complete\n");
     if(tone_attempts<10)dispatch_after_f(dispatch_time(DISPATCH_TIME_NOW,5*NSEC_PER_SEC),volume_queue,NULL,tone_restore);
 }
-void pong_audio_volume18_start(void)
+void diting_audio_volume18_start(void)
 {
     if(strcmp(getprogname(),"SpringBoard") || volume_queue)return;
-    volume_queue=dispatch_queue_create("org.unixnu.pong.native-volume",DISPATCH_QUEUE_SERIAL);
+    volume_queue=dispatch_queue_create("org.unixnu.diting.native-volume",DISPATCH_QUEUE_SERIAL);
     dispatch_after_f(dispatch_time(DISPATCH_TIME_NOW,15*NSEC_PER_SEC),volume_queue,NULL,volume_restore);
     dispatch_after_f(dispatch_time(DISPATCH_TIME_NOW,20*NSEC_PER_SEC),dispatch_get_main_queue(),NULL,ringer_restore);
     dispatch_after_f(dispatch_time(DISPATCH_TIME_NOW,20*NSEC_PER_SEC),volume_queue,NULL,tone_restore);

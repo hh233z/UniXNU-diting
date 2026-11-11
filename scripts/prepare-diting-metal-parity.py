@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Prepare a separate pinned translator tree for Pong's iPadOS18 Metal bridge.
+"""Prepare a separate pinned translator tree for Diting's iPadOS18 Metal bridge.
 
 The input is the public steelbrain/metal2vulkan Git repository. Existing dirty
 translator worktrees are never reset. Applies the feature branch's ordered
@@ -21,6 +21,6 @@ with tarfile.open(fileobj=io.BytesIO(source)) as archive:
 patches=sorted((ROOT/'patches/metal2vulkan/parity114').glob('*.patch'))
 for patch in patches:
     subprocess.run(['git','apply','--whitespace=nowarn',str(patch)],cwd=a.out,check=True)
-(a.out/'.pong-parity.json').write_text(json.dumps(dict(translator=PIN,guest='22H374',
+(a.out/'.diting-parity.json').write_text(json.dumps(dict(translator=PIN,guest='22H374',
     metal='b82fa2751d62d3b0a8b9330a58d1506d9cdf0963',patches=[p.name for p in patches]),indent=2)+'\n')
 print(a.out)

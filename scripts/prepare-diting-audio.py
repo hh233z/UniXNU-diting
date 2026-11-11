@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
-"""Derive the two real amplifier register profiles from a local Pong CNT."""
+"""Derive the two real amplifier register profiles from a local Diting CNT."""
 import argparse,struct,json
 from pathlib import Path
 p=argparse.ArgumentParser(description=__doc__);p.add_argument('--container',type=Path,required=True);p.add_argument('--output',type=Path,required=True);a=p.parse_args();b=a.container.read_bytes()
-if len(b)<54 or b[:2]!=b'PM' or struct.unpack_from('<H',b,40)[0]!=2:raise RuntimeError('Pong two-amplifier container required')
+if len(b)<54 or b[:2]!=b'PM' or struct.unpack_from('<H',b,40)[0]!=2:raise RuntimeError('Diting two-amplifier container required')
 def ptr(o):
  if o<0 or o+4>len(b):raise RuntimeError('CNT pointer outside file')
  x=struct.unpack_from('<I',b,o)[0];off=x&0xffffff
@@ -23,7 +23,7 @@ def bits(at,count):
 arrays=[]
 for i in range(2):
  d,kind=ptr(46+i*4)
- if kind or b[d+2]!=0x34+i:raise RuntimeError('Actual Pong amplifier addresses required')
+ if kind or b[d+2]!=0x34+i:raise RuntimeError('Actual Diting amplifier addresses required')
  # Device fields precede its profile pointers and the dummy ROM patch.
  device=[];profile=None
  for k in range(b[d]):
@@ -36,5 +36,5 @@ for i in range(2):
  if not profile:raise RuntimeError('Actual speaker profile absent')
  arrays.append(device+profile)
 a.output.parent.mkdir(parents=True,exist_ok=True)
-a.output.write_text('struct PongAmpField {unsigned field,value;};\n'+''.join('static constexpr PongAmpField kPongAmp%d[]={\n'%i+''.join('{0x%x,0x%x},\n'%x for x in v)+'};\n' for i,v in enumerate(arrays)))
+a.output.write_text('struct DitingAmpField {unsigned field,value;};\n'+''.join('static constexpr DitingAmpField kDitingAmp%d[]={\n'%i+''.join('{0x%x,0x%x},\n'%x for x in v)+'};\n' for i,v in enumerate(arrays)))
 print(json.dumps(dict(amplifiers=2,source=str(a.container),fields=[len(x) for x in arrays],hash_verification=False)))

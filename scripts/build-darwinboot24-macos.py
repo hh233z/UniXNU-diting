@@ -18,7 +18,7 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--edk2', type=Path, default=diting_paths.mu_basecore())
     parser.add_argument('--package', type=Path, default=diting_paths.unixnu_package())
-    parser.add_argument('--output-dir', type=Path, default=diting_paths.work_root() / 'build/Pong-DarwinBoot24')
+    parser.add_argument('--output-dir', type=Path, default=diting_paths.work_root() / 'build/Diting-DarwinBoot24')
     parser.add_argument('--llvm', type=Path, default=diting_paths.llvm_toolchain())
     args = parser.parse_args()
     if args.llvm is None:

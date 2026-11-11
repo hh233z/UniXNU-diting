@@ -1,4 +1,4 @@
-"""Locate Pong's retained CDC interface even when USB uses the iOS UDID."""
+"""Locate Diting's retained CDC interface even when USB uses the iOS UDID."""
 import glob
 import plistlib
 import subprocess
@@ -22,7 +22,7 @@ def phone_usb_nodes():
         if 'bDeviceClass' not in node or node.get('idVendor')!=0x05ac or node.get('idProduct')!=0x12a8:continue
         key=(node.get('IORegistryEntryID'),node.get('locationID'),node.get('USB Serial Number'))
         if key in seen:continue
-        if any(any(isinstance(v,str) and 'Pong XNU console' in v for v in item.values()) or
+        if any(any(isinstance(v,str) and 'Diting XNU console' in v for v in item.values()) or
                (item.get('bInterfaceClass')==2 and item.get('bInterfaceSubClass')==2)
                for item in _nodes(node)):
             found.append(node);seen.add(key)

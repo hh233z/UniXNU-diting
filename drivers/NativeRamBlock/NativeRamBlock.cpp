@@ -254,11 +254,11 @@ bool NativeRamBlock::start(IOService *provider)
   }
   capacity = logical / 512;
 #if defined(DITING_RAM_BLOCK_VOLATILE_ONLY) && DITING_RAM_BLOCK_VOLATILE_ONLY
-  // Pong's scratch Data is RAM-only; no persistence overlay consumes a seed digest.
+  // Diting's scratch Data is RAM-only; no persistence overlay consumes a seed digest.
   memset(seedHash, 0, sizeof(seedHash));
   if (sparse.pages || isBig) memory = nullptr;
 #else
-  // Pong's volatile scratch Data has no persistent overlay. Its seed digest
+  // Diting's volatile scratch Data has no persistent overlay. Its seed digest
   // is only an overlay identity, not an APFS or boot authorization check.
   unsigned storeMode = &native_ufs_store_mode ? native_ufs_store_mode() : 0;
   if (storeMode) {

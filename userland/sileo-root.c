@@ -1,5 +1,5 @@
 /* SPDX-License-Identifier: MIT
- * Sileo's setuid entry for the Pong development kernel. Use normal XNU
+ * Sileo's setuid entry for the Diting development kernel. Use normal XNU
  * credentials; this port has no libjailbreak or jailbreakd dependency.
  */
 #include <sys/stat.h>
@@ -27,25 +27,25 @@ int main(int argc,char **argv)
            expected.st_dev==actual.st_dev && expected.st_ino==actual.st_ino &&
            expected.st_uid==0 && !(expected.st_mode&022))trusted=1;
     if(!trusted) {
-        fputs("Pong Sileo: caller is not the installed Sileo executable\n",stderr);return 77;
+        fputs("Diting Sileo: caller is not the installed Sileo executable\n",stderr);return 77;
     }
     if(geteuid()!=0 || setgid(0) || setuid(0) || getuid()!=0) {
-        fputs("Pong Sileo: setuid credentials unavailable\n",stderr);return 77;
+        fputs("Diting Sileo: setuid credentials unavailable\n",stderr);return 77;
     }
     int command=1;
     if(argc>1 && !strcmp(argv[1],"giveMeRoot"))command++;
     if(argc<=command)return 0;
     if(!strcmp(argv[command],"whoami")){puts("root");return 0;}
-    if(argv[command][0]!='/'){fputs("Pong Sileo: absolute command required\n",stderr);return 64;}
+    if(argv[command][0]!='/'){fputs("Diting Sileo: absolute command required\n",stderr);return 64;}
     // APT may start long after boot's initial network attempt. Synchronize
     // conventional resolver state from actual configd DNS for each package
     // transaction, without changing native DNS or requiring a fixed server.
     if(!strcmp(argv[command],"/usr/bin/apt") || !strcmp(argv[command],"/usr/bin/apt-get")) {
-        char *network[]={"/pong/package-network",NULL};pid_t child;
+        char *network[]={"/diting/package-network",NULL};pid_t child;
         if(!posix_spawn(&child,network[0],NULL,NULL,network,environ)) {
             int status;while(waitpid(child,&status,0)<0 && errno==EINTR){}
         }
     }
     execv(argv[command],argv+command);
-    perror("Pong Sileo execv");return 71;
+    perror("Diting Sileo execv");return 71;
 }

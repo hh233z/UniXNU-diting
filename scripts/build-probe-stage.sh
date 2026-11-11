@@ -12,7 +12,7 @@ bash "$HERE/scripts/build-firmware.sh"
 python3 "$HERE/scripts/build-payload-probe.py"
 python3 "$HERE/scripts/test-initrd-qemu.py"
 python3 "$HERE/scripts/build-bootimg.py" \
-  --ramdisk "$ROOT/UniXNU/out/pong/payload-probe/payload.ramdisk" \
-  --output-dir "$ROOT/UniXNU/out/pong/boot-v3-mapped-probe"
+  --ramdisk "$ROOT/UniXNU/out/diting/payload-probe/payload.ramdisk" \
+  --output-dir "$ROOT/UniXNU/out/diting/boot-v3-mapped-probe"
 python3 "$HERE/scripts/verify-firmware.py" \
-  --output-dir "$ROOT/UniXNU/out/pong/boot-v3-mapped-probe"
+  --output-dir "$ROOT/UniXNU/out/diting/boot-v3-mapped-probe"

@@ -12,8 +12,8 @@ Example, after finishing a prepared userland locally:
 
     python3 scripts/pack-diting-userland.py \
       --prepared ../private-inputs/22H374/prepared \
-      --systemos out/ipados18/systemos/pong-ipados18-systemos.cdr \
-      --output ../private-inputs/pong-userland.zip
+      --systemos out/ipados18/systemos/diting-ipados18-systemos.cdr \
+      --output ../private-inputs/diting-userland.zip
 
 Nothing is copied: the two records and three images go into the archive at the
 top level, and zip picks the deflate level Python defaults to. The three images
@@ -26,8 +26,8 @@ import zipfile
 from pathlib import Path
 
 RECORDS = ('result.json', 'apply-complete.json')
-IMAGES = ('pong-ipados18-system.cdr', 'pong-ipados18-data.cdr')
-SYSTEMOS = 'pong-ipados18-systemos.cdr'
+IMAGES = ('diting-ipados18-system.cdr', 'diting-ipados18-data.cdr')
+SYSTEMOS = 'diting-ipados18-systemos.cdr'
 
 
 def check_file(path, what):
@@ -44,8 +44,8 @@ def main():
                                      formatter_class=argparse.RawDescriptionHelpFormatter)
     parser.add_argument('--prepared', type=Path, required=True,
                         help='the directory build-ipados18.py finish wrote: result.json, '
-                             'apply-complete.json, pong-ipados18-system.cdr and '
-                             'pong-ipados18-data.cdr')
+                             'apply-complete.json, diting-ipados18-system.cdr and '
+                             'diting-ipados18-data.cdr')
     parser.add_argument('--systemos', type=Path, required=True,
                         help='the .cdr build-systemos18.py wrote')
     parser.add_argument('--output', type=Path, required=True,
@@ -72,7 +72,7 @@ def main():
     if storage.is_file() and json.loads(storage.read_text()).get('ready'):
         raise SystemExit('refusing to pack: os-storage.json records a tracked sparsebundle OS '
                          'generation, and the layout script sizes the raw image. Finish the '
-                         'generation first, or pass the plain pong-ipados18-system.cdr.')
+                         'generation first, or pass the plain diting-ipados18-system.cdr.')
     output = args.output.expanduser().resolve()
     output.parent.mkdir(parents=True, exist_ok=True)
     written = []
@@ -82,7 +82,7 @@ def main():
             archive.write(path, name)
             written.append({'path': name, 'bytes': path.stat().st_size})
         archive.writestr('userland-manifest.json', json.dumps({
-            'device': 'Nothing Phone (2) / Pong / SM8475',
+            'device': 'Nothing Phone (2) / Diting / SM8475',
             'build': result.get('build'),
             'layout': 'result.json, apply-complete.json, the OS, SystemOS and Data images',
             'files': written,

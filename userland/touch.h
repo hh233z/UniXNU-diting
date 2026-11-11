@@ -9,6 +9,6 @@
 #define DITING_BUTTON_POWER 0
 #define DITING_BUTTON_VOLUME_UP 1
 #define DITING_BUTTON_VOLUME_DOWN 2
-struct pong_touch {uint64_t time;uint32_t type,finger,x,y;};
-void pong_touch_start(void);
+struct diting_touch {uint64_t time;uint32_t type,finger,x,y;};
+void diting_touch_start(void);
 #endif

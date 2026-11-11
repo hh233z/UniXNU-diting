@@ -8,7 +8,7 @@ import struct
 from diting_usb_ports import native_serial
 
 p=argparse.ArgumentParser(description=__doc__)
-p.add_argument('--serial',help='defaults to the iOS identity on Pong CDC/Mux USB')
+p.add_argument('--serial',help='defaults to the iOS identity on Diting CDC/Mux USB')
 p.add_argument('--socket',default='/var/run/usbmuxd')
 p.add_argument('--identity',action='store_true',help='read the actual native device identity keys')
 a=p.parse_args()
@@ -23,7 +23,7 @@ def receive(s,n):
     return bytes(data)
 
 def mux(s,request):
-    body=plistlib.dumps(dict(request,ProgName='Pong native USB info',ClientVersionString='Pong-1.0'))
+    body=plistlib.dumps(dict(request,ProgName='Diting native USB info',ClientVersionString='Diting-1.0'))
     s.sendall(struct.pack('<IIII',16+len(body),1,8,1)+body)
     size,version,kind,tag=struct.unpack('<IIII',receive(s,16))
     if not 16<=size<=1048576 or version!=1 or kind!=8 or tag!=1:
@@ -31,7 +31,7 @@ def mux(s,request):
     return plistlib.loads(receive(s,size-16))
 
 def lockdown(s,request):
-    body=plistlib.dumps(dict(request,Label='Pong native USB info'))
+    body=plistlib.dumps(dict(request,Label='Diting native USB info'))
     s.sendall(struct.pack('>I',len(body))+body)
     length=struct.unpack('>I',receive(s,4))[0]
     if not 0<length<=1048576:raise ValueError('native lockdownd response too large')
@@ -43,7 +43,7 @@ with socket.socket(socket.AF_UNIX,socket.SOCK_STREAM) as s:
 matches=[d for d in devices if d.get('Properties',{}).get('SerialNumber','').lower()==a.serial.lower()
          and d['Properties'].get('ConnectionType')=='USB']
 if len(matches)!=1:
-    raise SystemExit('Pong native USB is not registered with host usbmuxd: '+json.dumps(devices,default=str))
+    raise SystemExit('Diting native USB is not registered with host usbmuxd: '+json.dumps(devices,default=str))
 device=matches[0]
 with socket.socket(socket.AF_UNIX,socket.SOCK_STREAM) as s:
     s.settimeout(5);s.connect(a.socket)

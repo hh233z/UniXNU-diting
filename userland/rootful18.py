@@ -82,7 +82,7 @@ def stage(a):
     # with the obsolete rootless name from the previous Data environment.
     apt=root/'private/etc/apt'
     (apt/'sources.list.d/procursus.sources').write_text('Types: deb\nURIs: https://apt.procurs.us/\nSuites: iphoneos-arm64/1700\nComponents: main\n')
-    (apt/'apt.conf.d/99pong-indexes').write_text('Acquire::GzipIndexes "false";\nAcquire::Retries "2";\nAcquire::http::Timeout "20";\nAcquire::https::Timeout "20";\n')
+    (apt/'apt.conf.d/99diting-indexes').write_text('Acquire::GzipIndexes "false";\nAcquire::Retries "2";\nAcquire::http::Timeout "20";\nAcquire::https::Timeout "20";\n')
     lists=root/'private/var/lib/apt/lists';lists.mkdir(parents=True,exist_ok=True)
     prefix='apt.procurs.us_dists_iphoneos-arm64_1700_'
     (lists/(prefix+'main_binary-iphoneos-arm_Packages')).write_bytes(lzma.decompress(a.packages.read_bytes()))
@@ -92,8 +92,8 @@ def stage(a):
     # Preserve the actual Sileo bundle entitlements before signing nested code.
     (out/'app-entitlements.plist').write_bytes(plistlib.dumps(sign.entitlements((app/'Sileo').read_bytes()) or {}))
     signed=sign.sign_tree(root,out)
-    (root/'.procursus_strapped').write_text('Pong native Darwin24 rootful\n')
-    (root/'.pong-rootful-staged').write_text('22H374 rootful-v1\n')
+    (root/'.procursus_strapped').write_text('Diting native Darwin24 rootful\n')
+    (root/'.diting-rootful-staged').write_text('22H374 rootful-v1\n')
     # /private/var is a separate, existing UFS Data volume on the phone.
     # Seed only missing files there; never replace the user's Data image.
     def guest_owner(info):
@@ -141,7 +141,7 @@ def seed_firmware_version(root):
     paragraphs.append('\n'.join(['Package: firmware','Name: iOS Firmware',
         'Version: '+release,'Architecture: all','Essential: yes',
         'Priority: required','Section: System','Installed-Size: 0',
-        'Maintainer: UniXNU Pong system integration','Status: install ok installed',
+        'Maintainer: UniXNU Diting system integration','Status: install ok installed',
         'Description: Installed guest OS version from SystemVersion.plist',
         'Tag: role::cydia']))
     status.write_text('\n\n'.join(paragraphs)+'\n\n')
@@ -161,7 +161,7 @@ def install(root, stage, runtime):
     app=root/'Applications/Sileo.app'
     if app.is_symlink():raise RuntimeError('unexpected Sileo application link')
     if app.exists():
-        backup=root/'pong/rootful-stock/Applications/Sileo.app'
+        backup=root/'diting/rootful-stock/Applications/Sileo.app'
         if not backup.exists():
             backup.parent.mkdir(parents=True,exist_ok=True);shutil.copytree(app,backup,symlinks=True)
         shutil.rmtree(app)
@@ -186,7 +186,7 @@ def install(root, stage, runtime):
             target.mkdir(exist_ok=True);os.chown(target,0,0);continue
         if source.is_symlink():links.append((source,target));continue
         if exists:
-            backup=root/'pong/rootful-stock'/relative
+            backup=root/'diting/rootful-stock'/relative
             if not os.path.lexists(backup):
                 backup.parent.mkdir(parents=True,exist_ok=True)
                 if target.is_symlink():backup.symlink_to(os.readlink(target))
@@ -200,12 +200,12 @@ def install(root, stage, runtime):
     os.chown(app/'giveMeRoot',0,0);os.chmod(app/'giveMeRoot',0o4755)
     builder.run(['codesign','--force','--sign','-','--pagesize','4096','--entitlements',stage/'app-entitlements.plist',app])
     for source in (stage/'rootful-data.tar',PROJECT/'userland/sileo-rootful-firstboot.sh'):
-        target=root/'pong'/source.name;shutil.copyfile(source,target);os.chown(target,0,0);os.chmod(target,0o644)
-    label='dev.unixnu.pong.sileo-firstboot';path='/System/Library/LaunchDaemons/'+label+'.plist'
-    job=dict(Label=label,ProgramArguments=['/usr/bin/dash','/pong/sileo-rootful-firstboot.sh'],
+        target=root/'diting'/source.name;shutil.copyfile(source,target);os.chown(target,0,0);os.chmod(target,0o644)
+    label='dev.unixnu.diting.sileo-firstboot';path='/System/Library/LaunchDaemons/'+label+'.plist'
+    job=dict(Label=label,ProgramArguments=['/usr/bin/dash','/diting/sileo-rootful-firstboot.sh'],
         UserName='root',RunAtLoad=True,LaunchOnlyOnce=True,ProcessType='Background',
-        StandardOutPath='/private/var/logs/pong-sileo-rootful.log',
-        StandardErrorPath='/private/var/logs/pong-sileo-rootful.log',
+        StandardOutPath='/private/var/logs/diting-sileo-rootful.log',
+        StandardErrorPath='/private/var/logs/diting-sileo-rootful.log',
         EnvironmentVariables=dict(PATH='/usr/bin:/bin:/usr/sbin:/sbin'))
     builder.put_plist(root/path.lstrip('/'),job)
     cache_path=root/'System/Library/xpc/launchd.plist';cache=plistlib.loads(cache_path.read_bytes())

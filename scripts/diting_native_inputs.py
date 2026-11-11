@@ -1,4 +1,4 @@
-"""Host inputs for Pong builders; local paths never belong in public recipes."""
+"""Host inputs for Diting builders; local paths never belong in public recipes."""
 import os
 from pathlib import Path
 import tomllib
@@ -9,7 +9,7 @@ ROOT = Path(__file__).resolve().parents[1]
 
 def options():
     local = ROOT / 'local.toml'
-    return tomllib.loads(local.read_text()).get('pong_build', {}) if local.exists() else {}
+    return tomllib.loads(local.read_text()).get('diting_build', {}) if local.exists() else {}
 
 
 def input_path(name):

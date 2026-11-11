@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Cross-build the Darwin Turnip library for Pong's iOS16.6.1 userland.
+"""Cross-build the Darwin Turnip library for Diting's iOS16.6.1 userland.
 
 Mesa must already contain the UniXNU Darwin backend patches. This compiles
 the library only: it does not install an ICD, publish a GPU, run a workload,
@@ -29,17 +29,17 @@ def main():
     a = p.parse_args()
     backend = a.mesa / 'src/freedreno/vulkan/tu_knl_darwin.cc'
     if 'MIN2(tu_get_system_heap_size(device), info->va_size)' not in backend.read_text():
-        subprocess.run(['git', 'apply', str(ROOT / 'patches/mesa/0001-pong-scoped-gpu-heap.patch')],
+        subprocess.run(['git', 'apply', str(ROOT / 'patches/mesa/0001-diting-scoped-gpu-heap.patch')],
                        cwd=a.mesa, check=True)
     if 'NativeAdrenoMethodSubmitBatch' not in backend.read_text():
-        subprocess.run(['git','apply',str(ROOT/'patches/mesa/0003-pong-atomic-batches-and-fence-wait.patch')],cwd=a.mesa,check=True)
+        subprocess.run(['git','apply',str(ROOT/'patches/mesa/0003-diting-atomic-batches-and-fence-wait.patch')],cwd=a.mesa,check=True)
     copies = a.mesa / 'src/freedreno/vulkan/tu_clear_blit.cc'
     if 'reserve_buffer_copy_step' not in copies.read_text():
-        subprocess.run(['git', 'apply', str(ROOT / 'patches/mesa/0004-pong-buffer-copy-allocation-errors.patch')],
+        subprocess.run(['git', 'apply', str(ROOT / 'patches/mesa/0004-diting-buffer-copy-allocation-errors.patch')],
                        cwd=a.mesa, check=True)
     abi=a.abi_directory/'NativeAdrenoABI.h'
     if 'NativeAdrenoMethodSubmitBatch' not in abi.read_text():
-        raise SystemExit('Use the Pong ABI header with negotiated 128-IB submissions: '+str(abi))
+        raise SystemExit('Use the Diting ABI header with negotiated 128-IB submissions: '+str(abi))
     out = a.output_dir.resolve()
     out.mkdir(parents=True, exist_ok=True)
     minimum='18.0' if a.guest_build=='22H374' else '16.6.1'
@@ -59,7 +59,7 @@ def main():
     sdk = sdk_read('--show-sdk-path')
     flags = ['-target', 'arm64-apple-ios'+minimum, '-isysroot', sdk,
              '-fstack-protector-strong']
-    cross = out/('pong-'+a.guest_build+'.cross')
+    cross = out/('diting-'+a.guest_build+'.cross')
     cross.write_text('[binaries]\n' + ''.join(
         name+' = '+repr(sdk_read('--find', tool))+'\n'
         for name, tool in [('c', 'clang'), ('cpp', 'clang++'), ('objc', 'clang'),

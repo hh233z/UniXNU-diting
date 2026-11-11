@@ -45,7 +45,7 @@ def main():
     real = shell('readlink -f ' + target)
     if (real != geometry['device'] or real != '/dev/block/sda13' or
             int(shell('blockdev --getsize64 ' + target)) != geometry['bytes']):
-        raise RuntimeError('wrong Pong userdata device')
+        raise RuntimeError('wrong Diting userdata device')
     def unmounted():
         if shell('ls /sys/class/block/sda13/holders') or any(
                 line.split()[0] in (real, target) for line in shell('cat /proc/mounts').splitlines()):
@@ -54,10 +54,10 @@ def main():
     header = subprocess.check_output(cmd + ['exec-out', 'dd', 'if=' + target,
         'bs=4096', 'count=1', 'status=none'])
     if len(header) != 4096 or header[:8] != b'SHNGROOT':
-        raise RuntimeError('missing Pong storage layout')
+        raise RuntimeError('missing Diting storage layout')
     count = struct.unpack_from('<I', header, 12)[0]
     if count > 20:
-        raise RuntimeError('invalid Pong window count')
+        raise RuntimeError('invalid Diting window count')
     windows = {}
     for i in range(count):
         name, offset, amount = struct.unpack_from('<32sQQ', header, 24 + i * 128)

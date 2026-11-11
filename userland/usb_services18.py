@@ -1,4 +1,4 @@
-"""Adapt the supplied 22H374 native USB service to Pong's hardware."""
+"""Adapt the supplied 22H374 native USB service to Diting's hardware."""
 import os
 import plistlib
 import struct
@@ -10,10 +10,10 @@ def build_adapter(out, developer):
     out.mkdir(parents=True, exist_ok=True)
     env = dict(os.environ, DEVELOPER_DIR=str(developer))
     sdk = subprocess.check_output(['xcrun', '--sdk', 'iphoneos', '--show-sdk-path'], env=env, text=True).strip()
-    target = out / 'libpong-usb18.dylib'
+    target = out / 'libditing-usb18.dylib'
     subprocess.run(['xcrun', 'clang', '-target', 'arm64-apple-ios18.0', '-isysroot', sdk,
                     '-Os', '-Wall', '-Wextra', '-Werror', '-dynamiclib',
-                    '-Wl,-install_name,/pong/libpong-usb18.dylib',
+                    '-Wl,-install_name,/diting/libditing-usb18.dylib',
                     str(Path(__file__).with_name('usb_compat18.c')), '-framework', 'CoreFoundation',
                     '-framework', 'IOKit', '-lMobileGestalt', '-o', str(target)], env=env, check=True)
     subprocess.run(['codesign', '--force', '--sign', '-', '--pagesize', '4096', str(target)], check=True)
@@ -21,15 +21,15 @@ def build_adapter(out, developer):
 
 
 def stage_adapter(root, runtime, soc_serial, usb_serial, platform_uuid):
-    """Use the connected Pong's actual serial, never invent an Apple ECID."""
+    """Use the connected Diting's actual serial, never invent an Apple ECID."""
     import shutil
     import uuid
     soc_serial = int(soc_serial)
     if not 0 < soc_serial <= 0xffffffff or not usb_serial or len(usb_serial) > 32:
-        raise RuntimeError('actual Pong SoC and USB serial required')
+        raise RuntimeError('actual Diting SoC and USB serial required')
     software_uid = uuid.UUID(platform_uuid).hex + f'{soc_serial:08x}'
-    target = root / 'pong/libpong-usb18.dylib'
-    config = root / 'pong/usb-board-identity.plist'
+    target = root / 'diting/libditing-usb18.dylib'
+    config = root / 'diting/usb-board-identity.plist'
     if target.is_symlink() or config.is_symlink():
         raise RuntimeError('unexpected USB runtime alias')
     shutil.copyfile(runtime / target.name, target)
@@ -37,7 +37,7 @@ def stage_adapter(root, runtime, soc_serial, usb_serial, platform_uuid):
     values = dict(UniqueChipID=soc_serial, UniqueDeviceID=software_uid,
         SerialNumber=usb_serial, ChipID=530, ModelNumber='MYMC3', RegionInfo='LL/A',
         ModelName='iPhone 16 Pro', MarketingName='iPhone 16 Pro', RegulatoryModelNumber='A3083',
-        HardwareModel='D93AP', IdentityOrigin='Pong Qualcomm SoC serial; requested iPhone software presentation')
+        HardwareModel='D93AP', IdentityOrigin='Diting Qualcomm SoC serial; requested iPhone software presentation')
     # User-requested software component identifiers. These are explicitly
     # synthetic, persistent port metadata, never Apple factory/calibration
     # records or claims that a camera/Bluetooth controller is implemented.
@@ -64,12 +64,12 @@ def stage_adapter(root, runtime, soc_serial, usb_serial, platform_uuid):
     values.update(SoftwarePanelSerialNumber=panel, PanelSerialNumber=panel.encode('ascii'),
                   RawPanelSerialNumber=panel.encode('ascii'),
                   ComponentIdentifierVersion=2,
-                  ComponentIdentifierOrigin='Synthetic persistent component identifiers for the Pong port; not Apple factory/calibration values')
+                  ComponentIdentifierOrigin='Synthetic persistent component identifiers for the Diting port; not Apple factory/calibration values')
     config.write_bytes(plistlib.dumps(values, fmt=plistlib.FMT_BINARY))
     for path, mode in ((target, 0o755), (config, 0o644)):
         os.chown(path, 0, 0)
         os.chmod(path, mode)
-    return dict(serial_origin='actual connected Pong', software_uid=software_uid)
+    return dict(serial_origin='actual connected Diting', software_uid=software_uid)
 
 
 def configure_native_binary(root, backup):
@@ -146,7 +146,7 @@ def configure_lockdown(root):
             job.get('ProgramArguments') != ['/usr/libexec/lockdownd'] or
             not (root / 'usr/libexec/lockdownd').is_file()):
         raise RuntimeError('matching 22H374 native lockdownd required')
-    # Pong imports the restore's service set through the mobile domain.
+    # Diting imports the restore's service set through the mobile domain.
     # An omitted UserName would run this privileged pairing daemon as501.
     # Keep its own launchd sockets, event handlers, trust policy and binary.
     job.update(UserName='root', GroupName='wheel', RunAtLoad=True,

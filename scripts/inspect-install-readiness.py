@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Read-only Pong inventory for the XNU/iPadOS port; never boots or flashes."""
+"""Read-only Diting inventory for the XNU/iPadOS port; never boots or flashes."""
 import json
 import os
 import shutil
@@ -75,7 +75,7 @@ def describe(properties):
 
 def main():
     uefi = ROOT / 'Mu-Silicium'
-    nodes = fdt_nodes(uefi / 'Resources/DTBs/pong.dtb')
+    nodes = fdt_nodes(uefi / 'Resources/DTBs/diting.dtb')
     selected = {}
     for path, properties in nodes.items():
         compatible = properties.get('compatible', b'')
@@ -83,14 +83,14 @@ def main():
         if (leaf.startswith(('cpu@', 'memory@', 'ufshc@', 'ufsphy@'))
                 or b'arm,gic-v3' in compatible or leaf == 'psci'):
             selected[path] = describe(properties)
-    board = tomllib.loads((ROOT / 'UniXNU-pong/board.toml').read_text())
-    boot_dir = ROOT / 'UniXNU/out/pong/boot-v3-mapped-probe'
+    board = tomllib.loads((ROOT / 'UniXNU-diting/board.toml').read_text())
+    boot_dir = ROOT / 'UniXNU/out/diting/boot-v3-mapped-probe'
     if not (boot_dir / 'boot.json').is_file():
-        boot_dir = ROOT / 'UniXNU/out/pong/boot'
+        boot_dir = ROOT / 'UniXNU/out/diting/boot'
     boot = json.loads((boot_dir / 'boot.json').read_text())
     sec = (uefi / 'Silicon/Silicium/SiliciumPkg/Sec/Sec.c').read_text()
     entry = (uefi / 'Silicon/Silicium/SiliciumPkg/Sec/AArch64/ModuleEntryPoint.S').read_text()
-    dsc = (uefi / 'Platforms/Nothing/pongPkg/pong.dsc').read_text()
+    dsc = (uefi / 'Platforms/Nothing/ditingPkg/diting.dsc').read_text()
     fastboot = resolve_fastboot()
     variables = {}
     if fastboot and fastboot.is_file():
@@ -112,17 +112,17 @@ def main():
         'firmware_ramdisk_bytes': boot['ramdisk_bytes'],
         'inspected_boot_image': str(boot_dir.relative_to(ROOT)),
         'missing_board_sections': [key for key in ('ipsw', 'kernel', 'payload', 'userdata') if key not in board],
-        'expected_pong_artifacts_present': {
-            'prelinked_kernel': (ROOT / 'UniXNU/out/pong/kernel/kernel.macho').is_file(),
-            'fat_payload': (ROOT / 'UniXNU/out/pong/payload/payload.img').is_file(),
-            'system_userdata_image': (ROOT / 'UniXNU/out/pong/userdata/userdata-root.img').is_file(),
+        'expected_diting_artifacts_present': {
+            'prelinked_kernel': (ROOT / 'UniXNU/out/diting/kernel/kernel.macho').is_file(),
+            'fat_payload': (ROOT / 'UniXNU/out/diting/payload/payload.img').is_file(),
+            'system_userdata_image': (ROOT / 'UniXNU/out/diting/userdata/userdata-root.img').is_file(),
         },
         'sec_entry_argument_preserved': 'gSecEntryArg0' in entry,
         'entry_argument_hob_published': 'gSiliciumEntryArgHobGuid' in sec,
-        'sheng_boot_memory_driver_in_pong_dsc': 'ShengBootMemoryDxe.inf' in dsc,
-        'pong_initrd_driver_in_dsc': 'PongBootMemoryDxe.inf' in dsc,
+        'sheng_boot_memory_driver_in_diting_dsc': 'ShengBootMemoryDxe.inf' in dsc,
+        'diting_initrd_driver_in_dsc': 'DitingBootMemoryDxe.inf' in dsc,
         'fastboot': variables,
-        'local_dtb_path': 'Mu-Silicium/Resources/DTBs/pong.dtb',
+        'local_dtb_path': 'Mu-Silicium/Resources/DTBs/diting.dtb',
         'local_dtb_is_not_a_live_ram_or_partition_measurement': True,
         'local_dtb_nodes': selected,
         'write_operations_performed': False,
@@ -131,7 +131,7 @@ def main():
     if re.fullmatch(r'0x[0-9a-fA-F]+', size):
         report['userdata_bytes'] = int(size, 16)
         report['userdata_GiB'] = round(int(size, 16) / 2**30, 3)
-    out = ROOT / 'UniXNU/out/pong/install-readiness.json'
+    out = ROOT / 'UniXNU/out/diting/install-readiness.json'
     out.write_text(json.dumps(report, ensure_ascii=False, indent=2) + '\n')
     print(json.dumps({key: value for key, value in report.items() if key != 'local_dtb_nodes'},
                      ensure_ascii=False, indent=2))

@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Compile the Pong PSCI/GICv3 CPU provider against the selected XNU headers."""
+"""Compile the Diting PSCI/GICv3 CPU provider against the selected XNU headers."""
 import argparse
 import json
 import os
@@ -13,7 +13,7 @@ from diting_native_inputs import build_env
 DEVICE = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(DEVICE / 'scripts'))
 import diting_paths
-DEFAULT_TREE = diting_paths.build_tree(name='Pong-iPadOS18-native')
+DEFAULT_TREE = diting_paths.build_tree(name='Diting-iPadOS18-native')
 DEVELOPER = diting_paths.developer_dir()
 
 
@@ -62,7 +62,7 @@ def main():
     export.mkdir(parents=True, exist_ok=True)
     for name in ['libArmCpu.a', 'build-report.json', 'build.log']:
         shutil.copyfile(out / name, export / name)
-    print('Compiled Pong PSCI/GICv3 CPU archive:', archive)
+    print('Compiled Diting PSCI/GICv3 CPU archive:', archive)
 
 
 if __name__ == '__main__':

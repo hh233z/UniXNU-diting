@@ -23,14 +23,14 @@ static void snapshot(int fd,unsigned elapsed)
     mach_msg_type_number_t count=0;
     kern_return_t result=task_threads(mach_task_self(),&threads,&count);
     if(result!=KERN_SUCCESS) {
-        dprintf(fd,"Pong boot snapshot: %s task_threads=%d\n",process_name,result);
+        dprintf(fd,"Diting boot snapshot: %s task_threads=%d\n",process_name,result);
         return;
     }
     mach_port_t self=mach_thread_self();
     size_t cache_size=0;
     const void *(*cache_range)(size_t *)=dlsym(RTLD_DEFAULT,"_dyld_get_shared_cache_range");
     const void *cache=cache_range?cache_range(&cache_size):NULL;
-    dprintf(fd,"Pong boot snapshot: %s pid=%d seconds=%u time=%lld image_slide=%llx cache=%p size=%zx threads=%u\n",
+    dprintf(fd,"Diting boot snapshot: %s pid=%d seconds=%u time=%lld image_slide=%llx cache=%p size=%zx threads=%u\n",
         process_name,getpid(),elapsed,(long long)time(NULL),
         (unsigned long long)_dyld_get_image_vmaddr_slide(0),cache,cache_size,count);
     for(mach_msg_type_number_t i=0;i<count;i++) {
@@ -74,7 +74,7 @@ static void *worker(void *unused)
 {
     (void)unused;
     char path[256];
-    snprintf(path,sizeof(path),"%s/PongBoot-%s.txt",
+    snprintf(path,sizeof(path),"%s/DitingBoot-%s.txt",
         geteuid()==0?"/private/var/logs":"/private/var/mobile/Library/Logs",process_name);
     int fd=open(path,O_WRONLY|O_CREAT|O_TRUNC|O_CLOEXEC|O_NOFOLLOW,0600);
     if(fd>=0)(void)fchmod(fd,0600);
@@ -86,7 +86,7 @@ static void *worker(void *unused)
     return NULL;
 }
 
-void pong_boot_snapshot_start(const char *name)
+void diting_boot_snapshot_start(const char *name)
 {
     if(strcmp(name,"SpringBoard") && strcmp(name,"backboardd") && strcmp(name,"lsd") &&
        strcmp(name,"containermanagerd") && strcmp(name,"containermanagerd_system") &&

@@ -1,9 +1,9 @@
 {
-  "schema": "pong-usb-hardware-description-v1",
-  "device": "Pong SM8475",
+  "schema": "diting-usb-hardware-description-v1",
+  "device": "Diting SM8475",
   "status": "services138 physically enumerated Apple Inc./iPhone05ac12a8 at480Mbps; preferred-config vendor request timed out. Manual configuration exposed retained CDC+Mux and native62078 SYN/ACK, but QueryType timed out. services139 compiled PreferredConfig1/1/1/0, EP0 stall correction, kernel-origin native sockets and invalid-MG-UDID guard; actual139 result pending.",
   "sources": [
-    "Pong REC live DT, services124",
+    "Diting REC live DT, services124",
     "22H374 original kernelcache USB family metadata (local only)",
     "NothingOSS SM8475 c402fcdb3a1523d10b15ef1123bced45456f7592 drivers/usb/dwc3/dwc3-qcom.c external session override"
   ],
@@ -733,26 +733,26 @@
     "AppleUSBDeviceMux + native usbd/lockdownd pairing transport"
   ],
   "donor_exclusions": [
-    "SM8150 FEMTO PHY 0x088e2000 is not Pong eUSB2 PHY 0x088e3000",
-    "SM8150 SID 0x140 is not Pong controller SID 0",
+    "SM8150 FEMTO PHY 0x088e2000 is not Diting eUSB2 PHY 0x088e3000",
+    "SM8150 SID 0x140 is not Diting controller SID 0",
     "do not copy nabu watchdog/reset, RPMh/TCS or PMIC APID constants"
   ],
   "source_files": [
-    "drivers/PongUsb/PongUsbDevice.h",
-    "drivers/PongUsb/Dwc3Registers.h",
-    "drivers/PongPower/PongLowDma.h",
+    "drivers/DitingUsb/DitingUsbDevice.h",
+    "drivers/DitingUsb/Dwc3Registers.h",
+    "drivers/DitingPower/DitingLowDma.h",
     "drivers/DarwinBoot24/DarwinBootPkg/Driver/UsbOwnership.h",
-    "drivers/PongUsb/PongUsbPhy.h"
+    "drivers/DitingUsb/DitingUsbPhy.h"
   ],
   "dma_lease": {
-    "adt_property": "pong-usb-dma",
+    "adt_property": "diting-usb-dma",
     "lease_bytes": 32768,
-    "ownership": "independent UEFI reservation, must not overlap pong-audio-dma",
+    "ownership": "independent UEFI reservation, must not overlap diting-audio-dma",
     "cpu_mapping": "Normal non-cacheable (kIOMapWriteCombineCache)",
     "runtime_contiguous_allocator": false
   },
   "controller_handoff": {
-    "adt_property": "pong-usb-handoff",
+    "adt_property": "diting-usb-handoff",
     "layout_u64": [
       "version=1",
       "core=0xa600000",
@@ -762,9 +762,9 @@
     "producer_required": "actual board loader; no static capability fabrication",
     "current_loader_produces_record": true,
     "phy_retention_certified": false,
-    "status_property": "pong-usb-status: two u64 values (stage, actual EFI_STATUS)",
+    "status_property": "diting-usb-status: two u64 values (stage, actual EFI_STATUS)",
     "supported_operations": "firmware StopController proves old DMA stopped; kernel requires retained PHY flag or successful independent board setup",
-    "kernel_board_phy": "PongUsbPhy.h: cmd-db rails/XO, GDSC and branch prerequisites; HWCG-aware bounded QUP0/SE5 readiness, real APSS vote, GPIO206/207 mux1 and actual XO/19.2MHz DFS level; actual NXP ID/DT parameter readback before eUSB2",
+    "kernel_board_phy": "DitingUsbPhy.h: cmd-db rails/XO, GDSC and branch prerequisites; HWCG-aware bounded QUP0/SE5 readiness, real APSS vote, GPIO206/207 mux1 and actual XO/19.2MHz DFS level; actual NXP ID/DT parameter readback before eUSB2",
     "session_source": "Real PMIC BmUsbOnline via independent atomic snapshot; unknown never asserted, unplug retires RUN_STOP before removing session valid",
     "qscratch": {
       "base": "0xa6f8800",
@@ -777,7 +777,7 @@
   "device_evidence": {
     "revision": "services135",
     "transport": "DWC3 CDC-ACM",
-    "host_product": "Pong XNU console",
+    "host_product": "Diting XNU console",
     "host_serial": "DITING-SM8475",
     "log_capture_bytes": 108518,
     "capture_seconds": 12,
@@ -790,10 +790,10 @@
       "help"
     ],
     "automatic_restart": false,
-    "mux_boot_argument": "pong_usb_mux=1",
+    "mux_boot_argument": "diting_usb_mux=1",
     "native_service": "/usr/libexec/lockdownd, launchd TCP62078 and native spawned service ports",
-    "kernel_transport": "PongUsbMuxTransport; root-only exclusive client; physical bulk endpoints 03/83",
-    "runtime": "/pong/usb-mux",
+    "kernel_transport": "DitingUsbMuxTransport; root-only exclusive client; physical bulk endpoints 03/83",
+    "runtime": "/diting/usb-mux",
     "pairing": "native iOS trust and TLS; no synthetic replies",
     "device_result": "actual help and synchronized REC reset confirmed; native Mux framing correction pending next boot"
   }

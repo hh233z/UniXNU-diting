@@ -21,7 +21,7 @@ jobs:
           python-version: '3.12'
       - name: Install the device inputs the record is checked against
         # The same script the package workflow runs: the 22H374 OS profile, and
-        # the PongPlatform24 entry the record's component check resolves.
+        # the DitingPlatform24 entry the record's component check resolves.
         run: python3 device/scripts/install-unixnu-inputs.py --unixnu tools
       - name: Check porting record
         run: python3 tools/scripts/porting-record.py check --device device

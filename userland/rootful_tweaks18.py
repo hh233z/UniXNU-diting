@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Stage the real arm64/rootful ElleKit runtime and Pong's native loader.
+"""Stage the real arm64/rootful ElleKit runtime and Diting's native loader.
 
 The official package remains a local input. No Apple files or guest data
 are downloaded/copied here. A supplied mounted guest is required to install.
@@ -15,7 +15,7 @@ import tarfile
 
 PROJECT=Path(__file__).resolve().parents[1]
 UPSTREAM='https://ellekit.space/pool/ellekit_1.2_iphoneos-arm.deb'
-VERSION='1.2+pong1'
+VERSION='1.2+diting1'
 
 
 def load(name,path):
@@ -38,20 +38,20 @@ def prepare(package,out):
         raise RuntimeError('expected official rootful ElleKit 1.2')
     text=text.replace('Version: 1.2\n','Version: '+VERSION+'\n')
     (control/'control').write_text(text)
-    # Retain the stock maintainer script for attribution/recovery. Pong
+    # Retain the stock maintainer script for attribution/recovery. Diting
     # already has a kernel exec adapter; remote suspension of PID 1 is not
     # needed and could overwrite the board runtime's own injection rules.
     docs=root/'usr/share/doc/ellekit';docs.mkdir(parents=True,exist_ok=True)
     shutil.copyfile(control/'postinst',docs/'postinst.upstream')
     (control/'postinst').write_text('''#!/bin/sh
-if [ -f /.pong-rootful-staged ]; then
-    exec /pong/tweak-refresh
+if [ -f /.diting-rootful-staged ]; then
+    exec /diting/tweak-refresh
 fi
 exec /bin/bash /usr/share/doc/ellekit/postinst.upstream "$@"
 ''')
     (control/'postrm').write_text('''#!/bin/sh
-if [ -f /.pong-rootful-staged ] && [ -x /pong/tweak-refresh ]; then
-    /pong/tweak-refresh
+if [ -f /.diting-rootful-staged ] && [ -x /diting/tweak-refresh ]; then
+    /diting/tweak-refresh
 fi
 exit 0
 ''')
@@ -60,7 +60,7 @@ exit 0
     # /etc/rc.d's upstream remote injector is omitted: this port's init
     # composes the real injector with its own UI rule before launchd starts.
     (root/'etc/rc.d/ellekit-loader').unlink(missing_ok=True)
-    config=root/'private/etc/pong-tweak-processes';config.parent.mkdir(parents=True,exist_ok=True)
+    config=root/'private/etc/diting-tweak-processes';config.parent.mkdir(parents=True,exist_ok=True)
     config.write_text('# Explicit app executable names; append additional tweak targets here.\nSpringBoard Preferences MobilePhone Sileo\n')
     sign=load('tweak_sign',PROJECT/'scripts/prepare-diting-sileo.py')
     sign.sign_tree(root,out)
@@ -83,7 +83,7 @@ def compile_refresh(runtime,developer):
 
 def install(root,stage,runtime):
     root=root.resolve()
-    if os.geteuid() or root==Path('/') or not root.is_mount() or not (root/'.pong-rootful-staged').is_file():
+    if os.geteuid() or root==Path('/') or not root.is_mount() or not (root/'.diting-rootful-staged').is_file():
         raise RuntimeError('mounted local rootful guest and root ownership required')
     overlay=stage/'root-overlay';db=root/'Library/dpkg'
     status=db/'status';text=status.read_text()
@@ -114,7 +114,7 @@ def install(root,stage,runtime):
             if not target.exists():target.mkdir()
             if target.is_symlink() or not target.is_dir():raise RuntimeError('conflicting directory: '+str(rel))
         else:
-            if str(rel)=='private/etc/pong-tweak-processes' and target.exists():continue
+            if str(rel)=='private/etc/diting-tweak-processes' and target.exists():continue
             if target.is_dir() and not target.is_symlink():raise RuntimeError('conflicting package path: '+str(rel))
             target.unlink(missing_ok=True)
             if source.is_symlink():target.symlink_to(os.readlink(source))
@@ -122,7 +122,7 @@ def install(root,stage,runtime):
         os.chown(target,0,0,follow_symlinks=False)
         if not target.is_symlink():os.chmod(target,source.stat().st_mode&0o777)
         installed.append('/'+str(rel))
-    target=root/'pong/tweak-refresh';shutil.copyfile(runtime/'tweak-refresh',target);os.chown(target,0,0);os.chmod(target,0o755)
+    target=root/'diting/tweak-refresh';shutil.copyfile(runtime/'tweak-refresh',target);os.chown(target,0,0);os.chmod(target,0o755)
     control=stage/'control';info=db/'info';info.mkdir(exist_ok=True)
     for name in ('postinst','postrm'):
         target=info/('ellekit.'+name);shutil.copyfile(control/name,target);os.chown(target,0,0);os.chmod(target,0o755)

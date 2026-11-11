@@ -1,5 +1,5 @@
 /* SPDX-License-Identifier: MIT
- * Native 22H374 USB consumer adaptation to the actual Pong Mux service.
+ * Native 22H374 USB consumer adaptation to the actual Diting Mux service.
  * No fabricated Apple driver, pairing response, certificate or trust result.
  */
 #include <CoreFoundation/CoreFoundation.h>
@@ -22,11 +22,11 @@ extern CFDictionaryRef MGCopyMultipleAnswers(CFArrayRef,CFDictionaryRef);
 extern const CFStringRef kMGQDiskUsageTotalDataCapacity;
 extern const CFStringRef kMGQDiskUsageTotalDataAvailable;
 extern const CFStringRef kMGQDiskUsageTotalDiskCapacity;
-#include "PongGestaltKeys.h"
+#include "DitingGestaltKeys.h"
 static CFDictionaryRef identity;
 static pthread_once_t once=PTHREAD_ONCE_INIT;
 static void load_identity(void) {
-    int fd=open("/pong/usb-board-identity.plist",O_RDONLY|O_CLOEXEC|O_NOFOLLOW);
+    int fd=open("/diting/usb-board-identity.plist",O_RDONLY|O_CLOEXEC|O_NOFOLLOW);
     if(fd<0)return;
     struct stat st;unsigned char bytes[4096];ssize_t length=-1;
     if(!fstat(fd,&st) && S_ISREG(st.st_mode) && st.st_uid==0 && !(st.st_mode&022) &&
@@ -38,10 +38,10 @@ static void load_identity(void) {
     if(plist && CFGetTypeID(plist)==CFDictionaryGetTypeID())identity=(CFDictionaryRef)plist;
     else if(plist)CFRelease(plist);
 }
-CFTypeRef pong_usb_copy_board_identity(CFStringRef key) {
+CFTypeRef diting_usb_copy_board_identity(CFStringRef key) {
     key=canonical_key(key);
     if(!key)return NULL;
-    // These are software identity values derived from this Pong's real
+    // These are software identity values derived from this Diting's real
     // Qualcomm serial. Never supply Apple ECID/fuses/activation capabilities.
     const char *process=getprogname();
     bool usb=process && (!strcmp(process,"lockdownd") || !strcmp(process,"usb-mux"));
@@ -102,9 +102,9 @@ static CFTypeRef playback_answer(CFStringRef key) {
 }
 static CFTypeRef storage_answer(CFStringRef key) {
     if(CFEqual(key,CFSTR("TotalDiskCapacity"))) {
-        CFMutableDictionaryRef match=IOServiceMatching("PongUfsBlock");
+        CFMutableDictionaryRef match=IOServiceMatching("DitingUfsBlock");
         if(!match)return NULL;
-        const void *keys[]={CFSTR("PongDataWindow")},*values[]={kCFBooleanTrue};
+        const void *keys[]={CFSTR("DitingDataWindow")},*values[]={kCFBooleanTrue};
         CFDictionaryRef properties=CFDictionaryCreate(NULL,keys,values,1,
             &kCFTypeDictionaryKeyCallBacks,&kCFTypeDictionaryValueCallBacks);
         if(!properties){CFRelease(match);return NULL;}
@@ -154,38 +154,38 @@ static CFTypeRef board_answer(CFStringRef key) {
     if(!key)return NULL;
     key=canonical_key(key);
     if(CFEqual(key,CFSTR("DiskUsage")))return disk_usage_answer(key);
-    CFTypeRef value=pong_usb_copy_board_identity(key);
+    CFTypeRef value=diting_usb_copy_board_identity(key);
     if(!value)value=power_answer(key);
     if(!value)value=playback_answer(key);
     if(!value)value=storage_answer(key);
     return value;
 }
-static CFTypeRef pong_answer(CFStringRef key) {
+static CFTypeRef diting_answer(CFStringRef key) {
     CFTypeRef value=board_answer(key);
     return value?value:MGCopyAnswer(key);
 }
-static bool pong_bool(CFStringRef key) {
+static bool diting_bool(CFStringRef key) {
     CFTypeRef value=board_answer(key);if(!value)return MGGetBoolAnswer(key);
     bool result=false;
     if(CFGetTypeID(value)==CFBooleanGetTypeID())result=CFBooleanGetValue(value);
     else if(CFGetTypeID(value)==CFNumberGetTypeID()){int64_t n=0;CFNumberGetValue(value,kCFNumberSInt64Type,&n);result=n!=0;}
     CFRelease(value);return result;
 }
-static int64_t pong_int64(CFStringRef key,int64_t fallback) {
+static int64_t diting_int64(CFStringRef key,int64_t fallback) {
     CFTypeRef value=board_answer(key);if(!value)return MGGetSInt64Answer(key,fallback);
     int64_t result=fallback;
     if(CFGetTypeID(value)==CFNumberGetTypeID())CFNumberGetValue(value,kCFNumberSInt64Type,&result);
     else if(CFGetTypeID(value)==CFBooleanGetTypeID())result=CFBooleanGetValue(value);
     CFRelease(value);return result;
 }
-static int32_t pong_int32(CFStringRef key,int32_t fallback) {
+static int32_t diting_int32(CFStringRef key,int32_t fallback) {
     CFTypeRef value=board_answer(key);if(!value)return MGGetSInt32Answer(key,fallback);
     int64_t result=fallback;
     if(CFGetTypeID(value)==CFNumberGetTypeID())CFNumberGetValue(value,kCFNumberSInt64Type,&result);
     else if(CFGetTypeID(value)==CFBooleanGetTypeID())result=CFBooleanGetValue(value);
     CFRelease(value);return result<INT32_MIN || result>INT32_MAX?fallback:(int32_t)result;
 }
-static CFDictionaryRef pong_multiple(CFArrayRef keys,CFDictionaryRef options) {
+static CFDictionaryRef diting_multiple(CFArrayRef keys,CFDictionaryRef options) {
     CFDictionaryRef original=MGCopyMultipleAnswers(keys,options);
     if(!keys || CFGetTypeID(keys)!=CFArrayGetTypeID())return original;
     CFMutableDictionaryRef result=original?CFDictionaryCreateMutableCopy(NULL,0,original):
@@ -200,22 +200,22 @@ static CFDictionaryRef pong_multiple(CFArrayRef keys,CFDictionaryRef options) {
     }
     return result;
 }
-static CFMutableDictionaryRef pong_matching(const char *name) {
+static CFMutableDictionaryRef diting_matching(const char *name) {
     const char *process=getprogname();
     if(process && !strcmp(process,"lockdownd") && name &&
        (!strcmp(name,"AppleUSBDeviceMux") || !strcmp(name,"IOUSBDeviceInterface"))) {
         // Native PTP property filters still exclude our actual Mux function.
         // IsActive and its interest events come from the DWC3 configuration.
-        return IOServiceMatching("PongUsbMuxTransport");
+        return IOServiceMatching("DitingUsbMuxTransport");
     }
     return IOServiceMatching(name);
 }
 __attribute__((used,section("__DATA,__interpose")))
 static const struct {const void *replacement,*original;} interpose[]={
-    {(const void *)pong_answer,(const void *)MGCopyAnswer},
-    {(const void *)pong_bool,(const void *)MGGetBoolAnswer},
-    {(const void *)pong_int32,(const void *)MGGetSInt32Answer},
-    {(const void *)pong_int64,(const void *)MGGetSInt64Answer},
-    {(const void *)pong_multiple,(const void *)MGCopyMultipleAnswers},
-    {(const void *)pong_matching,(const void *)IOServiceMatching},
+    {(const void *)diting_answer,(const void *)MGCopyAnswer},
+    {(const void *)diting_bool,(const void *)MGGetBoolAnswer},
+    {(const void *)diting_int32,(const void *)MGGetSInt32Answer},
+    {(const void *)diting_int64,(const void *)MGGetSInt64Answer},
+    {(const void *)diting_multiple,(const void *)MGCopyMultipleAnswers},
+    {(const void *)diting_matching,(const void *)IOServiceMatching},
 };

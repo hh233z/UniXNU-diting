@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Create an 8 MiB FAT EFI probe and its CRC-checked Pong initrd envelope."""
+"""Create an 8 MiB FAT EFI probe and its CRC-checked Diting initrd envelope."""
 import hashlib
 import json
 import os
@@ -10,12 +10,12 @@ import subprocess
 import zlib
 
 ROOT = Path(__file__).resolve().parents[2]
-out = ROOT / 'UniXNU/out/pong/payload-probe'
+out = ROOT / 'UniXNU/out/diting/payload-probe'
 stage = out / 'stage'
 efi = stage / 'EFI/UniXNU'
 efi.mkdir(parents=True, exist_ok=True)
-binary = ROOT / 'Mu-Silicium/Build/pongPkg/RELEASE_CLANGPDB/AARCH64/PongPayloadProbe.efi'
-shutil.copyfile(binary, efi / 'PongPayloadProbe.efi')
+binary = ROOT / 'Mu-Silicium/Build/ditingPkg/RELEASE_CLANGPDB/AARCH64/DitingPayloadProbe.efi'
+shutil.copyfile(binary, efi / 'DitingPayloadProbe.efi')
 (stage / 'DITING-PROBE.TXT').write_bytes(b'DITING-INITRD-PROBE-20261020')
 (efi / 'unixnu.toml').write_text('''version = 1
 [boot]
@@ -25,9 +25,9 @@ default = "probe"
 autoload = false
 [[entry]]
 id = "probe"
-title = "Pong initrd FAT test (not iPadOS)"
+title = "Diting initrd FAT test (not iPadOS)"
 type = "efi"
-path = "PongPayloadProbe.efi"
+path = "DitingPayloadProbe.efi"
 ''')
 for path in [stage, *stage.rglob('*')]:
     os.utime(path, (315532800, 315532800))

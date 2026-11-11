@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Unpack and validate a Pong firmware archive for the CI kernel build.
+"""Unpack and validate a Diting firmware archive for the CI kernel build.
 
 The archive holds the same tree a local build uses: the QCA6490 modem files,
 the TFA9873 amplifier container, the Adreno 730 GMU/SQE/ZAP firmware and

@@ -1,7 +1,7 @@
 {
-  "format": "pong-sm8475-dram-v1",
+  "format": "diting-sm8475-dram-v1",
   "physical_bytes": 12884901888,
-  "source": "Pong REC /sys/firmware/fdt, capture services57a",
+  "source": "Diting REC /sys/firmware/fdt, capture services57a",
   "dram": [
     {
       "base": "0x80000000",

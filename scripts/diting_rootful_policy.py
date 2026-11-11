@@ -11,12 +11,12 @@ def apply(candidate, native, original, slide, components):
     if 'com.apple.filesystems.apfs' not in components:
         raise ValueError('Rootful policy requires the matching APFS component')
     helper = [address for address, names in exports(native, macho(native)).items()
-              if '_native_pong_apfs_upgrade_flags' in names]
+              if '_native_diting_apfs_upgrade_flags' in names]
     if len(helper) != 1:
         raise ValueError('Native rootful policy entry missing or ambiguous')
     # apfs_mount_upgrade_checks in the supplied ordinary ARM64 22H374 cache.
     # Its ROOTFS-only gate follows this vfs_flags call. The helper returns
-    # the ordinary flags unless an explicit, root-owned Pong OS update passes.
+    # the ordinary flags unless an explicit, root-owned Diting OS update passes.
     site = 0xfffffff0066f58a0
     parent = macho(original)['segments']
     old_at = backed_offset(parent, site - 8, 20, len(original))
@@ -34,5 +34,5 @@ def apply(candidate, native, original, slide, components):
     struct.pack_into('<I', output, at, 0x94000000 | ((delta >> 2) & 0x3ffffff))
     return bytes(output), dict(build='22H374', original_call=hex(site),
         linked_call=hex(pc), native_policy=hex(helper[0]),
-        activation='pong_rootful=1, uid 0, bound native UFS OS root only',
+        activation='diting_rootful=1, uid 0, bound native UFS OS root only',
         mount_flags_modified=False, restore_input_modified=False)

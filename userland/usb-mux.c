@@ -45,7 +45,7 @@ static void *loadIdentity(void *unused){
  CFTypeRef (*answer)(CFStringRef)=library?dlsym(library,"MGCopyAnswer"):NULL;
  // The same scoped board adapter supplies lockdownd and the descriptor.
  // dlsym of an original MG symbol need not return dyld's interposed target.
- CFTypeRef (*boardAnswer)(CFStringRef)=dlsym(RTLD_DEFAULT,"pong_usb_copy_board_identity");
+ CFTypeRef (*boardAnswer)(CFStringRef)=dlsym(RTLD_DEFAULT,"diting_usb_copy_board_identity");
  CFTypeRef value=boardAnswer?boardAnswer(CFSTR("UniqueDeviceID")):NULL;
  if(!value)value=answer?answer(CFSTR("UniqueDeviceID")):NULL;
  char text[64]={0};bool valid=value&&CFGetTypeID(value)==CFStringGetTypeID()&&
@@ -68,7 +68,7 @@ static void registerIdentity(void){
  const char *serial=ready?nativeIdentity:"";
  kern_return_t r=IOConnectCallStructMethod(transport,3,serial,strlen(serial)+1,NULL,NULL);
  identityApplied=!r&&ready&&serial[0];
- if(!r)fprintf(stderr,"Pong USB Mux: %s identity supplied to USB descriptor\n",identityApplied?"native iOS UniqueDeviceID":"retained board");
+ if(!r)fprintf(stderr,"Diting USB Mux: %s identity supplied to USB descriptor\n",identityApplied?"native iOS UniqueDeviceID":"retained board");
 }
 static uint64_t milliseconds(void){struct timespec t;clock_gettime(CLOCK_MONOTONIC,&t);return (uint64_t)t.tv_sec*1000+t.tv_nsec/1000000;}
 static uint16_t get16(const uint8_t *p){return (uint16_t)((p[0]<<8)|p[1]);}
@@ -113,7 +113,7 @@ static bool tcpInput(const uint8_t *p,size_t n){
  // Older native Mux writers omit the IP/TCP data-offset nibble for their
  // fixed 20-byte header. This is a USB tunnel, not an unvalidated IP frame.
  unsigned header=words?words*4:20;
- if(header<20||header>n){fprintf(stderr,"Pong USB Mux: invalid TCP header=%u bytes=%zu\n",header,n);return false;}
+ if(header<20||header>n){fprintf(stderr,"Diting USB Mux: invalid TCP header=%u bytes=%zu\n",header,n);return false;}
  uint16_t host=get16(p),port=get16(p+2);uint32_t seq=get32(p+4),ack=get32(p+8);
  uint8_t flags=p[13];const uint8_t *data=p+header;size_t size=n-header;
  struct connection *c=NULL;
@@ -127,7 +127,7 @@ static bool tcpInput(const uint8_t *p,size_t n){
   if(result&&result!=EINPROGRESS){refuse(host,port,seq+1);return true;}
   memset(c,0,sizeof(*c));c->fd=(int)(c-clients);c->state=1;c->host=host;c->port=port;
   c->receive=seq+1;c->window=(uint32_t)get16(p+14)<<8;c->deadline=milliseconds()+10000;
-  fprintf(stderr,"Pong USB Mux: connecting real loopback service %u\n",port);
+  fprintf(stderr,"Diting USB Mux: connecting real loopback service %u\n",port);
   return true;
  }
  if(!c){refuse(host,port,seq+(uint32_t)size);return true;}
@@ -137,11 +137,11 @@ static bool tcpInput(const uint8_t *p,size_t n){
  if((flags&~8u)!=Ack){(void)tcp(c,Rst,NULL,0);closeClient(c);return true;}
  if((int32_t)(ack-c->acked)<0||(int32_t)(c->send-ack)<0)return false;
  c->acked=ack;c->window=(uint32_t)get16(p+14)<<8;
- if(c->state==2){if(ack!=1)return false;c->state=3;fprintf(stderr,"Pong USB Mux: native service %u connected\n",port);}
+ if(c->state==2){if(ack!=1)return false;c->state=3;fprintf(stderr,"Diting USB Mux: native service %u connected\n",port);}
  if(seq!=c->receive){return tcp(c,Ack,NULL,0);}
  if(size>Buffer-c->pending)return false;
   if(size){memcpy(c->input+c->pending,data,size);c->pending+=size;c->receive+=(uint32_t)size;
-   if(c->port==62078&&c->trace++<6)fprintf(stderr,"Pong USB Mux: native request bytes=%zu pending=%zu window=%u\n",size,c->pending,c->window);
+   if(c->port==62078&&c->trace++<6)fprintf(stderr,"Diting USB Mux: native request bytes=%zu pending=%zu window=%u\n",size,c->pending,c->window);
    return tcp(c,Ack,NULL,0);}
  return true;
 }
@@ -162,7 +162,7 @@ static bool consume(void){
    uint32_t magic=get32(incoming+8);
    // Native host OUT is FEEDFACE; device IN is FACEFACE. Accept both
    // known v2 framing markers on input, but emit the device direction.
-   if(magic!=0xfeedface&&magic!=0xfaceface){fprintf(stderr,"Pong USB Mux: bad frame magic=%08x protocol=%u length=%u\n",magic,protocol,length);return false;}
+   if(magic!=0xfeedface&&magic!=0xfaceface){fprintf(stderr,"Diting USB Mux: bad frame magic=%08x protocol=%u length=%u\n",magic,protocol,length);return false;}
    rxSequence=get16(incoming+12);
   }
   const uint8_t *p=incoming+header;size_t size=length-header;
@@ -172,19 +172,19 @@ static bool consume(void){
    outgoingAt=outgoingSize=0;version=0;txSequence=0;rxSequence=0xffff;
    uint8_t answer[12]={0};unsigned negotiated=get32(p);put32(answer,negotiated);
    if(!wire(0,answer,12))return false;version=negotiated;
-   fprintf(stderr,"Pong USB Mux: wire version %u negotiated; native trust remains required\n",version);
+   fprintf(stderr,"Diting USB Mux: wire version %u negotiated; native trust remains required\n",version);
   } else if(protocol==2) {
-   // macOS requested5 on the real Pong session; libimobiledevice uses7.
+   // macOS requested5 on the real Diting session; libimobiledevice uses7.
    // Both select the implemented basic v2 transport (bit1 is optional).
-   if(version<2||size!=1||(p[0]&~2u)!=5){fprintf(stderr,"Pong USB Mux: unsupported SETUP size=%zu code=%u\n",size,size?p[0]:0);return false;}
+   if(version<2||size!=1||(p[0]&~2u)!=5){fprintf(stderr,"Diting USB Mux: unsupported SETUP size=%zu code=%u\n",size,size?p[0]:0);return false;}
    txSequence=0;rxSequence=header==16?get16(incoming+12):0xffff;
   } else if(protocol==6) {
    if(!version||!tcpInput(p,size))return false;
   } else if(protocol==1&&size&&(p[0]==5||p[0]==7)) {
    // Defined warning/information controls carry no command to execute.
    // An error control (3), or an unknown control, still closes the session.
-   fprintf(stderr,"Pong USB Mux: native control=%u bytes=%zu\n",p[0],size);
-  } else {fprintf(stderr,"Pong USB Mux: unsupported protocol=%u size=%zu\n",protocol,size);return false;}
+   fprintf(stderr,"Diting USB Mux: native control=%u bytes=%zu\n",p[0],size);
+  } else {fprintf(stderr,"Diting USB Mux: unsupported protocol=%u size=%zu\n",protocol,size);return false;}
   incomingSize-=length;if(incomingSize)memmove(incoming,incoming+length,incomingSize);
  }
  return true;
@@ -206,7 +206,7 @@ static bool serviceClients(void){
    size_t written=0,size=c->pending>4096?4096:c->pending;
    int error=nativeSocket(6,c,0,c->input,size,NULL,NULL,&written);
    if(written){c->pending-=written;if(c->pending)memmove(c->input,c->input+written,c->pending);
-    if(c->port==62078&&c->trace++<6)fprintf(stderr,"Pong USB Mux: native service accepted bytes=%zu\n",written);
+    if(c->port==62078&&c->trace++<6)fprintf(stderr,"Diting USB Mux: native service accepted bytes=%zu\n",written);
     if(!tcp(c,Ack,NULL,0))return false;}
    if(error&&error!=EAGAIN&&error!=EINTR){(void)tcp(c,Rst,NULL,0);closeClient(c);continue;}
   }
@@ -216,7 +216,7 @@ static bool serviceClients(void){
    if(allowed>sizeof buffer)allowed=sizeof buffer;if(!allowed)continue;
    size_t read=allowed;int error=nativeSocket(7,c,0,NULL,0,buffer,&read,NULL);
    if(read){if(!tcp(c,Ack,buffer,read))return false;c->send+=(uint32_t)read;
-    if(c->port==62078&&c->trace++<6)fprintf(stderr,"Pong USB Mux: native reply bytes=%zu\n",read);}
+    if(c->port==62078&&c->trace++<6)fprintf(stderr,"Diting USB Mux: native reply bytes=%zu\n",read);}
    if((!error&&!read)||(error&&error!=EAGAIN&&error!=EINTR)){if(!tcp(c,Rst,NULL,0))return false;closeClient(c);}
   }
  }
@@ -230,11 +230,11 @@ int main(void){
  setvbuf(stderr,NULL,_IOLBF,0);
  while(!quitting) {
   if(!transport) {
-   io_service_t service=IOServiceGetMatchingService(MACH_PORT_NULL,IOServiceMatching("PongUsbMuxTransport"));
+   io_service_t service=IOServiceGetMatchingService(MACH_PORT_NULL,IOServiceMatching("DitingUsbMuxTransport"));
    if(!service){usleep(250000);continue;}
    kern_return_t r=IOServiceOpen(service,mach_task_self(),0,&transport);IOObjectRelease(service);
    if(r){transport=0;usleep(250000);continue;}
-   fprintf(stderr,"Pong USB Mux: root bridge attached to physical DWC3 transport\n");
+   fprintf(stderr,"Diting USB Mux: root bridge attached to physical DWC3 transport\n");
    registerIdentity();identityRetry=milliseconds()+1000;
   }
   uint64_t state[3]={0};uint32_t count=3;
@@ -255,7 +255,7 @@ int main(void){
    uint8_t block[4096];size_t size=sizeof block;
    r=IOConnectCallMethod(transport,1,&generation,1,NULL,0,NULL,NULL,block,&size);
    if(!r&&size&&incomingSize+size<=sizeof incoming){memcpy(incoming+incomingSize,block,size);incomingSize+=size;
-    if(!consume()){fprintf(stderr,"Pong USB Mux: malformed/unsupported stream; reset bounded session\n");IOServiceClose(transport);transport=0;reset();continue;}}
+    if(!consume()){fprintf(stderr,"Diting USB Mux: malformed/unsupported stream; reset bounded session\n");IOServiceClose(transport);transport=0;reset();continue;}}
    else if(r||incomingSize+size>sizeof incoming){IOServiceClose(transport);transport=0;reset();continue;}
   }
   if(!serviceClients()){IOServiceClose(transport);transport=0;reset();continue;}

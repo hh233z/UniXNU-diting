@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
-"""Build the Pong Darwin 24 kernel aggregate for the UniXNU kernel step.
+"""Build the Diting Darwin 24 kernel aggregate for the UniXNU kernel step.
 
-The component catalog names this file as the build recipe of the PongPlatform24
+The component catalog names this file as the build recipe of the DitingPlatform24
 kit, so the shared kernel step runs it at this kit's archive position and takes
 the file it writes as the kernel to prelink.
 
@@ -30,11 +30,11 @@ KERNEL_RELATIVE = Path('build/xnu/ios-obj/DEVELOPMENT_ARM64_DITING/mach.developm
 
 
 def local_inputs(device):
-    """The [pong_build] table of the device repository's local.toml, when it has one."""
+    """The [diting_build] table of the device repository's local.toml, when it has one."""
     path = device / 'local.toml'
     if not path.is_file():
         return {}
-    return tomllib.loads(path.read_text()).get('pong_build', {})
+    return tomllib.loads(path.read_text()).get('diting_build', {})
 
 
 def seed_refer(device, sources):
@@ -72,13 +72,13 @@ def hardware_dtb(device, tree, given=None):
         return Path(given).resolve()
     board = tomllib.loads((device / 'board.toml').read_text())
     spec = board.get('device_tree', {})
-    entry = spec.get('source', 'device:dts/pong.dts')
+    entry = spec.get('source', 'device:dts/diting.dts')
     kind, _, relative = entry.partition(':')
     source = (device / relative) if kind == 'device' else (tree / relative)
     if not source.is_file():
         raise SystemExit(f'{source} missing: [device_tree] source names it')
     command = [shutil.which('dtc') or '', '-I', 'dts', '-O', 'dtb',
-               '-o', str(tree / 'build/pong/hardware.dtb')]
+               '-o', str(tree / 'build/diting/hardware.dtb')]
     if not command[0]:
         raise SystemExit('dtc is missing; install it (brew install dtc)')
     # include_dirs may carry a soc: prefix; those resolve against the SoC seed

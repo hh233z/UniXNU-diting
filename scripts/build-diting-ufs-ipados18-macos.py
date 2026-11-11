@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Compile the Pong UFS transport and optional diagnostics."""
+"""Compile the Diting UFS transport and optional diagnostics."""
 import hashlib
 import argparse
 import json
@@ -13,7 +13,7 @@ import sys
 DEVICE = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(DEVICE / 'scripts'))
 import diting_paths
-DEFAULT_TREE = diting_paths.build_tree(name='Pong-iPadOS18-native')
+DEFAULT_TREE = diting_paths.build_tree(name='Diting-iPadOS18-native')
 DEVELOPER = diting_paths.developer_dir()
 
 
@@ -52,8 +52,8 @@ def main():
     (out / 'build.log').write_text(result.stdout + result.stderr)
     if result.returncode:
         raise SystemExit(result.stderr)
-    transport = out / 'PongUfsTransport.o'
-    command[command.index(str(source))] = str(source.with_name('PongUfsTransport.cpp'))
+    transport = out / 'DitingUfsTransport.o'
+    command[command.index(str(source))] = str(source.with_name('DitingUfsTransport.cpp'))
     command[-1] = str(transport)
     result = subprocess.run(command, capture_output=True, text=True, env=env)
     (out / 'transport-build.log').write_text(result.stdout + result.stderr)
@@ -70,12 +70,12 @@ def main():
         'build_tree': str(tree),
         'source': str(source),
         'image_verification': 'skipped by request' if args.skip_image_verification else 'digest recorded',
-        'read_write_capable': True, 'runtime_write_arg': 'pong_ufs_readwrite=1',
+        'read_write_capable': True, 'runtime_write_arg': 'diting_ufs_readwrite=1',
         'write_scope': 'declared SHNGROOT OS/SystemOS/Data windows; each mount retains its own flags',
         'storage_commands': ['NOP', 'READ ATTRIBUTE', 'START STOP ACTIVE', 'TEST UNIT READY', 'READ CAPACITY', 'READ(10)', 'WRITE(10) FUA', 'SYNCHRONIZE CACHE(10)'],
         'smmu_writes': 'exclusive UFS SID 0xe0 only after queue stop',
         'optional_probes_default': 'off',
-        'board': 'Nothing Phone (2) Pong / SM8475',
+        'board': 'Nothing Phone (2) Diting / SM8475',
         'ufs_hc': '0x01d84000/0x3000', 'gcc_ufs_page': '0x00187000/0x1000',
         'stream_id': '0xe0', 'hardware_tested': False,
         'smmu_owned_context_banks': 78, 'smmu_owned_match_groups': 120,
@@ -90,7 +90,7 @@ def main():
     export.mkdir(parents=True, exist_ok=True)
     for name in ('libNativeUfs.a', 'build-report.json', 'build.log', 'bindings.json', 'transport-build.log'):
         shutil.copyfile(out / name, export / name)
-    print('Compiled Pong NativeUfs read/write path (boot-arg gated):', archive)
+    print('Compiled Diting NativeUfs read/write path (boot-arg gated):', archive)
 
 
 if __name__ == '__main__':

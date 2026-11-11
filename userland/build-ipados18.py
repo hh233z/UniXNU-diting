@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Adapt the userland to the local, native-APFS UniXNU Pong 22H374 port.
+"""Adapt the userland to the local, native-APFS UniXNU Diting 22H374 port.
 
 prepare: build static init, curate real 22H374 jobs, extract a Data seed and clone images.
 apply:   mount ONLY these image copies and apply the prepared changes (macOS admin).
@@ -26,7 +26,7 @@ import subprocess
 import sys
 
 VERIFY_IMAGES = False
-BUILD_PLAN_FORMAT = 'pong-userland-22H374-v1'
+BUILD_PLAN_FORMAT = 'diting-userland-22H374-v1'
 
 PROJECT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(PROJECT / 'tools/apfs'))
@@ -63,11 +63,11 @@ EXTRA = [
     ('mobile/Library/Caches', 0o755, 501, 501), ('mobile/Library/Preferences', 0o755, 501, 501),
     ('mobile/Library/Logs', 0o755, 501, 501), ('root/Library', 0o700, 0, 0),
     ('mobile/Library/Logs/CrashReporter', 0o755, 501, 501),
-    ('mobile/Library/Pong', 0o700, 501, 501),
-    ('mobile/Library/Pong/PosterBoard', 0o700, 501, 501),
-    ('mobile/Library/Pong/LaunchServices', 0o700, 501, 501),
-    ('mobile/Library/Pong/LaunchServices/Library', 0o700, 501, 501),
-    ('mobile/Library/Pong/LaunchServices/Library/Caches', 0o700, 501, 501),
+    ('mobile/Library/Diting', 0o700, 501, 501),
+    ('mobile/Library/Diting/PosterBoard', 0o700, 501, 501),
+    ('mobile/Library/Diting/LaunchServices', 0o700, 501, 501),
+    ('mobile/Library/Diting/LaunchServices/Library', 0o700, 501, 501),
+    ('mobile/Library/Diting/LaunchServices/Library/Caches', 0o700, 501, 501),
     ('mobile/Library/CoreDuet/Knowledge', 0o700, 501, 501),
     ('mobile/Library/IdentityServices/PDS', 0o700, 501, 501),
     ('root/Library/Caches', 0o700, 0, 0), ('root/Library/Preferences', 0o700, 0, 0),
@@ -101,7 +101,7 @@ def file_sha(path):
 
 
 def native_init_signature(data):
-    """Reject host-default 16K signatures before a 4K Pong kernel sees init."""
+    """Reject host-default 16K signatures before a 4K Diting kernel sees init."""
     if len(data) < 32 or struct.unpack_from('<I', data)[0] != 0xfeedfacf:
         raise RuntimeError('static init must be a thin 64-bit Mach-O')
     commands, command_bytes = struct.unpack_from('<II', data, 16)
@@ -133,7 +133,7 @@ def native_init_signature(data):
             if size < 44: raise RuntimeError('truncated CodeDirectory')
             shift = signature[start + 39]
             if shift != 12:
-                raise RuntimeError(f'static init signature page shift {shift}; Pong requires 12 (4096 bytes)')
+                raise RuntimeError(f'static init signature page shift {shift}; Diting requires 12 (4096 bytes)')
             pages.append(1 << shift)
     if not pages: raise RuntimeError('static init signature lacks a CodeDirectory')
     return {'code_directories': len(pages), 'page_bytes': 4096}
@@ -260,7 +260,7 @@ def drop_restore_app_alias(root, overlay):
     """Replace the restore's dangling App cryptex alias with the OS-resident directory.
 
     prepare() puts the matching AppOS files at overlay/System/Cryptexes/App,
-    because Pong keeps AppOS inside the OS instead of mounting a separate
+    because Diting keeps AppOS inside the OS instead of mounting a separate
     cryptex from /private/preboot. A restore OS carries that same path as a
     symlink to the cryptex mount, and merge_tree deliberately refuses to merge
     a directory into a destination symlink -- without this the App files are
@@ -378,12 +378,12 @@ def runtime_namespace(root):
         os.chown(alias, 0, 0, follow_symlinks=False)
     # Hide unsupported board-specific HALs at runtime without deleting them.
     # Keep /Library/.../VirtualAudio.plugin and all media codecs untouched.
-    empty_hal = root / 'pong/audio-hal18'
+    empty_hal = root / 'diting/audio-hal18'
     if empty_hal.is_symlink():
         raise RuntimeError('unexpected HAL view symlink')
     empty_hal.mkdir(exist_ok=True)
-    if any(x.name not in ('PongAudio.plugin', 'PongAudio.driver') for x in empty_hal.iterdir()):
-        raise RuntimeError('unexpected board HAL in Pong output-only view')
+    if any(x.name not in ('DitingAudio.plugin', 'DitingAudio.driver') for x in empty_hal.iterdir()):
+        raise RuntimeError('unexpected board HAL in Diting output-only view')
     os.chown(empty_hal, 0, 0); os.chmod(empty_hal, 0o755)
     return dict(build='22H374', expected_mounts={
         'SystemOS': {'path': '/private/preboot', 'readonly': True},
@@ -395,7 +395,7 @@ def runtime_namespace(root):
 
 def stage_audio_policy(root):
     """Select 22H374's real in-process endpoint manager before launchd starts."""
-    directory = root / 'pong/etc'
+    directory = root / 'diting/etc'
     directory.mkdir(parents=True, exist_ok=True)
     if directory.is_symlink():
         raise RuntimeError('unexpected audio policy directory symlink')
@@ -410,7 +410,7 @@ def stage_audio_policy(root):
 
 
 def adapt_job18(job):
-    """Adapt file-based 22H374 jobs to Pong's non-Exclaves boot environment."""
+    """Adapt file-based 22H374 jobs to Diting's non-Exclaves boot environment."""
     changes = []
     if job.get('Label') == 'com.apple.watchdogd':
         # This phone currently has no native IOWatchdog provider. The stock
@@ -420,13 +420,13 @@ def adapt_job18(job):
         # restrict import to a real watchdog DT node until its driver exists.
         job['_LimitLoadToDeviceTree'] = ['watchdog', 'wdt']
         changes.append({'key': '_LimitLoadToDeviceTree',
-                        'reason': 'requires real native watchdog node/provider; not implemented on Pong'})
+                        'reason': 'requires real native watchdog node/provider; not implemented on Diting'})
     if job.get('Label') == 'com.apple.wifid':
-        # The real QCA6490 service publishes through PongWifi, not Apple's
+        # The real QCA6490 service publishes through DitingWifi, not Apple's
         # wlan/marconi-wifi DT nodes. Keep the native daemon and XPC ABI.
         if job.pop('_LimitLoadToDeviceTree', None) is not None:
             changes.append({'key': '_LimitLoadToDeviceTree',
-                            'reason': 'Pong QCA6490 native transport replaces Apple WLAN node gating'})
+                            'reason': 'Diting QCA6490 native transport replaces Apple WLAN node gating'})
     if job.get('Label') == 'com.apple.audiomxd':
         # This restore ships audiomxd instead of mediaserverd. Select its
         # real service definitions on this non-Exclaves port. Keep nested
@@ -439,7 +439,7 @@ def adapt_job18(job):
                 job[key] = value['#Then']
                 changes.append({'key': key, 'reason': '22H374 audiomxd provider selected; no legacy mediaserverd job'})
     for key, reason in (
-        ('_Conclave', 'Pong Darwin24 does not build CONFIG_EXCLAVES; this key rejects backboardd import'),
+        ('_Conclave', 'Diting Darwin24 does not build CONFIG_EXCLAVES; this key rejects backboardd import'),
         ('HighPriorityIO', '22H374 file importer reports unknown key'),
         ('HopefullyExitsLast', '22H374 importer explicitly no longer respects this key'),
         ('NO_EnvironmentVariables', 'disabled source-template field, not a launchd environment dictionary'),
@@ -459,10 +459,10 @@ def jobs(root, cryptex, overlay, out, app_cryptex=None):
         raise RuntimeError('matching 22H374 Version 7 service cache required')
     cached_jobs = {}
     # Unlike 20G81, 22H374 rejects event publishers from ordinary file jobs.
-    # Its cache lookup uses the resolved directory: the old /System -> /pong
+    # Its cache lookup uses the resolved directory: the old /System -> /diting
     # symlink makes /System cache keys miss and silently falls back to files.
     dest = overlay / 'System/Library/LaunchDaemons'
-    legacy = overlay / 'pong/LaunchDaemons'
+    legacy = overlay / 'diting/LaunchDaemons'
     if legacy.is_dir(): shutil.rmtree(legacy)
     dest.mkdir(parents=True, exist_ok=True)
     for old in dest.glob('*.plist'): old.unlink()
@@ -514,7 +514,7 @@ def jobs(root, cryptex, overlay, out, app_cryptex=None):
                 # for this provider's handshake. Retain its native behavior and
                 # preserve the actual server error on Data, independent of pstore.
                 job.setdefault('EnvironmentVariables', {})['OS_ACTIVITY_DT_MODE'] = 'YES'
-                job['StandardErrorPath'] = '/private/var/logs/PongService-runningboardd.log'
+                job['StandardErrorPath'] = '/private/var/logs/DitingService-runningboardd.log'
             if label == 'com.apple.PosterBoard':
                 # Preserve the real database/migration error. The previous
                 # generic scene assertion discards its underlying cause.
@@ -534,10 +534,10 @@ def jobs(root, cryptex, overlay, out, app_cryptex=None):
                 # the real server, database/schema and XPC endpoints; use a
                 # real mobile-owned directory on this development port.
                 job.setdefault('EnvironmentVariables', {})['LS_DATABASE_DIR'] = \
-                    '/private/var/mobile/Library/Pong/LaunchServices'
+                    '/private/var/mobile/Library/Diting/LaunchServices'
             put_plist(dest / f.name, job)
             # All selected definitions use this real canonical directory,
-            # including launch angels. No /pong symlink changes cache keys.
+            # including launch angels. No /diting symlink changes cache keys.
             cached_jobs['/System/Library/LaunchDaemons/' + f.name] = job
     cache['LaunchDaemons'] = cached_jobs
     # Retain the matching 18.x extension/bundle/tree schema and feature gates.
@@ -657,7 +657,7 @@ def phone_wallpaper_resources(source_root, destination_root):
             value=plistlib.loads(manifest.read_bytes())
             # Renaming only the outer collection left every actual variant
             # tagged ~ipad in its directory name. WallpaperKit filters these
-            # before reading the plist. Pong is 1080x2412 pixels / scale 3.
+            # before reading the plist. Diting is 1080x2412 pixels / scale 3.
             screen_class='360w-804h@3x~iphone'
             package=manifest.parent
             source_name=original/'Wallpapers'/package.name/'Wallpaper.plist'
@@ -665,7 +665,7 @@ def phone_wallpaper_resources(source_root, destination_root):
             source_class=source_value.get('logicalScreenClass','')
             if '~ipad' in source_class:
                 destination=package.with_name(package.name.replace(source_class,screen_class))
-                if destination.exists():raise RuntimeError('duplicate Pong wallpaper variant')
+                if destination.exists():raise RuntimeError('duplicate Diting wallpaper variant')
                 package.rename(destination)
                 # Keep old serialized poster URLs usable without a second
                 # copied variant. Native phone scanning skips the ~ipad name.
@@ -783,11 +783,11 @@ def data_seed(image, root, overlay, out):
         path.parent.mkdir(parents=True, exist_ok=True)
         put_plist(path, value)
         metadata[rel] = [stat.S_IFREG | 0o644, uid, gid]
-    settings = data / 'pong/PreferencesUI.framework'
+    settings = data / 'diting/PreferencesUI.framework'
     settings.mkdir(parents=True,exist_ok=True)
     removed = {}
     dump(out / 'settings-resources.json', removed)
-    for p in [data/'pong', settings, *settings.iterdir()]:
+    for p in [data/'diting', settings, *settings.iterdir()]:
         rel = str(p.relative_to(data))
         kind = stat.S_IFLNK if p.is_symlink() else stat.S_IFDIR if p.is_dir() else stat.S_IFREG
         metadata[rel] = [kind | (0o755 if kind != stat.S_IFREG else 0o644), 0, 0]
@@ -800,13 +800,13 @@ def data_seed(image, root, overlay, out):
     metadata[link] = [stat.S_IFLNK | 0o755, 0, 0]
     for rel in ('db/diagnostics/.migrated', 'db/diagnostics/timesync/.migrated', 'db/uuidtext/.migrated'):
         (data / rel).touch(); metadata[rel] = [stat.S_IFREG | 0o644, 272, 272]
-    (data / '.pong-data-22H374').write_text('Pong development Data seed for 18.7.10 / 22H374\n')
-    metadata['.pong-data-22H374'] = [stat.S_IFREG | 0o644, 0, 0]
+    (data / '.diting-data-22H374').write_text('Diting development Data seed for 18.7.10 / 22H374\n')
+    metadata['.diting-data-22H374'] = [stat.S_IFREG | 0o644, 0, 0]
     for rel, (mode, _, _) in metadata.items():
         if not stat.S_ISLNK(mode): os.chmod(data / rel, mode & 0o7777)
     dump(out / 'data-metadata.json', metadata)
     # Init only creates absent entries, preserving an existing Data volume's contents.
-    seed = overlay / 'pong/var-seed'
+    seed = overlay / 'diting/var-seed'
     shutil.copytree(data, seed, symlinks=True)
     lines = []
     for rel, (mode, uid, gid) in sorted(metadata.items()):
@@ -817,10 +817,10 @@ def data_seed(image, root, overlay, out):
         path = '/private/var/' + rel
         if stat.S_ISLNK(mode): lines.append(f'l\t{os.readlink(data / rel)}\t{path}')
         elif stat.S_ISREG(mode):
-            lines.append(f'f\t{mode & 0o7777:o}\t{uid}\t{gid}\t{path}\t/pong/var-seed/{rel}')
+            lines.append(f'f\t{mode & 0o7777:o}\t{uid}\t{gid}\t{path}\t/diting/var-seed/{rel}')
     skeleton = '\n'.join(lines) + '\n'
     if len(skeleton.encode()) >= 65536: raise RuntimeError('var.skel exceeds init buffer')
-    (overlay / 'pong/etc/var.skel').write_text(skeleton)
+    (overlay / 'diting/etc/var.skel').write_text(skeleton)
     return dict(entries=len(metadata), skeleton_bytes=len(skeleton.encode()),
                 template='22H374 native APFS inode owners/modes; staged apps remain on OS')
 
@@ -834,7 +834,7 @@ def compile_init(out, developer, destination):
            '-fno-stack-protector', '-fno-stack-check', '-fno-builtin', '-Wall', '-Wextra', '-Werror',
            '-I' + str(PROJECT / 'userland/libmini'), '-DDITING_SYSTEM_VERSION="18.7.10"', '-DDITING_SYSTEM_BUILD="22H374"',
            '-DDITING_NATIVE_APFS18=1',
-           '-DDITING_UI_LIBRARY_PATH="/pong/libpong-ui18.dylib"',
+           '-DDITING_UI_LIBRARY_PATH="/diting/libditing-ui18.dylib"',
            '-DDITING_UI_EXTRA_PROCESSES=" usermanagerd lsd installd pkd runningboardd PosterBoard"', '-Wl,-e,_start',
            '-Wl,-pagezero_size,0x100000000', '-Wl,-no_fixup_chains',
            str(PROJECT / 'userland/libmini/start.S'), str(PROJECT / 'userland/libmini/mini.c'),
@@ -857,10 +857,10 @@ def compile_ui(out, developer):
     """Build the 22H374 adapter; no prebuilt 20F66 addresses/libraries."""
     env = dict(os.environ, DEVELOPER_DIR=str(developer))
     sdk = subprocess.check_output(['xcrun', '--sdk', 'iphoneos', '--show-sdk-path'], env=env, text=True).strip()
-    destination = out / 'libpong-ui.dylib'
+    destination = out / 'libditing-ui.dylib'
     cmd = ['xcrun', '--sdk', 'iphoneos', 'clang', '-target', 'arm64-apple-ios18.0',
            '-isysroot', sdk, '-Os', '-fblocks', '-dynamiclib', '-Wall', '-Wextra', '-Werror',
-           '-Wl,-no_fixup_chains', '-install_name', '/pong/libpong-ui18.dylib',
+           '-Wl,-no_fixup_chains', '-install_name', '/diting/libditing-ui18.dylib',
            '-framework', 'CoreFoundation', '-framework', 'CoreGraphics', '-lobjc',
            str(PROJECT / 'userland/ui_compat18.c'),
            str(PROJECT / 'userland/settings_compat18.c'),
@@ -875,7 +875,7 @@ def compile_ui(out, developer):
 
 
 def compile_audio(out, developer):
-    """Build the Pong output-only AudioServerPlugIn against public SDK headers."""
+    """Build the Diting output-only AudioServerPlugIn against public SDK headers."""
     env=dict(os.environ,DEVELOPER_DIR=str(developer))
     sdk=Path(subprocess.check_output(['xcrun','--sdk','iphoneos','--show-sdk-path'],env=env,text=True).strip())
     mac=Path(subprocess.check_output(['xcrun','--sdk','macosx','--show-sdk-path'],env=env,text=True).strip())
@@ -888,23 +888,23 @@ def compile_audio(out, developer):
     # 22H374 HALS_PlugInManager::LoadPlugIns enumerates .driver bundles.
     # .plugin is the legacy AHP namespace (e.g. VirtualAudio), whose factory
     # and interface UUIDs differ from AudioServerPlugIn's public C ABI.
-    bundle=out/'PongAudio.driver';bundle.mkdir(exist_ok=True)
-    target=bundle/'PongAudio'
+    bundle=out/'DitingAudio.driver';bundle.mkdir(exist_ok=True)
+    target=bundle/'DitingAudio'
     cmd=['xcrun','clang','-target','arm64-apple-ios18.0','-isysroot',str(sdk),
         '-Os','-fblocks','-bundle','-fvisibility=hidden','-Wall','-Wextra','-Werror',
         '-Wl,-no_fixup_chains',
-        '-I'+str(includes.parent),'-I'+str(PROJECT/'drivers/PongPower'),
+        '-I'+str(includes.parent),'-I'+str(PROJECT/'drivers/DitingPower'),
         '-framework','CoreFoundation','-framework','IOKit',
-        str(PROJECT/'userland/PongAudioPlugIn.c'),'-o',str(target)]
+        str(PROJECT/'userland/DitingAudioPlugIn.c'),'-o',str(target)]
     run(cmd,env=env)
     factory='341D03C1-9CF6-4163-A3E9-FA3AC191C764'
-    put_plist(bundle/'Info.plist',dict(CFBundleDevelopmentRegion='en',CFBundleExecutable='PongAudio',
-        CFBundleIdentifier='org.unixnu.pong.audio',CFBundleInfoDictionaryVersion='6.0',
-        CFBundleName='PongAudio',CFBundlePackageType='BNDL',CFBundleShortVersionString='1.0',
+    put_plist(bundle/'Info.plist',dict(CFBundleDevelopmentRegion='en',CFBundleExecutable='DitingAudio',
+        CFBundleIdentifier='org.unixnu.diting.audio',CFBundleInfoDictionaryVersion='6.0',
+        CFBundleName='DitingAudio',CFBundlePackageType='BNDL',CFBundleShortVersionString='1.0',
         CFBundleVersion='1',CFBundleSupportedPlatforms=['iPhoneOS'],MinimumOSVersion='18.0',
-        CFPlugInFactories={factory:'PongAudio_Create'},
+        CFPlugInFactories={factory:'DitingAudio_Create'},
         CFPlugInTypes={'443ABAB8-E7B3-491A-B985-BEB9187030DB':[factory]},
-        AudioServerPlugIn_IOKitUserClients=['PongAudioUserClient']))
+        AudioServerPlugIn_IOKitUserClients=['DitingAudioUserClient']))
     run(['codesign','--force','--sign','-','--pagesize','4096',bundle])
     dump(out/'audio-compile-command.json',cmd)
     return bundle
@@ -922,7 +922,7 @@ def compile_sleep(out, developer):
     run(['codesign', '--force', '--sign', '-', '--pagesize', '4096', destination])
     (out / 'sleep-compile-command.json').write_text(json.dumps([str(x) for x in cmd], indent=2) + '\n')
     put_plist(out / 'com.apple.sleepd.plist', dict(Label='com.apple.sleepd',
-        ProgramArguments=['/private/var/pong/sleepserver'], UserName='mobile',
+        ProgramArguments=['/private/var/diting/sleepserver'], UserName='mobile',
         MachServices={'com.apple.sleepd.sleepserver': True}, RunAtLoad=True,
         ThrottleInterval=30, StandardOutPath='/dev/console', StandardErrorPath='/dev/console',
         POSIXSpawnType='Interactive'))
@@ -976,12 +976,12 @@ def compile_audio_route(out, developer):
 
 
 def stage_audio_route_job(root):
-    label='dev.unixnu.pong.audio-route'
+    label='dev.unixnu.diting.audio-route'
     path='/System/Library/LaunchDaemons/'+label+'.plist'
-    job=dict(Label=label,ProgramArguments=['/pong/audio-route'],UserName='root',
+    job=dict(Label=label,ProgramArguments=['/diting/audio-route'],UserName='root',
         RunAtLoad=True,LaunchOnlyOnce=True,ProcessType='Background',
-        StandardOutPath='/private/var/logs/pong-audio-route.log',
-        StandardErrorPath='/private/var/logs/pong-audio-route.log')
+        StandardOutPath='/private/var/logs/diting-audio-route.log',
+        StandardErrorPath='/private/var/logs/diting-audio-route.log')
     put_plist(root/path.lstrip('/'),job)
     cache_path=root/'System/Library/xpc/launchd.plist'
     cache=plistlib.loads(cache_path.read_bytes());cache['LaunchDaemons'][path]=job
@@ -992,11 +992,11 @@ def stage_audio_route_job(root):
 def stage_sileo_job(root):
     # Run only after real launchd has established the service namespace.
     # A pre-launchd fork keeps its old bootstrap port even after sleep(30).
-    label = 'dev.unixnu.pong.sileo-firstboot'
+    label = 'dev.unixnu.diting.sileo-firstboot'
     path = '/System/Library/LaunchDaemons/' + label + '.plist'
-    rootful=(root/'.pong-rootful-staged').is_file()
-    arguments=['/usr/bin/dash','/pong/sileo-rootful-firstboot.sh'] if rootful else ['/var/jb/bin/sh','/pong/sileo-firstboot.sh']
-    log='/private/var/logs/pong-sileo-rootful.log' if rootful else '/private/var/logs/pong-sileo.log'
+    rootful=(root/'.diting-rootful-staged').is_file()
+    arguments=['/usr/bin/dash','/diting/sileo-rootful-firstboot.sh'] if rootful else ['/var/jb/bin/sh','/diting/sileo-firstboot.sh']
+    log='/private/var/logs/diting-sileo-rootful.log' if rootful else '/private/var/logs/diting-sileo.log'
     job = dict(Label=label, ProgramArguments=arguments,
         UserName='root', RunAtLoad=True, LaunchOnlyOnce=True,
         ProcessType='Background', StandardOutPath=log,
@@ -1016,7 +1016,7 @@ def stage_sileo_application(root, stage, runtime):
     Procursus, APT and dpkg stay on writable Data; Sileo selects /var/jb
     from its existing bootstrap marker, independently of its bundle path.
     """
-    if (root/'.pong-rootful-staged').is_file():
+    if (root/'.diting-rootful-staged').is_file():
         raise RuntimeError('Rootful OS: use rootful18.install, not a rootless Sileo stage')
     source=stage/'data-overlay/jb/Applications/Sileo.app'
     if not (source/'Sileo').is_file():raise RuntimeError('complete local Sileo stage required')
@@ -1049,11 +1049,11 @@ def helper(a):
                  'com.apple.springboard.plist'):
         source = PROJECT / 'userland/var/mobile/Library/Preferences' / name
         shutil.copyfile(source, preference_seed / name)
-    dump(out / 'helper.json', dict(helper=str(out / 'init'), runtime_path='/pong/init',
-        signature=signature, required_kernel=['pong_init_path',
+    dump(out / 'helper.json', dict(helper=str(out / 'init'), runtime_path='/diting/init',
+        signature=signature, required_kernel=['diting_init_path',
         'native writable Data mount', 'DEVELOPMENT DITING arm64 4K'],
         ui_library=str(ui_library),
-        ui_library_runtime='/pong/libpong-ui18.dylib',
+        ui_library_runtime='/diting/libditing-ui18.dylib',
         preference_seed=str(preference_seed),
         audio_plugin=str(audio_plugin), audio_scope='physical stereo output; no microphone',
         sleep_service=str(sleep_service), sleep_scope='local configuration; no alarm/Focus/Health/Watch backend',
@@ -1071,7 +1071,7 @@ def prepare(a):
     if (cv['ProductVersion'], cv['ProductBuildVersion']) != ('18.7.10', '22H374'):
         raise RuntimeError('SystemCryptex must also be 18.7.10 / 22H374; refusing mixed builds')
     overlay = out / 'overlay'
-    (overlay / 'pong/etc').mkdir(parents=True, exist_ok=True)
+    (overlay / 'diting/etc').mkdir(parents=True, exist_ok=True)
     stage_audio_policy(overlay)
     (overlay / 'sbin').mkdir(exist_ok=True)
     init_signature = compile_init(out, a.developer, overlay / 'sbin/launchd')
@@ -1081,13 +1081,13 @@ def prepare(a):
     dump(out / 'phone-artwork.json', phone_wallpaper_resources(root, overlay))
     seed = data_seed(a.os_image, root, overlay, out)
     ui=compile_ui(out,a.developer)
-    shutil.copyfile(overlay/'sbin/launchd',overlay/'pong/init')
-    shutil.copyfile(ui,overlay/'pong/libpong-ui18.dylib')
-    data=out/'data-root/pong';data.mkdir(exist_ok=True)
-    shutil.copyfile(ui,data/'libpong-ui.dylib')
+    shutil.copyfile(overlay/'sbin/launchd',overlay/'diting/init')
+    shutil.copyfile(ui,overlay/'diting/libditing-ui18.dylib')
+    data=out/'data-root/diting';data.mkdir(exist_ok=True)
+    shutil.copyfile(ui,data/'libditing-ui.dylib')
     shutil.copyfile(overlay/'sbin/launchd',data/'init')
     metadata=json.loads((out/'data-metadata.json').read_text())
-    for name in ('libpong-ui.dylib','init'):metadata['pong/'+name]=[stat.S_IFREG|0o755,0,0]
+    for name in ('libditing-ui.dylib','init'):metadata['diting/'+name]=[stat.S_IFREG|0o755,0,0]
     dump(out/'data-metadata.json',metadata)
     links = cryptex_link_plan(root, cryptex)
     install_cryptex_links(overlay, links)
@@ -1112,7 +1112,7 @@ def prepare(a):
                  'skipIgnition dyld_flags=0x8', 'a writable Data device or pre-mounted /private/var'],
                  phone_written=False)
     dump(out / 'build-plan.json', state)
-    for source, name in ((a.os_image, 'pong-ipados18-system.cdr'), (a.data_image, 'pong-ipados18-data.cdr')):
+    for source, name in ((a.os_image, 'diting-ipados18-system.cdr'), (a.data_image, 'diting-ipados18-data.cdr')):
         dest = out / name
         if not dest.exists():
             if source.suffix == '.sparseimage':
@@ -1126,7 +1126,7 @@ def prepare(a):
 
 def os_copy(out, updating=True):
     """Use the tracked writable OS while retaining the last raw base."""
-    raw = out / 'pong-ipados18-system.cdr'
+    raw = out / 'diting-ipados18-system.cdr'
     tracked = storage_for(raw)
     if tracked and updating and not tracked.get('pending'):
         raise RuntimeError('begin a tracked OS update before editing the installed generation')
@@ -1150,17 +1150,17 @@ def apply(a):
     out = a.out.resolve(); plan = json.loads((out / 'build-plan.json').read_text())
     if plan['format'] != BUILD_PLAN_FORMAT: raise RuntimeError('wrong build plan')
     if (out / 'apply-complete.json').exists(): raise RuntimeError('images already modified; use a new output directory')
-    for name, source in (('pong-ipados18-system.cdr', plan['os_source']),
-                         ('pong-ipados18-data.cdr', plan['data_source'])):
+    for name, source in (('diting-ipados18-system.cdr', plan['os_source']),
+                         ('diting-ipados18-data.cdr', plan['data_source'])):
         target = out / name
         if not target.is_file() or target.is_symlink() or target.samefile(source):
             raise RuntimeError('refusing non-copy target: ' + str(target))
     root = out / 'system-mount'
-    device = attach(out / 'pong-ipados18-system.cdr', root)
+    device = attach(out / 'diting-ipados18-system.cdr', root)
     try:
         if file_sha(root / 'sbin/launchd') != plan['apple_sha256']['sbin/launchd']:
             raise RuntimeError('launchd does not match source 22H374')
-        stock = root / 'pong/stock-config'
+        stock = root / 'diting/stock-config'
         stock.mkdir(parents=True)
         for rel in ('System/Library/LaunchDaemons', 'System/Library/NanoLaunchDaemons',
                     'System/Library/LaunchAngels', 'System/Library/xpc/launchd.plist',
@@ -1185,12 +1185,12 @@ def apply(a):
         os.chown(job_dir, 0, 0); os.chmod(job_dir, 0o755)
         for p in list(job_dir.glob('*.plist')) + [root / 'System/Library/xpc/launchd.plist']:
             os.chown(p, 0, 0); os.chmod(p, 0o644)
-        for rel in ('pong', 'sbin/launchd'):
+        for rel in ('diting', 'sbin/launchd'):
             base = root / rel
             paths = [base] + list(base.rglob('*')) if base.is_dir() else [base]
             for p in paths:
                 os.chown(p, 0, 0, follow_symlinks=False)
-        for rel in ('pong/init', 'pong/libpong-ui18.dylib', 'sbin/launchd'):
+        for rel in ('diting/init', 'diting/libditing-ui18.dylib', 'sbin/launchd'):
             os.chmod(root / rel, 0o755)
         link = root / 'System/Cryptexes/OS'
         original_link = os.readlink(link) if link.is_symlink() else None
@@ -1207,7 +1207,7 @@ def apply(a):
     finally:
         run(['hdiutil', 'detach', device])
     data = out / 'data-mount'
-    device = attach(out / 'pong-ipados18-data.cdr', data)
+    device = attach(out / 'diting-ipados18-data.cdr', data)
     try:
         merge_tree(out / 'data-root', data)
         metadata = json.loads((out / 'data-metadata.json').read_text())
@@ -1256,10 +1256,10 @@ def rebuild_data(a):
     if plan.get('format') != BUILD_PLAN_FORMAT:
         raise RuntimeError('matching 22H374 prepared userland required')
     source = Path(plan['data_source']).resolve()
-    target = out / 'pong-ipados18-data.cdr'
+    target = out / 'diting-ipados18-data.cdr'
     if target.is_symlink() or source == target or (target.exists() and target.samefile(source)):
         raise RuntimeError('independent Data copy required')
-    candidate = out / 'pong-ipados18-data-rebuild.cdr'
+    candidate = out / 'diting-ipados18-data-rebuild.cdr'
     if candidate.exists(): raise RuntimeError('unfinished Data candidate already exists')
     # UDTO emits the actual disk bytes, including GPT and the APFS container;
     # the sparseimage storage file itself is not a device-ready disk image.
@@ -1305,7 +1305,7 @@ def reset_data(a):
     plan = json.loads((out / 'build-plan.json').read_text())
     if plan['version'].get('ProductBuildVersion') != '22H374':
         raise RuntimeError('matching 22H374 prepared Data required')
-    target = out / 'pong-ipados18-data.cdr'
+    target = out / 'diting-ipados18-data.cdr'
     original = Path(plan['data_source']).resolve()
     if target.is_symlink() or target.resolve() == original or (target.exists() and target.samefile(original)):
         raise RuntimeError('only the port-owned Data copy may be cleared')
@@ -1361,7 +1361,7 @@ def install_app_cryptex(source, root, numeric_owners=True):
     target = root / 'System/Cryptexes/App'
     if target.is_symlink():
         # The restore alias points into a separately mounted App cryptex.
-        # Pong mounts SystemOS at /private/preboot; AppOS is OS-resident in
+        # Diting mounts SystemOS at /private/preboot; AppOS is OS-resident in
         # this port, so replace only this known dangling restore mount alias.
         restore_app_alias(os.readlink(target))
         target.unlink()
@@ -1395,7 +1395,7 @@ def refresh_jobs(a):
             install_app_cryptex(a.app_cryptex, root)
         target = root / 'System/Library/LaunchDaemons'
         if target.is_symlink():
-            if os.readlink(target) != '/pong/LaunchDaemons': raise RuntimeError('unexpected job directory alias')
+            if os.readlink(target) != '/diting/LaunchDaemons': raise RuntimeError('unexpected job directory alias')
             target.unlink()
         target.mkdir(exist_ok=True)
         if not target.is_dir(): raise RuntimeError('unexpected job directory')
@@ -1410,7 +1410,7 @@ def refresh_jobs(a):
         if cache_target.is_symlink(): raise RuntimeError('unexpected service cache symlink')
         shutil.copyfile(out / 'overlay/System/Library/xpc/launchd.plist', cache_target)
         os.chown(cache_target, 0, 0); os.chmod(cache_target, 0o644)
-        original = root / 'pong/stock-config/launchd.original'
+        original = root / 'diting/stock-config/launchd.original'
         if not original.exists():
             shutil.copyfile(a.os_root / 'sbin/launchd', original)
             os.chown(original, 0, 0); os.chmod(original, 0o755)
@@ -1422,7 +1422,7 @@ def refresh_jobs(a):
         run(['hdiutil', 'detach', device])
     dump(out / 'jobs-update.json', dict(build='22H374', counts=counts, data_modified=False,
          app_cryptex=str(a.app_cryptex) if a.app_cryptex else None,
-         operation='Pong non-Exclaves jobs and native Version 7 service cache', image_verification='skipped by request'))
+         operation='Diting non-Exclaves jobs and native Version 7 service cache', image_verification='skipped by request'))
     if a.app_cryptex:
         plan.update(app_cryptex=str(a.app_cryptex.resolve()), app_cryptex_runtime='/System/Cryptexes/App')
         dump(out / 'build-plan.json', plan)
@@ -1438,7 +1438,7 @@ def stage_preinstalled_assets(plan, destination_root):
     """
     base = 'MobileAsset/PreinstalledAssetsV2'
     source_root = Path(plan['os_root']) / 'private/var'
-    seed = destination_root / 'pong/var-seed'
+    seed = destination_root / 'diting/var-seed'
     container = apfs.Container(plan['os_source'])
     volume = apfs.pick_volume(container, None)
     records, total = [], 0
@@ -1462,7 +1462,7 @@ def stage_preinstalled_assets(plan, destination_root):
             if total > 32 * 1024**2: raise RuntimeError('unexpected size of this build preinstalled assets')
             shutil.copyfile(source, target)
             os.chown(target, 0, 0); os.chmod(target, 0o644)
-            records.append(f'f\t{mode:o}\t{inode.owner}\t{inode.group}\t{guest}\t/pong/var-seed/{rel}')
+            records.append(f'f\t{mode:o}\t{inode.owner}\t{inode.group}\t{guest}\t/diting/var-seed/{rel}')
         else:
             raise RuntimeError('unexpected non-file asset entry: ' + rel)
         if len(records) > 4096: raise RuntimeError('unexpected preinstalled asset entry count')
@@ -1476,7 +1476,7 @@ def stage_preinstalled_assets(plan, destination_root):
     records = [r for r in records if r.startswith('d\t')] + [r for r in records if r.startswith('f\t')]
     skeleton = '\n'.join(records) + '\n'
     if len(skeleton.encode()) >= 65536: raise RuntimeError('preinstalled asset seed exceeds init buffer')
-    manifest = destination_root / 'pong/etc/preinstalled-assets.skel'
+    manifest = destination_root / 'diting/etc/preinstalled-assets.skel'
     manifest.parent.mkdir(parents=True, exist_ok=True)
     manifest.write_text(skeleton); os.chown(manifest, 0, 0); os.chmod(manifest, 0o644)
     return dict(build='22H374', entries=len(records), bytes=total,
@@ -1491,19 +1491,19 @@ def refresh_ui(a):
     out, runtime = a.out.resolve(), a.runtime.resolve()
     plan = json.loads((out / 'build-plan.json').read_text())
     info = json.loads((runtime / 'helper.json').read_text())
-    if plan['version'].get('ProductBuildVersion') != '22H374' or info['ui_library_runtime'] != '/pong/libpong-ui18.dylib':
+    if plan['version'].get('ProductBuildVersion') != '22H374' or info['ui_library_runtime'] != '/diting/libditing-ui18.dylib':
         raise RuntimeError('matching 22H374 UI runtime required')
     image = os_copy(out)
     if image.is_symlink() or image.samefile(plan['os_source']): raise RuntimeError('prepared OS copy required')
     device = attach(image, out / 'system-mount')
     try:
-        target = out / 'system-mount/pong/libpong-ui18.dylib'
+        target = out / 'system-mount/diting/libditing-ui18.dylib'
         if target.is_symlink() or not target.is_file(): raise RuntimeError('existing OS UI library required')
-        shutil.copyfile(target, runtime / 'libpong-ui18.previous.dylib')
-        shutil.copyfile(runtime / 'libpong-ui.dylib', target)
+        shutil.copyfile(target, runtime / 'libditing-ui18.previous.dylib')
+        shutil.copyfile(runtime / 'libditing-ui.dylib', target)
         os.chown(target, 0, 0); os.chmod(target, 0o755)
         if a.refresh_init:
-            for rel in ('pong/init', 'sbin/launchd'):
+            for rel in ('diting/init', 'sbin/launchd'):
                 target = out / 'system-mount' / rel
                 if target.is_symlink() or not target.is_file():
                     raise RuntimeError('expected existing static init: ' + rel)
@@ -1511,22 +1511,22 @@ def refresh_ui(a):
                 os.chown(target, 0, 0); os.chmod(target, 0o755)
             stage_audio_policy(out / 'system-mount')
         if a.enable_audio_hal:
-            plugin=runtime/'PongAudio.driver'
-            if not plugin.is_dir():raise RuntimeError('matching Pong audio plugin required')
-            hal=out/'system-mount/pong/audio-hal18'
+            plugin=runtime/'DitingAudio.driver'
+            if not plugin.is_dir():raise RuntimeError('matching Diting audio plugin required')
+            hal=out/'system-mount/diting/audio-hal18'
             if hal.is_symlink() or not hal.is_dir():raise RuntimeError('existing HAL view required')
-            for name in ('PongAudio.plugin', 'PongAudio.driver'):
+            for name in ('DitingAudio.plugin', 'DitingAudio.driver'):
                 previous=hal/name
                 if previous.is_symlink():raise RuntimeError('unexpected audio plugin symlink')
                 if previous.exists():shutil.rmtree(previous)
-            dest=hal/'PongAudio.driver'
+            dest=hal/'DitingAudio.driver'
             shutil.copytree(plugin,dest)
             for item in (dest,*dest.rglob('*')):
-                os.chown(item,0,0);os.chmod(item,0o755 if item.is_dir() or item.name=='PongAudio' else 0o644)
+                os.chown(item,0,0);os.chmod(item,0o755 if item.is_dir() or item.name=='DitingAudio' else 0o644)
     finally:
         run(['hdiutil', 'detach', device])
     dump(runtime / 'os-ui-update.json', dict(build='22H374', os_image=str(image),
-         ui_library='/pong/libpong-ui18.dylib', data_modified=False,
+         ui_library='/diting/libditing-ui18.dylib', data_modified=False,
          audio_hal_exposed=a.enable_audio_hal, audio_hal_format='AudioServerPlugIn .driver / MH_BUNDLE',
          hal_factory_requires_physical_ready=False,
          hal_device_requires_physical_ready=True,
@@ -1541,56 +1541,56 @@ def refresh_runtime(a):
     plan = json.loads((out / 'build-plan.json').read_text())
     if plan['version'].get('ProductBuildVersion') != '22H374': raise RuntimeError('22H374 prepared OS required')
     info = json.loads((runtime / 'helper.json').read_text())
-    if (info['runtime_path'], info['ui_library_runtime']) != ('/pong/init', '/pong/libpong-ui18.dylib'):
+    if (info['runtime_path'], info['ui_library_runtime']) != ('/diting/init', '/diting/libditing-ui18.dylib'):
         raise RuntimeError('Build the matching OS runtime first')
     image = os_copy(out)
     if image.is_symlink() or image.samefile(plan['os_source']): raise RuntimeError('prepared OS copy required')
     device = attach(image, out / 'system-mount')
     try:
         root = out / 'system-mount'
-        for name, source in [('init', runtime / 'init'), ('libpong-ui18.dylib', runtime / 'libpong-ui.dylib')]:
-            target = root / 'pong' / name
+        for name, source in [('init', runtime / 'init'), ('libditing-ui18.dylib', runtime / 'libditing-ui.dylib')]:
+            target = root / 'diting' / name
             if target.is_symlink(): raise RuntimeError('unexpected runtime symlink: ' + str(target))
             shutil.copyfile(source, target)
             os.chown(target, 0, 0); os.chmod(target, 0o755)
         for name in ('sileo-register', 'sileo-firstboot.sh', 'sileo-rootful-firstboot.sh'):
-            target = root / 'pong' / name
+            target = root / 'diting' / name
             if target.is_symlink(): raise RuntimeError('unexpected Sileo runtime symlink')
             shutil.copyfile(runtime / name, target)
             os.chown(target, 0, 0); os.chmod(target, 0o755)
         stage_sileo_job(root)
         if a.sileo_stage:stage_sileo_application(root,a.sileo_stage.resolve(),runtime)
         stage_audio_route_job(root)
-        target=root/'pong/audio-route'
+        target=root/'diting/audio-route'
         shutil.copyfile(runtime/'audio-route',target);os.chown(target,0,0);os.chmod(target,0o755)
         stage_audio_policy(root)
         # The modern AudioServerPlugIn must not enter the legacy .plugin
         # loader. Remove that old bundle when updating either runtime mode.
-        plugin=runtime/'PongAudio.driver'
-        if not plugin.is_dir():raise RuntimeError('matching Pong audio plugin required')
-        hal=root/'pong/audio-hal18';hal.mkdir(exist_ok=True)
+        plugin=runtime/'DitingAudio.driver'
+        if not plugin.is_dir():raise RuntimeError('matching Diting audio plugin required')
+        hal=root/'diting/audio-hal18';hal.mkdir(exist_ok=True)
         if hal.is_symlink():raise RuntimeError('unexpected audio HAL symlink')
-        for name in ('PongAudio.plugin', 'PongAudio.driver'):
+        for name in ('DitingAudio.plugin', 'DitingAudio.driver'):
             previous=hal/name
-            if previous.is_symlink():raise RuntimeError('unexpected Pong audio plugin symlink')
+            if previous.is_symlink():raise RuntimeError('unexpected Diting audio plugin symlink')
             if previous.exists():shutil.rmtree(previous)
-        staged=root/'pong/staged-audio18';staged.mkdir(exist_ok=True)
+        staged=root/'diting/staged-audio18';staged.mkdir(exist_ok=True)
         if staged.is_symlink():raise RuntimeError('unexpected staged audio symlink')
-        dest=(hal if a.enable_audio_hal else staged)/'PongAudio.driver'
-        if dest.is_symlink():raise RuntimeError('unexpected Pong audio plugin symlink')
+        dest=(hal if a.enable_audio_hal else staged)/'DitingAudio.driver'
+        if dest.is_symlink():raise RuntimeError('unexpected Diting audio plugin symlink')
         if dest.exists():shutil.rmtree(dest)
         shutil.copytree(plugin,dest)
         for item in (dest,*dest.rglob('*')):
-            os.chown(item,0,0);os.chmod(item,0o755 if item.is_dir() or item.name=='PongAudio' else 0o644)
+            os.chown(item,0,0);os.chmod(item,0o755 if item.is_dir() or item.name=='DitingAudio' else 0o644)
         if a.power_firmware:
             firmware = a.power_firmware.resolve() / 'adsp.mbn'
-            if not firmware.is_file(): raise RuntimeError('Actual Pong adsp.mbn required')
-            dest = root / 'pong/firmware'; dest.mkdir(parents=True, exist_ok=True)
+            if not firmware.is_file(): raise RuntimeError('Actual Diting adsp.mbn required')
+            dest = root / 'diting/firmware'; dest.mkdir(parents=True, exist_ok=True)
             shutil.copyfile(firmware, dest / 'adsp.mbn')
             os.chown(dest / 'adsp.mbn', 0, 0); os.chmod(dest / 'adsp.mbn', 0o644)
         dump(runtime / 'phone-artwork.json', phone_wallpaper_resources(Path(plan['os_root']), root))
         dump(runtime / 'preinstalled-assets.json', stage_preinstalled_assets(plan, root))
-        seed_target = root / 'pong/var-seed/mobile/Library/Preferences'
+        seed_target = root / 'diting/var-seed/mobile/Library/Preferences'
         seed_target.mkdir(parents=True, exist_ok=True)
         for name in ('com.apple.purplebuddy.plist', 'com.apple.purplebuddy.notbackedup.plist',
                      'com.apple.springboard.plist'):
@@ -1604,7 +1604,7 @@ def refresh_runtime(a):
     finally:
         run(['hdiutil', 'detach', device])
     dump(runtime / 'os-runtime-update.json', dict(build='22H374', os_image=str(image),
-         helper='/pong/init', ui_library='/pong/libpong-ui18.dylib', data_modified=False,
+         helper='/diting/init', ui_library='/diting/libditing-ui18.dylib', data_modified=False,
          audio_hal_exposed=a.enable_audio_hal, audio_hal_format='AudioServerPlugIn .driver / MH_BUNDLE',
          hal_factory_requires_physical_ready=False, hal_device_requires_physical_ready=True,
          image_verification='skipped by request'))
@@ -1616,9 +1616,9 @@ def refresh_metal(a):
     out, runtime = a.out.resolve(), a.runtime.resolve()
     report = json.loads((runtime / 'build-report.json').read_text())
     if report.get('guest') != '22H374': raise RuntimeError('Build a 22H374 Metal plugin first')
-    bundle = runtime / 'PongAdrenoMetal.bundle'
+    bundle = runtime / 'DitingAdrenoMetal.bundle'
     info = plistlib.loads((bundle / 'Info.plist').read_bytes())
-    if info.get('CFBundleIdentifier') != 'dev.unixnu.pong.Metal': raise RuntimeError('Unexpected Metal bundle')
+    if info.get('CFBundleIdentifier') != 'dev.unixnu.diting.Metal': raise RuntimeError('Unexpected Metal bundle')
     device = attach(os_copy(out), out / 'system-mount')
     try:
         extensions = out / 'system-mount/System/Library/Extensions'
@@ -1631,7 +1631,7 @@ def refresh_metal(a):
             if old.get('CFBundleIdentifier') != info['CFBundleIdentifier']: raise RuntimeError('Preserving a foreign bundle')
             shutil.rmtree(target)
         shutil.copytree(bundle, target)
-        for name in ('PongAdrenoMetal.publish', 'PongAdrenoMetal.clients'):
+        for name in ('DitingAdrenoMetal.publish', 'DitingAdrenoMetal.clients'):
             shutil.copyfile(runtime / name, extensions / name)
             os.chown(extensions / name, 0, 0); os.chmod(extensions / name, 0o644)
         for path in [target, *target.rglob('*')]:
@@ -1641,7 +1641,7 @@ def refresh_metal(a):
     finally:
         run(['hdiutil', 'detach', device])
     dump(runtime / 'os-metal-update.json', dict(build='22H374',
-         path='/System/Library/Extensions/PongAdrenoMetal.bundle', data_modified=False,
+         path='/System/Library/Extensions/DitingAdrenoMetal.bundle', data_modified=False,
          publication='real CP/fence and runtime ABI prerequisites; stock discovery',
          hardware_acceleration_confirmed=False, image_verification='skipped by request'))
 
@@ -1650,13 +1650,13 @@ def finish(a):
     out = a.out.resolve(); plan = json.loads((out / 'build-plan.json').read_text())
     if not (out / 'apply-complete.json').exists(): raise RuntimeError('apply has not completed')
     if not VERIFY_IMAGES:
-        packed = out / 'pong-ipados18-data.packed'
-        pack_data(out / 'pong-ipados18-data.cdr', packed)
-        tracked = storage_for(out / 'pong-ipados18-system.cdr')
+        packed = out / 'diting-ipados18-data.packed'
+        pack_data(out / 'diting-ipados18-data.cdr', packed)
+        tracked = storage_for(out / 'diting-ipados18-system.cdr')
         files = {name: {'bytes': (out / name).stat().st_size} for name in
-                 ('pong-ipados18-system.cdr', 'pong-ipados18-data.cdr', 'pong-ipados18-data.packed')}
+                 ('diting-ipados18-system.cdr', 'diting-ipados18-data.cdr', 'diting-ipados18-data.packed')}
         if tracked:
-            files['pong-ipados18-system.cdr'] = dict(path=tracked['image'],
+            files['diting-ipados18-system.cdr'] = dict(path=tracked['image'],
                 bytes=tracked['logical_bytes'], storage='sparsebundle; raw cdr retained as earlier base')
         result=dict(build='22H374', data_backend='ufs', image_verification='skipped by request',
                     device_boot_verified=False, static_init_signature=plan.get('static_init_signature'),
@@ -1664,13 +1664,13 @@ def finish(a):
         dump(out/'result.json',result)
         print(json.dumps(result,indent=2))
         return
-    c = apfs.Container(str(out / 'pong-ipados18-system.cdr')); v = apfs.pick_volume(c, None)
+    c = apfs.Container(str(out / 'diting-ipados18-system.cdr')); v = apfs.pick_volume(c, None)
     def content(path):
         found = v.lookup(path)
         if not found: raise RuntimeError('missing image path: ' + path)
         return v.inode(found[0]).contents()
     for source, expected in plan['apple_sha256'].items():
-        path = '/pong/stock-config/launchd.original' if source == 'sbin/launchd' else '/' + source
+        path = '/diting/stock-config/launchd.original' if source == 'sbin/launchd' else '/' + source
         if hashlib.sha256(content(path)).hexdigest() != expected:
             raise RuntimeError('Apple original readback mismatch: ' + source)
     if content('/System/Cryptexes/OS') != b'/private/preboot': raise RuntimeError('wrong cryptex link')
@@ -1686,7 +1686,7 @@ def finish(a):
         if inode.owner != 0 or inode.group != 0 or inode.contents() != p.read_bytes():
             raise RuntimeError('launchd job ownership/content mismatch: ' + p.name)
     system_uuid = apfs._uuid(v.vol_uuid); c.close()
-    data_path = out / 'pong-ipados18-data.cdr'
+    data_path = out / 'diting-ipados18-data.cdr'
     c = apfs.Container(str(data_path)); v = apfs.pick_volume(c, None)
     data_uuid = apfs._uuid(v.vol_uuid)
     for path, (mode, uid, gid) in json.loads((out / 'data-metadata.json').read_text()).items():
@@ -1700,7 +1700,7 @@ def finish(a):
     if migration['LastSystemVersion'] != '22H374' or ino.owner != 501:
         raise RuntimeError('Data version/ownership mismatch')
     c.close()
-    packed = out / 'pong-ipados18-data.packed'
+    packed = out / 'diting-ipados18-data.packed'
     pack_data(data_path, packed)
     result = {'os_volume_uuid': system_uuid, 'data_volume_uuid': data_uuid,
               'original_launchd_preserved': True, 'original_dyld_and_SystemVersion_preserved': True,
@@ -1712,11 +1712,11 @@ def finish(a):
               'Data_metadata_entries': len(json.loads((out / 'data-metadata.json').read_text())),
               'native_APFS_readback': 'passed',
               'device_boot_verified': False, 'files': {}}
-    for name in ('pong-ipados18-system.cdr', 'pong-ipados18-data.cdr', 'pong-ipados18-data.packed'):
+    for name in ('diting-ipados18-system.cdr', 'diting-ipados18-data.cdr', 'diting-ipados18-data.packed'):
         p = out / name
         result['files'][name] = {'bytes': p.stat().st_size, 'sha256': sha(p)}
     packed_sha = packed_digest(packed)
-    if packed_sha != result['files']['pong-ipados18-data.cdr']['sha256']:
+    if packed_sha != result['files']['diting-ipados18-data.cdr']['sha256']:
         raise RuntimeError('PackedRAMDisk reconstruction does not match Data')
     result['packed_Data_roundtrip_sha256'] = packed_sha
     dump(out / 'result.json', result)
@@ -1742,13 +1742,13 @@ def main():
     s.add_argument('--sileo-stage', type=Path, help='Install the real staged Sileo.app in /Applications')
     s.add_argument('--enable-audio-hal', action='store_true',
                    help='Expose experimental PCM HAL; default keeps it outside the boot HAL view')
-    s.add_argument('--power-firmware', type=Path, help='Local REC-extracted Pong signed firmware directory')
+    s.add_argument('--power-firmware', type=Path, help='Local REC-extracted Diting signed firmware directory')
     s.add_argument('--runtime', type=Path, required=True)
     s = sub.add_parser('refresh_ui'); s.add_argument('--out', type=Path, required=True)
     s.add_argument('--runtime', type=Path, required=True)
     s.add_argument('--refresh-init', action='store_true',
                    help='Also stage the matching static init and native audio-provider policy')
-    s.add_argument('--enable-audio-hal', action='store_true', help='Install the physical-readiness-gated Pong output HAL')
+    s.add_argument('--enable-audio-hal', action='store_true', help='Install the physical-readiness-gated Diting output HAL')
     s = sub.add_parser('refresh_metal'); s.add_argument('--out', type=Path, required=True)
     s.add_argument('--runtime', type=Path, required=True)
     s = sub.add_parser('refresh_cryptex'); s.add_argument('--out', type=Path, required=True)

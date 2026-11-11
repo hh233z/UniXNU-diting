@@ -67,7 +67,7 @@ def main():
     if not args.skip_image_verification:
         if not report.get('build_complete'):
             raise ValueError('Kernel build is not complete')
-        if report.get('profile') == 'Pong-iPadOS18-22H374-Darwin24':
+        if report.get('profile') == 'Diting-iPadOS18-22H374-Darwin24':
             recorded = report.get('kernel') or {}
             if recorded.get('bytes') not in (None, len(kernel)):
                 raise ValueError('Kernel length does not match the Darwin 24 build result')
@@ -127,7 +127,7 @@ def main():
         'system_volume_auth_blob_sha256': hashlib.sha256(auth_blob).hexdigest() if auth_blob is not None and not args.skip_image_verification else None,
         'kernel_sha384': hashlib.sha384(kernel).hexdigest() if not args.skip_image_verification else None,
         'loader_sha384': hashlib.sha384((payload / 'DarwinBoot24.efi').read_bytes()).hexdigest() if not args.skip_image_verification else None,
-        'board': 'Nothing Phone (2) / Pong / SM8475',
+        'board': 'Nothing Phone (2) / Diting / SM8475',
         'boot_args': boot_args,
         'root_volume_uuid': args.root_match_volume_uuid,
         'requested_memory_window_bytes': args.window_size,
@@ -152,9 +152,9 @@ def main():
     (out / 'adt-audit.json').write_text(json.dumps(adt_audit, indent=2) + '\n')
     initrd_line = 'initrd = "Payloads/scratch-data.img"\n' if data_ramdisk else ''
     (payload / 'unixnu.toml').write_text('version = 1\n[boot]\ntimeout = 3\n'
-        'default = "pong-xnu"\n[kits]\nautoload = false\n[[driver]]\n'
+        'default = "diting-xnu"\n[kits]\nautoload = false\n[[driver]]\n'
         'path = "DarwinBoot24.efi"\nconnect = false\n[[entry]]\n'
-        'id = "pong-xnu"\ntitle = "Pong iOS 18 - iPhone 16 Pro"\n'
+        'id = "diting-xnu"\ntitle = "Diting iOS 18 - iPhone 16 Pro"\n'
         'type = "xnu"\npath = "kernel.macho"\n' + initrd_line + 'args = "' + boot_args + '"\n')
     fat = out / 'payload-fat.img'
     env = dict(os.environ, MTOOLS_SKIP_CHECK='1', TZ='UTC')

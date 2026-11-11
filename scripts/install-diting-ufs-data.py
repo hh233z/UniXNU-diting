@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Install a constructed APFS Data disk into Pong's independent UFS window.
+"""Install a constructed APFS Data disk into Diting's independent UFS window.
 
 Requires recovery ADB and the existing SHNGROOT OS/SystemOS layout. Does not
 format the whole userdata partition, change GPT, hash/read back disk images,
@@ -63,7 +63,7 @@ def main():
     if (target!='/dev/block/sda13' or geometry['bytes']!=PARTITION_BYTES or
         geometry['start_512']!=FIRST_4K*8 or geometry['sectors_512']*512!=PARTITION_BYTES or
         geometry['logical_block_bytes']!=4096):
-        raise SystemExit('Pong userdata geometry differs; refusing writes')
+        raise SystemExit('Diting userdata geometry differs; refusing writes')
     if shell('ls /sys/class/block/sda13/holders'):
         raise SystemExit('userdata has active device-mapper holders')
     mounts=shell('cat /proc/mounts').splitlines()
@@ -84,7 +84,7 @@ def main():
         records.append(dict(name=name,offset=offset,size=length))
     names={r['name'] for r in records}
     if len(names)!=count or names not in ({'OS','SystemOS'},{'OS','SystemOS','Data'}):
-        raise SystemExit('Expected the existing Pong OS/SystemOS and optional Data windows')
+        raise SystemExit('Expected the existing Diting OS/SystemOS and optional Data windows')
     previous=next((r for r in records if r['name']=='Data'),None)
     if previous:
         if not (a.replace_existing_data or a.update_existing_data):
@@ -137,7 +137,7 @@ def main():
         previous_data_backup=str(a.previous_data_backup.resolve()) if previous else None,
         previous_data=previous,completed_bytes=start)
     record.write_text(json.dumps(plan,indent=2)+'\n')
-    remote='/tmp/pong-ufs-data-install.cdr';remote_header='/tmp/pong-shngroot-with-data.bin'
+    remote='/tmp/diting-ufs-data-install.cdr';remote_header='/tmp/diting-shngroot-with-data.bin'
     print('Installing Data only: offset='+hex(a.offset)+' bytes='+str(size),flush=True)
     chunk_bytes=a.chunk_mib*1024**2
     transfer=a.transfer_dir.resolve() if a.transfer_dir else out

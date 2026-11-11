@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Build Sheng's volatile NativeRamBlock against Pong's Darwin 22 storage ABI."""
+"""Build Sheng's volatile NativeRamBlock against Diting's Darwin 22 storage ABI."""
 import argparse
 import hashlib
 import json
@@ -12,7 +12,7 @@ import sys
 DEVICE = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(DEVICE / 'scripts'))
 import diting_paths
-TREE = diting_paths.build_tree(name='Pong-iOS16-native')
+TREE = diting_paths.build_tree(name='Diting-iOS16-native')
 DEVELOPER = diting_paths.developer_dir()
 
 
@@ -84,7 +84,7 @@ def main():
         report['source_sha256'] = {p.name: hashlib.sha256(p.read_bytes()).hexdigest()
                                   for p in sorted(source.parent.iterdir()) if p.is_file()}
     (out / 'build-report.json').write_text(json.dumps(report, indent=2) + '\n')
-    print(f'Built Pong NativeRamBlock: {archive} ({len(imports)} original storage imports)')
+    print(f'Built Diting NativeRamBlock: {archive} ({len(imports)} original storage imports)')
 
 
 if __name__ == '__main__':

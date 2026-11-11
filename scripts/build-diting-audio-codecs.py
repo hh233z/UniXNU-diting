@@ -16,10 +16,10 @@ out = a.output_dir.resolve()
 out.mkdir(parents=True, exist_ok=True)
 env = dict(os.environ, DEVELOPER_DIR=str(a.developer_dir))
 sdk = subprocess.check_output(['xcrun', '--sdk', 'iphoneos', '--show-sdk-path'], env=env, text=True).strip()
-binary = out / 'libpong-audio-codecs18.dylib'
+binary = out / 'libditing-audio-codecs18.dylib'
 cmd = ['xcrun', 'clang', '-target', 'arm64-apple-ios18.0', '-isysroot', sdk,
        '-Os', '-Wall', '-Wextra', '-Werror', '-dynamiclib', '-Wl,-no_fixup_chains',
-       '-install_name', '/pong/libpong-audio-codecs18.dylib',
+       '-install_name', '/diting/libditing-audio-codecs18.dylib',
        str(ROOT / 'userland/audio_codecs18.c'), '-framework', 'AudioToolbox', '-o', str(binary)]
 subprocess.run(cmd, env=env, check=True)
 subprocess.run(['codesign', '--force', '--sign', '-', '--pagesize', '4096', str(binary)], check=True)

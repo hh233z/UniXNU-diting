@@ -45,7 +45,7 @@ if wifi or backlight:
 print('wifi/backlight inputs present' if wifi or backlight else 'wifi and backlight are off')
 PY
 fi
-# Pong Darwin 24 migration of the successfully returned Mac build script.
+# Diting Darwin 24 migration of the successfully returned Mac build script.
 # First console build uses MACHINE_CONFIGS=DITING; preserve the original baseline artifact.
 XNU_TAG=${UNIXNU_XNU_TAG:-xnu-11417.140.69}
 XNU_COMMIT=${UNIXNU_XNU_COMMIT:-43a90889846e00bfb5cf1d255cdc0a701a1e05a4}
@@ -103,7 +103,7 @@ while IFS= read -r LATE_PATCH; do
   fi
 done < <(python3 - <<'PY_LATE_PATCHES'
 from pathlib import Path
-patches = [p.resolve() for d in ('patches/xnu', 'patches/xnu-ipados18') for p in Path(d).glob('zz*pong*.patch')]
+patches = [p.resolve() for d in ('patches/xnu', 'patches/xnu-ipados18') for p in Path(d).glob('zz*diting*.patch')]
 patches += [Path('patches/xnu/zzz-boot-progress.patch').resolve(),
             Path('patches/xnu/zzy-native-gpu-addon-mount.patch').resolve()]
 for patch in sorted(set(patches), reverse=True):
@@ -250,7 +250,7 @@ if [ ! -f "$KERNEL_SDKROOT/.xnu-$XNU_VERSION-headers" ] || \
   touch "$KERNEL_SDKROOT/.xnu-$XNU_VERSION-headers"
 fi
 if [ "${XNU_ARM_DT_PLATFORM:-0}" = 1 ] && [ -n "${DITING_NATIVE_DRIVER_SOURCE:-}" ]; then
-  # These sources live in the active Pong project, not the old baseline's
+  # These sources live in the active Diting project, not the old baseline's
   # drivers symlink. Build against the same freshly exported machine headers.
   python3 "$DITING_NATIVE_DRIVER_SOURCE/scripts/build-diting-platform-macos.py" \
     --tree "$ROOT" --skip-image-verification
@@ -261,7 +261,7 @@ if [ "${XNU_ARM_DT_PLATFORM:-0}" = 1 ] && [ -n "${DITING_NATIVE_DRIVER_SOURCE:-}
 fi
 if [ "${XNU_NATIVE_UFS:-0}" = 1 ] && [ -n "${DITING_NATIVE_DRIVER_SOURCE:-}" ]; then
   # The transport changes with the selected Data backend. Always compile the
-  # active Pong source before linking, rather than reuse an older RAM-era .a.
+  # active Diting source before linking, rather than reuse an older RAM-era .a.
   python3 "$DITING_NATIVE_DRIVER_SOURCE/scripts/build-diting-ufs-ipados18-macos.py" \
     --tree "$ROOT" --skip-image-verification
 fi
@@ -270,13 +270,13 @@ if [ "${XNU_DITING_WIFI:-0}" = 1 ]; then
   # Flags/environment/local.toml resolve in diting_native_inputs. Keep the
   # archive in this same tree; never link a previous branch's wireless stack.
   python3 "$DITING_NATIVE_DRIVER_SOURCE/scripts/build-diting-ath11k.py" \
-    --output-dir "$ROOT/build/pong-ath11k" --jobs "${JOBS:-4}"
+    --output-dir "$ROOT/build/diting-ath11k" --jobs "${JOBS:-4}"
   python3 "$DITING_NATIVE_DRIVER_SOURCE/scripts/build-diting-wifi-native.py" --tree "$ROOT"
 fi
 if [ "${XNU_DITING_POWER:-0}" = 1 ]; then
   python3 "$DITING_NATIVE_DRIVER_SOURCE/scripts/build-diting-power-native.py" --tree "$ROOT"
 elif [ "${XNU_NATIVE_UFS:-0}" = 1 ]; then
-  # The UFS transport takes the shared SMMU lease from PongPlatformResources; build that
+  # The UFS transport takes the shared SMMU lease from DitingPlatformResources; build that
   # one object when the full power/audio archive is not selected.
   python3 "$DITING_NATIVE_DRIVER_SOURCE/scripts/build-diting-power-native.py" --tree "$ROOT" --resources-only
 fi
@@ -573,7 +573,7 @@ if [ "$OWNER_DATA_MOUNT" = 1 ] && [ "$OWNER_BOOT_MANIFEST" != 1 ]; then
   if [ "$DITING_APFS_DEBUG" != 1 ] || [ "$OWNER_CACHE_MOUNT" != 1 ] || { [ "$NATIVE_RAM_BLOCK" != 1 ] && [ "$OWNER_DATA_UFS" != 1 ]; } || {
     [ "${XNU_OWNER_UNION_SYSTEMOS:-0}" != 1 ] && [ "${XNU_OWNER_CRYPTEX_FILES:-0}" != 1 ];
   }; then
-    echo 'Data requires Pong development root policy, a selected Data backend and mounted SystemOS startup' >&2
+    echo 'Data requires Diting development root policy, a selected Data backend and mounted SystemOS startup' >&2
     exit 1
   fi
 fi
@@ -593,7 +593,7 @@ if sys.argv[2] == '1':
 try:
     cache = str(uuid.UUID(sys.argv[5])).upper()
 except ValueError:
-    raise SystemExit('Set XNU_OWNER_CACHE_VOLUME_UUID to the observed Pong SystemOS APFS UUID')
+    raise SystemExit('Set XNU_OWNER_CACHE_VOLUME_UUID to the observed Diting SystemOS APFS UUID')
 text += '#define XNU_OWNER_CACHE_VOLUME_UUID "' + cache + '"\n'
 try:
     root = str(uuid.UUID(sys.argv[6])).upper()
@@ -615,11 +615,11 @@ if [ "$OWNER_CRYPTEX_FILES" != 0 ] && [ "$OWNER_CRYPTEX_FILES" != 1 ]; then
   echo 'XNU_OWNER_CRYPTEX_FILES must be 0 or 1' >&2
   exit 1
 fi
-# Pong supplies an already mounted cache instead of an ignition-managed graft.
+# Diting supplies an already mounted cache instead of an ignition-managed graft.
 # dyld-1066.8 still calls ignite() after opening an override directory unless
 # its commpage skipIgnition bit (0x8) is set by the owner startup hook.
 if [ "$OWNER_CRYPTEX_FILES" = 1 ] && [ "$DITING_APFS_DEBUG" = 1 ] && [ "$OWNER_CACHE_STARTUP" != 1 ]; then
-  echo 'Pong mounted Cryptex startup requires the dyld skipIgnition commpage flag' >&2
+  echo 'Diting mounted Cryptex startup requires the dyld skipIgnition commpage flag' >&2
   exit 1
 fi
 OWNER_CRYPTEX_STAMP=$ROOT/build/xnu/ios-obj/DEVELOPMENT_ARM64_DITING/.owner-cryptex-files-mode
@@ -640,7 +640,7 @@ if [ "$DITING_APFS_DEBUG" = 1 ] && {
   [ "${XNU_NATIVE_UFS:-0}" != 1 ] || [ "$OWNER_CACHE_MOUNT" != 1 ] ||
   { [ "$OWNER_UNION_SYSTEMOS" != 1 ] && [ "$OWNER_CRYPTEX_FILES" != 1 ]; };
 }; then
-  echo 'Pong APFS debug handoff requires read-only UFS UUID binding and either SystemOS union or Cryptex files' >&2
+  echo 'Diting APFS debug handoff requires read-only UFS UUID binding and either SystemOS union or Cryptex files' >&2
   exit 1
 fi
 OWNER_UNION_STAMP=$ROOT/build/xnu/ios-obj/DEVELOPMENT_ARM64_DITING/.owner-union-systemos-mode
@@ -749,7 +749,7 @@ python3 - "$DITING_EARLY_TRACE" "$DITING_RAMOOPS_CONSOLE" "$DITING_RAMOOPS_BASE"
 from pathlib import Path
 import sys
 directory = Path('build/xnu/ios-obj/DEVELOPMENT_ARM64_DITING')
-stamp = directory / '.pong-early-trace-mode'
+stamp = directory / '.diting-early-trace-mode'
 mode = ':'.join(sys.argv[1:]) + ':minimal-ramoops-v3'
 if not stamp.exists() or stamp.read_text() != mode:
     for name in ('start', 'arm_init', 'arm_vm_init', 'machine_routines', 'startup', 'serial_console', 'debug'):
@@ -925,7 +925,7 @@ import json, sys
 from pathlib import Path
 ufs, ram = [json.loads(Path(p).read_text()) for p in sys.argv[1:]]
 if any(ufs['bindings'].get(name) != value for name, value in ram['bindings'].items()):
-    raise SystemExit('RAM transport imports differ from Pong NativeUfs storage bindings')
+    raise SystemExit('RAM transport imports differ from Diting NativeUfs storage bindings')
 PY_BINDINGS
       RAM_BLOCK_OBJECT=$ROOT/build/native-ram-block/NativeRamBlock.o
       test -f "$RAM_BLOCK_OBJECT"
@@ -980,12 +980,12 @@ fi
 if [ "$DITING_ADRENO_PLATFORM" = 1 ]; then
   ADRENO_FW=$(python3 -c "import sys;sys.path.insert(0,'scripts');import diting_paths;p=diting_paths.adreno_firmware();print(p or '')" 2>/dev/null || true)
   if [ -z "$ADRENO_FW" ] || [ ! -f "$ADRENO_FW/a730_sqe.fw" ]; then
-    echo "adreno: vendor firmware (a730_sqe.fw, gmu_gen70000.bin, a730_zap.*) is not available; skipping libPongAdrenoPlatform.a" >&2
+    echo "adreno: vendor firmware (a730_sqe.fw, gmu_gen70000.bin, a730_zap.*) is not available; skipping libDitingAdrenoPlatform.a" >&2
     DITING_ADRENO_PLATFORM=0
   else
     python3 "$DITING_NATIVE_DRIVER_SOURCE/scripts/build-diting-adreno-platform.py" \
-      --guest-build 22H374 --tree "$ROOT" --firmware-dir "$ADRENO_FW" --output-dir "$ROOT/build/pong-adreno"
-    test -f "$ROOT/build/pong-adreno/libPongAdrenoPlatform.a"
+      --guest-build 22H374 --tree "$ROOT" --firmware-dir "$ADRENO_FW" --output-dir "$ROOT/build/diting-adreno"
+    test -f "$ROOT/build/diting-adreno/libDitingAdrenoPlatform.a"
   fi
 fi
 if [ "$ARM_DT_PLATFORM" = 1 ] && [ "${XNU_SOURCE_CORECRYPTO14:-0}" != 1 ]; then
@@ -1015,7 +1015,7 @@ import json, sys
 from pathlib import Path
 ufs, ram = [json.loads(Path(p).read_text()) for p in sys.argv[1:]]
 if any(ufs['bindings'].get(name) != value for name, value in ram['bindings'].items()):
-    raise SystemExit('RAM transport imports differ from Pong NativeUfs storage bindings')
+    raise SystemExit('RAM transport imports differ from Diting NativeUfs storage bindings')
 PY_RAM_BLOCK_BINDINGS
       PLATFORM_ARCHIVES="$PLATFORM_ARCHIVES $RAM_BLOCK_OBJECT"
     else
@@ -1024,23 +1024,23 @@ PY_RAM_BLOCK_BINDINGS
     PLATFORM_DEPENDENCIES="$PLATFORM_DEPENDENCIES $RAM_BLOCK_ARCHIVE"
   fi
   if [ "$DITING_ADRENO_PLATFORM" = 1 ]; then
-    PLATFORM_ARCHIVES="$PLATFORM_ARCHIVES -Wl,-force_load,$ROOT/build/pong-adreno/libPongAdrenoPlatform.a"
-    PLATFORM_DEPENDENCIES="$PLATFORM_DEPENDENCIES $ROOT/build/pong-adreno/libPongAdrenoPlatform.a"
+    PLATFORM_ARCHIVES="$PLATFORM_ARCHIVES -Wl,-force_load,$ROOT/build/diting-adreno/libDitingAdrenoPlatform.a"
+    PLATFORM_DEPENDENCIES="$PLATFORM_DEPENDENCIES $ROOT/build/diting-adreno/libDitingAdrenoPlatform.a"
   fi
   if [ "${XNU_DITING_POWER:-0}" = 1 ] || [ "${XNU_NATIVE_UFS:-0}" = 1 ]; then
-    POWER_ARCHIVE=$ROOT/build/pong-power/libPongPower.a
+    POWER_ARCHIVE=$ROOT/build/diting-power/libDitingPower.a
     test -f "$POWER_ARCHIVE"
     PLATFORM_ARCHIVES="$PLATFORM_ARCHIVES -Wl,-force_load,$POWER_ARCHIVE"
     PLATFORM_DEPENDENCIES="$PLATFORM_DEPENDENCIES $POWER_ARCHIVE"
   fi
   if [ "${XNU_DITING_POWER:-0}" = 1 ] || [ "$DITING_ADRENO_PLATFORM" = 1 ] || [ "${XNU_DITING_WIFI:-0}" = 1 ]; then
-    SMMU4K_ARCHIVE=$ROOT/build/pong-smmu4k/libPongSmmu4K.a
+    SMMU4K_ARCHIVE=$ROOT/build/diting-smmu4k/libDitingSmmu4K.a
     test -f "$SMMU4K_ARCHIVE"
     PLATFORM_ARCHIVES="$PLATFORM_ARCHIVES -Wl,-force_load,$SMMU4K_ARCHIVE"
     PLATFORM_DEPENDENCIES="$PLATFORM_DEPENDENCIES $SMMU4K_ARCHIVE"
   fi
   if [ "${XNU_DITING_WIFI:-0}" = 1 ]; then
-    WIFI_ARCHIVE=$ROOT/build/pong-wifi/libPongWifiNative.a
+    WIFI_ARCHIVE=$ROOT/build/diting-wifi/libDitingWifiNative.a
     test -f "$WIFI_ARCHIVE"
     PLATFORM_ARCHIVES="$PLATFORM_ARCHIVES -Wl,-force_load,$WIFI_ARCHIVE"
     PLATFORM_DEPENDENCIES="$PLATFORM_DEPENDENCIES $WIFI_ARCHIVE"
@@ -1061,7 +1061,7 @@ python3 - "${XNU_NATIVE_AES:-0}" "${XNU_NATIVE_AES_ARCHIVE:-$ROOT/build/native-a
   "$SHENG_PMGR" "$ROOT/build/sheng-platform-power/libShengPlatformPower.a" \
   "${XNU_NATIVE_UFS:-0}" "$ROOT/build/native-ufs/libNativeUfs.a" \
   "${XNU_NATIVE_ADRENO:-0}" "$ROOT/build/native-adreno/libNativeAdreno.a" \
-  "$DITING_ADRENO_PLATFORM" "$ROOT/build/pong-adreno/libPongAdrenoPlatform.a" <<'PY'
+  "$DITING_ADRENO_PLATFORM" "$ROOT/build/diting-adreno/libDitingAdrenoPlatform.a" <<'PY'
 from pathlib import Path
 import sys
 directory = Path('build/xnu/ios-obj/DEVELOPMENT_ARM64_DITING')
@@ -1087,10 +1087,10 @@ fi
 # when the selected backlight configuration changes.
 DITING_IOKIT_OBJ=$ROOT/build/xnu/ios-obj/DEVELOPMENT_ARM64_DITING/iokit/DEVELOPMENT
 if [ -d "$DITING_IOKIT_OBJ" ]; then
-  if [ "$(cat "$DITING_IOKIT_OBJ/.pong-backlight-mode" 2>/dev/null || echo unset)" != "$DITING_BACKLIGHT" ]; then
+  if [ "$(cat "$DITING_IOKIT_OBJ/.diting-backlight-mode" 2>/dev/null || echo unset)" != "$DITING_BACKLIGHT" ]; then
     rm -f "$DITING_IOKIT_OBJ/MiniIOMobileFramebuffer.cpo"
   fi
-  printf '%s\n' "$DITING_BACKLIGHT" > "$DITING_IOKIT_OBJ/.pong-backlight-mode"
+  printf '%s\n' "$DITING_BACKLIGHT" > "$DITING_IOKIT_OBJ/.diting-backlight-mode"
 fi
 EXTRA_MAKE_ARGS+=("MiniIOMobileFramebuffer.cpo_CFLAGS_ADD=-DXNU_DITING_BACKLIGHT=$DITING_BACKLIGHT")
 EXTRA_CFLAGS="$EXTRA_CFLAGS -DXNU_BOOT_PROGRESS=$BOOT_PROGRESS -DXNU_DITING_ADRENO_PLATFORM=$DITING_ADRENO_PLATFORM"
@@ -1103,7 +1103,7 @@ import json
 import sys
 directory = Path('build/xnu/ios-obj/DEVELOPMENT_ARM64_DITING')
 directory.mkdir(parents=True, exist_ok=True)
-stamp = directory / '.pong-global-compiler-flags'
+stamp = directory / '.diting-global-compiler-flags'
 identity = 'RC_NONARCH_CFLAGS-v1\n' + sys.argv[1] + '\n'
 if not stamp.exists() or stamp.read_text() != identity:
     # Make tracks source/header timestamps, not changes to command-line flags.
@@ -1115,7 +1115,7 @@ if not stamp.exists() or stamp.read_text() != identity:
         if path.is_file():
             path.unlink()
     stamp.write_text(identity)
-(directory / 'pong-global-compiler-flags.json').write_text(json.dumps({
+(directory / 'diting-global-compiler-flags.json').write_text(json.dumps({
     'make_variable': 'RC_NONARCH_CFLAGS',
     'consumers': ['CFLAGS_GEN', 'SFLAGS_GEN'],
     'value': sys.argv[1],

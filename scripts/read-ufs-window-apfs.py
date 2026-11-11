@@ -17,8 +17,8 @@ report "unreadable" while the container and volume checks still work.
 Usage:
     read-ufs-window-apfs.py --serial 9e0c2b55 --window OS \
         --expect-uuid B07DF049-7AD9-47B5-9F8F-9EE728056398 \
-        --stat /pong/init --hash /sbin/launchd.ios
-    read-ufs-window-apfs.py --image prepared-os.img --stat /pong/init
+        --stat /diting/init --hash /sbin/launchd.ios
+    read-ufs-window-apfs.py --image prepared-os.img --stat /diting/init
 """
 import argparse
 import hashlib

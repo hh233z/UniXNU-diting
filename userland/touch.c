@@ -1,4 +1,4 @@
-/* Pong touch-to-HID bridge.
+/* Diting touch-to-HID bridge.
  * Runs in backboardd, reads only actual Goodix samples. No graphics hooks. */
 #include <CoreFoundation/CoreFoundation.h>
 #include <dispatch/dispatch.h>
@@ -138,7 +138,7 @@ service_set_property(__attribute__((unused)) void *target, void *refcon, __attri
 
 		CFNumberGetValue(value, kCFNumberIntType, &mode);
 		if (mode != __atomic_load_n(&touch_mode,__ATOMIC_RELAXED)) {
-			say("Pong touch HID: touch detection mode %#x\n", mode);
+			say("Diting touch HID: touch detection mode %#x\n", mode);
 		}
 		__atomic_store_n(&touch_mode,mode,__ATOMIC_RELAXED);
 	}
@@ -192,7 +192,7 @@ make_service(IOHIDEventSystemClientRef client, const char *product, int page, in
 	CFDictionarySetValue(properties, CFSTR("DeviceUsagePairs"), pairs);
 	CFDictionarySetValue(properties, CFSTR("Built-In"), kCFBooleanTrue);
 	CFDictionarySetValue(properties, CFSTR("Transport"), display?CFSTR("SPI"):CFSTR("Virtual"));
-	CFDictionarySetValue(properties, CFSTR("Manufacturer"), CFSTR("Pong"));
+	CFDictionarySetValue(properties, CFSTR("Manufacturer"), CFSTR("Diting"));
 	CFDictionarySetValue(properties, CFSTR("Product"), name);
 	CFDictionarySetValue(properties, CFSTR("VendorID"), zero);
 	CFDictionarySetValue(properties, CFSTR("ProductID"), zero);
@@ -216,7 +216,7 @@ make_service(IOHIDEventSystemClientRef client, const char *product, int page, in
 		if (__atomic_load_n(&made->opened,__ATOMIC_ACQUIRE)) {
 			break;
 		}
-		say("Pong touch HID: the event server has not opened \"%s\" (attempt %d): making it again\n", product, attempt);
+		say("Diting touch HID: the event server has not opened \"%s\" (attempt %d): making it again\n", product, attempt);
 		IOHIDVirtualServiceClientRemove(service);
 		CFRelease(service);
 		service = NULL;
@@ -226,7 +226,7 @@ make_service(IOHIDEventSystemClientRef client, const char *product, int page, in
 
 /* One frame of the touch screen: the hand, and under it every finger that is down or has just lifted. */
 static void
-send_touch(IOHIDServiceClientRef screen, const struct pong_touch *t)
+send_touch(IOHIDServiceClientRef screen, const struct diting_touch *t)
 {
 	uint32_t change = t->type == DITING_TOUCH_MOVE ? DIGITIZER_POSITION : DIGITIZER_RANGE | DIGITIZER_TOUCH;
 	IOHIDEventRef hand, finger;
@@ -266,7 +266,7 @@ send_touch(IOHIDServiceClientRef screen, const struct pong_touch *t)
 	}
     if (!IOHIDVirtualServiceClientDispatchEvent(screen,hand)) {
         static unsigned failures;
-        if (failures++<3) fprintf(stderr,"Pong touch HID: event dispatch refused\n");
+        if (failures++<3) fprintf(stderr,"Diting touch HID: event dispatch refused\n");
     }
 	CFRelease(hand);
 }
@@ -292,7 +292,7 @@ static void
 release_contacts(IOHIDServiceClientRef screen,uint64_t time)
 {
     for (unsigned i=0;i<MAX_FINGERS;i++) if (fingers[i].touching) {
-        struct pong_touch up={time,DITING_TOUCH_UP,i,
+        struct diting_touch up={time,DITING_TOUCH_UP,i,
             (uint32_t)(fingers[i].x*65535),(uint32_t)(fingers[i].y*65535)};
         send_touch(screen,&up);
     }
@@ -301,13 +301,13 @@ release_contacts(IOHIDServiceClientRef screen,uint64_t time)
 static void *
 input_thread(void *unused)
 {
-    (void)unused;pthread_setname_np("Pong touch HID");
+    (void)unused;pthread_setname_np("Diting touch HID");
     int device=-1;
     for (unsigned i=0;i<30 && device<0;i++) {
-        device=open("/dev/pong-touch",O_RDONLY);
+        device=open("/dev/diting-touch",O_RDONLY);
         if (device<0) sleep(1);
     }
-    if (device<0) {say("Pong touch HID: real touch device unavailable (%s); SKIP\n",strerror(errno));return NULL;}
+    if (device<0) {say("Diting touch HID: real touch device unavailable (%s); SKIP\n",strerror(errno));return NULL;}
     IOHIDEventSystemClientRef client=NULL;IOHIDServiceClientRef screen=NULL,wake_control=NULL;
     const int types[]={HID_CLIENT_SIMPLE,HID_CLIENT_RATE_CONTROLLED};
     /* Register during BackBoard's main-screen digitizer initialization.
@@ -315,21 +315,21 @@ input_thread(void *unused)
     for (unsigned i=0;i<2 && !screen;i++) {
         client=IOHIDEventSystemClientCreateWithType(NULL,types[i],NULL);
         if (!client) continue;
-        IOHIDEventSystemClientScheduleWithDispatchQueue(client,dispatch_queue_create("pong.touch.hid",NULL));
-        screen=make_service(client,"Pong Goodix Berlin-D",HID_PAGE_DIGITIZER,HID_USAGE_TOUCH_SCREEN,true);
+        IOHIDEventSystemClientScheduleWithDispatchQueue(client,dispatch_queue_create("diting.touch.hid",NULL));
+        screen=make_service(client,"Diting Goodix Berlin-D",HID_PAGE_DIGITIZER,HID_USAGE_TOUCH_SCREEN,true);
         if (!screen) CFRelease(client);
     }
-    if (!screen) {say("Pong touch HID: server did not open digitizer; SKIP\n");close(device);return NULL;}
+    if (!screen) {say("Diting touch HID: server did not open digitizer; SKIP\n");close(device);return NULL;}
     if (IOHIDEventCreateKeyboardEvent)
-        wake_control=make_service(client,"Pong touch wake control",HID_PAGE_CONSUMER,HID_USAGE_CONSUMER_CONTROL,false);
-    say("Pong touch HID: display-integrated digitizer opened\n");
-    if (wake_control) say("Pong touch HID: tap-to-wake consumer opened\n");
-    struct pong_touch sample;unsigned count=0,waking=0;ssize_t length;
+        wake_control=make_service(client,"Diting touch wake control",HID_PAGE_CONSUMER,HID_USAGE_CONSUMER_CONTROL,false);
+    say("Diting touch HID: display-integrated digitizer opened\n");
+    if (wake_control) say("Diting touch HID: tap-to-wake consumer opened\n");
+    struct diting_touch sample;unsigned count=0,waking=0;ssize_t length;
     while ((length=read(device,&sample,sizeof(sample)))>0 || (length<0 && errno==EINTR)) {
         if (length<0) continue;
         if (length!=(ssize_t)sizeof(sample) || sample.type<DITING_TOUCH_DOWN || sample.type>DITING_TOUCH_UP) continue;
         if (sample.finger>=MAX_FINGERS) continue;
-        if (count++<4) say("Pong touch HID: type=%u finger=%u xy=%u,%u\n",sample.type,sample.finger,sample.x,sample.y);
+        if (count++<4) say("Diting touch HID: type=%u finger=%u xy=%u,%u\n",sample.type,sample.finger,sample.x,sample.y);
         unsigned mode=(unsigned)__atomic_load_n(&touch_mode,__ATOMIC_RELAXED)&0xff;
         unsigned bit=1u<<sample.finger;
         if (mode==TOUCH_MODE_OFF || mode==TOUCH_MODE_WAKE) {
@@ -352,20 +352,20 @@ input_thread(void *unused)
 static void *
 buttons_thread(void *unused)
 {
-    (void)unused;pthread_setname_np("Pong physical keys");
+    (void)unused;pthread_setname_np("Diting physical keys");
     int fd=-1;
-    for (unsigned i=0;i<30 && fd<0;i++) {fd=open("/dev/pong-buttons",O_RDONLY);if (fd<0) sleep(1);}
-    if (fd<0) {say("Pong keys HID: verified PMIC input unavailable; SKIP\n");return NULL;}
+    for (unsigned i=0;i<30 && fd<0;i++) {fd=open("/dev/diting-buttons",O_RDONLY);if (fd<0) sleep(1);}
+    if (fd<0) {say("Diting keys HID: verified PMIC input unavailable; SKIP\n");return NULL;}
     IOHIDEventSystemClientRef client=NULL;IOHIDServiceClientRef keys=NULL;
     const int types[]={HID_CLIENT_SIMPLE,HID_CLIENT_RATE_CONTROLLED};
     for (unsigned i=0;i<2 && !keys;i++) {
         client=IOHIDEventSystemClientCreateWithType(NULL,types[i],NULL);
         if (!client) continue;
-        IOHIDEventSystemClientScheduleWithDispatchQueue(client,dispatch_queue_create("pong.keys.hid",NULL));
-        keys=make_service(client,"Pong physical side and volume keys",HID_PAGE_CONSUMER,HID_USAGE_CONSUMER_CONTROL,false);
+        IOHIDEventSystemClientScheduleWithDispatchQueue(client,dispatch_queue_create("diting.keys.hid",NULL));
+        keys=make_service(client,"Diting physical side and volume keys",HID_PAGE_CONSUMER,HID_USAGE_CONSUMER_CONTROL,false);
         if (!keys) CFRelease(client);
     }
-    if (!keys) {say("Pong keys HID: event server unavailable; SKIP\n");close(fd);return NULL;}
+    if (!keys) {say("Diting keys HID: event server unavailable; SKIP\n");close(fd);return NULL;}
     // Let the stock event driver parse the real PMIC Consumer reports.
     // Do not declare a QWERTY keyboard/modifiers: iPadOS treats that as a
     // connected hardware keyboard and suppresses the on-screen keyboard.
@@ -385,15 +385,15 @@ buttons_thread(void *unused)
             CFDictionarySetValue(properties,CFSTR("Built-In"),kCFBooleanTrue);
             CFDictionarySetValue(properties,CFSTR("HIDDefaultBehavior"),kCFBooleanTrue);
             CFDictionarySetValue(properties,CFSTR("Transport"),CFSTR("SPMI"));
-            CFDictionarySetValue(properties,CFSTR("Product"),CFSTR("Pong PMIC volume keys"));
-            CFDictionarySetValue(properties,CFSTR("Manufacturer"),CFSTR("Pong"));
+            CFDictionarySetValue(properties,CFSTR("Product"),CFSTR("Diting PMIC volume keys"));
+            CFDictionarySetValue(properties,CFSTR("Manufacturer"),CFSTR("Diting"));
             volume=IOHIDUserDeviceCreate(NULL,properties);
         }
         if(report)CFRelease(report);
         if(properties)CFRelease(properties);
     }
-    say("Pong keys HID: physical side consumer opened; volume report device=%s\n",volume?"native":"unavailable, consumer events retained");
-    struct pong_touch sample;ssize_t n;unsigned held=0;
+    say("Diting keys HID: physical side consumer opened; volume report device=%s\n",volume?"native":"unavailable, consumer events retained");
+    struct diting_touch sample;ssize_t n;unsigned held=0;
     const uint32_t usages[]={HID_USAGE_POWER,HID_USAGE_VOLUME_UP,HID_USAGE_VOLUME_DOWN};
     while ((n=read(fd,&sample,sizeof(sample)))>0 || (n<0 && errno==EINTR)) {
         if (n<0) continue;
@@ -404,7 +404,7 @@ buttons_thread(void *unused)
         if(sample.finger && volume) {
             const uint8_t report[]={2,(uint8_t)((held>>1)&3)};
             int result=IOHIDUserDeviceHandleReportWithTimeStamp(volume,sample.time,report,sizeof(report));
-            say("Pong keys HID: PMIC volume report=%u result=%#x\n",report[1],result);
+            say("Diting keys HID: PMIC volume report=%u result=%#x\n",report[1],result);
             continue;
         }
         IOHIDEventRef event=IOHIDEventCreateKeyboardEvent(NULL,sample.time,HID_PAGE_CONSUMER,
@@ -412,7 +412,7 @@ buttons_thread(void *unused)
         if (!event) continue;
         IOHIDEventSetIntegerValue(event,FIELD_IS_BUILT_IN,1);
         Boolean sent=IOHIDVirtualServiceClientDispatchEvent(keys,event);CFRelease(event);
-        say("Pong keys HID: key=%u down=%u sent=%u\n",sample.finger,down,sent);
+        say("Diting keys HID: key=%u down=%u sent=%u\n",sample.finger,down,sent);
     }
     if(volume) {
         const uint8_t release[]={2,0};
@@ -427,9 +427,9 @@ buttons_thread(void *unused)
 }
 
 void
-pong_touch_start(void)
+diting_touch_start(void)
 {
-#define RESOLVE(name) do { name=(__typeof__(name))dlsym(RTLD_DEFAULT,#name); if (!name) {say("Pong touch HID: unavailable " #name "; SKIP\n");return;} } while (0)
+#define RESOLVE(name) do { name=(__typeof__(name))dlsym(RTLD_DEFAULT,#name); if (!name) {say("Diting touch HID: unavailable " #name "; SKIP\n");return;} } while (0)
     RESOLVE(IOHIDEventSystemClientCreateWithType);
     RESOLVE(IOHIDEventSystemClientScheduleWithDispatchQueue);
     RESOLVE(IOHIDVirtualServiceClientCreateWithCallbacks);

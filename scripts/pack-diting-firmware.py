@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Pack locally extracted Pong firmware into the archive a CI run expects.
+"""Pack locally extracted Diting firmware into the archive a CI run expects.
 
 A local build reads the firmware straight out of the directories a phone
 extraction produced. This script turns those directories into one zip with the
@@ -9,11 +9,11 @@ putting any firmware in Git.
 Example, after extracting the phone's partitions:
 
     python3 scripts/pack-diting-firmware.py \
-      --wifi ../private-inputs/pong-wifi-firmware \
-      --audio ../private-inputs/pong-audio-inputs \
+      --wifi ../private-inputs/diting-wifi-firmware \
+      --audio ../private-inputs/diting-audio-inputs \
       --adreno730 out/ipados18/firmware/adreno730 \
-      --adsp ../private-inputs/pong-power \
-      --output ../private-inputs/pong-firmware.zip
+      --adsp ../private-inputs/diting-power \
+      --output ../private-inputs/diting-firmware.zip
 """
 import argparse
 import hashlib
@@ -67,7 +67,7 @@ def main():
                 archive.write(source, name)
                 written.append({'path': name, 'bytes': source.stat().st_size})
         archive.writestr('manifest.json', json.dumps({
-            'device': 'Nothing Phone (2) / Pong / SM8475',
+            'device': 'Nothing Phone (2) / Diting / SM8475',
             'layout': 'wifi/, audio/, adreno730/, power/',
             'files': written,
             'note': 'Extracted from this phone. Do not commit the archive or its contents.',

@@ -8,7 +8,7 @@
 #include <sys/stat.h>
 #include <unistd.h>
 
-@interface NSObject (PongLaunchServices)
+@interface NSObject (DitingLaunchServices)
 + (id)defaultWorkspace;
 + (id)applicationProxyForIdentifier:(NSString *)identifier;
 - (BOOL)registerApplication:(NSURL *)url;
@@ -24,7 +24,7 @@ int main(void)
      * registration never allocates or overwrites launchd's personas. */
     /* LS uses the caller's user domain. Do not populate root's separate DB. */
     if(getuid()==0 && (setgroups(0,NULL) || setgid(501) || setuid(501))) {
-        perror("Pong Sileo: mobile credentials");return 77;
+        perror("Diting Sileo: mobile credentials");return 77;
     }
     if(getuid()!=501)return 77;
     setenv("HOME","/var/mobile",1);
@@ -60,7 +60,7 @@ int main(void)
             id state=[proxy respondsToSelector:@selector(appState)]?[proxy appState]:nil;
             BOOL valid=[state respondsToSelector:@selector(isValid)] && [state isValid];
             BOOL matches=[actual.path.stringByResolvingSymlinksInPath isEqualToString:path.stringByResolvingSymlinksInPath];
-            fprintf(stderr,"Pong Sileo: mobile LS attempt=%u registered=%d valid=%d path=%s\n",attempt+1,registered,valid,actual.path.UTF8String?:"(absent)");
+            fprintf(stderr,"Diting Sileo: mobile LS attempt=%u registered=%d valid=%d path=%s\n",attempt+1,registered,valid,actual.path.UTF8String?:"(absent)");
             if(valid && matches)return 0; /* Also accept an already registered native system app. */
             sleep(5);
         }

@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
-"""Run one timed Pong boot and collect the existing REC pstore paths.
+"""Run one timed Diting boot and collect the existing REC pstore paths.
 
-The image must contain pong_capture_seconds and pong_capture_id. No image
+The image must contain diting_capture_seconds and diting_capture_id. No image
 hashes, flashing, image readback, or endless reboot loop. Partial evidence
 and the failed stage are retained on timeout. Default final state is REC.
 """
@@ -32,7 +32,7 @@ def main():
     if a.reader_image and not a.reader_image.is_file():p.error('reader image does not exist')
     if not 60<=a.timeout<=7200:p.error('timeout must be 60..7200 seconds')
     if not a.boot_id or len(a.boot_id)>63 or not all(c.isalnum() or c in '-_.' for c in a.boot_id):
-        p.error('boot-id must be a short identifier matching pong_capture_id')
+        p.error('boot-id must be a short identifier matching diting_capture_id')
     if (a.out/'capture.json').exists():p.error('existing evidence retained; choose a new output directory')
     a.out.mkdir(parents=True,exist_ok=True)
     receipt=dict(boot_id=a.boot_id,serial=a.serial,boot_image=str(a.boot_image.resolve()),

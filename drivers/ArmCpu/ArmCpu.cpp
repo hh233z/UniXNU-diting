@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: BSD-2-Clause-Patent
-// Pong Darwin 22/24 GICv3 CPU provider, with firmware PSCI secondary startup.
+// Diting Darwin 22/24 GICv3 CPU provider, with firmware PSCI secondary startup.
 #include <IOKit/IOCPU.h>
 #include <IOKit/IODeviceTreeSupport.h>
 #include <IOKit/IOMemoryDescriptor.h>
@@ -10,7 +10,7 @@
 #include <machine/machine_routines.h>
 #include <pexpert/pexpert.h>
 #if DITING_DARWIN_MAJOR >= 24
-#include "PongCpuPolicy.h"
+#include "DitingCpuPolicy.h"
 #endif
 
 extern "C" void rtclock_intr(unsigned int);
@@ -18,10 +18,10 @@ extern "C" void psci_smp_init(void);
 extern "C" kern_return_t psci_smp_start_cpu(int);
 extern "C" void psci_smp_cpu_running(void);
 extern "C" void psci_smp_cpu_off(void) __attribute__((noreturn));
-extern "C" void pong_cpu_startup_finished(IOCPUInterruptController *);
+extern "C" void diting_cpu_startup_finished(IOCPUInterruptController *);
 #if DITING_DARWIN_MAJOR >= 24
-extern "C" void pong_cpu_first_boot(processor_t);
-extern "C" void pong_cpu_first_boot_wait(processor_t);
+extern "C" void diting_cpu_first_boot(processor_t);
+extern "C" void diting_cpu_first_boot_wait(processor_t);
 #endif
 extern "C" {
 volatile uint32_t armcpu_registered, armcpu_gic_ready;
@@ -35,11 +35,11 @@ volatile uint64_t armcpu_pac_features[8][3];
 }
 
 #if DITING_DARWIN_MAJOR >= 24
-/* Pure scheduler hint: logical IDs follow the selected Pong DT's sorted
+/* Pure scheduler hint: logical IDs follow the selected Diting DT's sorted
  * MPIDRs. Keep the 4+3+1 board knowledge out of the generic scheduler.
  * An occupied/offline/unrecommended core is absent from the supplied map;
  * this never binds a thread or removes any of the eight eligible CPUs. */
-extern "C" uint64_t pong_cpu_preferred_idle_mask(uint64_t available)
+extern "C" uint64_t diting_cpu_preferred_idle_mask(uint64_t available)
 {
   if (available & (1ULL << 7)) return available & (1ULL << 7); // Cortex-X2
   if (available & 0x70ULL) return available & 0x70ULL;         // Cortex-A710
@@ -51,7 +51,7 @@ static uint64_t gRedistStride;
 static const uint32_t kSgiPpiEnable = 1U | (1U << 27);
 static IOCPUInterruptController *gController;
 /* Published SPI owners, following Sheng's GIC integration. CPU topology,
- * PSCI and timer setup stay on the existing Pong path. */
+ * PSCI and timer setup stay on the existing Diting path. */
 struct SpiOwner {uint32_t id;void (*handler)(void *);void *context;uint64_t count;};
 static SpiOwner gSpi[64];
 static uint32_t gSpiUsed,gSpiRegistering;
@@ -293,7 +293,7 @@ bool ArmCpu::start(IOService *provider)
     affinity = physical;
   }
   if (!IOCPU::start(provider)) return false;
-  cpuName = OSSymbol::withCStringNoCopy("Pong ARM architectural CPU");
+  cpuName = OSSymbol::withCStringNoCopy("Diting ARM architectural CPU");
   if (!cpuName) return false;
   ml_processor_info_t info = {};
   info.cpu_id = this;
@@ -341,7 +341,7 @@ bool ArmCpu::start(IOService *provider)
   gController = controller = new IOCPUInterruptController;
   if (!controller || controller->initCPUInterruptController(armcpu_registered, armcpu_registered) != kIOReturnSuccess)
     panic("ArmCpu: interrupt controller allocation failed");
-  controller->setName("PongCPUInterruptController");
+  controller->setName("DitingCPUInterruptController");
   if (!controller->attach(provider)) panic("ArmCpu: interrupt controller attach failed");
   armcpu_controller_attached = 1;
   controller->registerCPUInterruptController();
@@ -358,12 +358,12 @@ bool ArmCpu::start(IOService *provider)
   // Darwin 24 separates first boot from processor_start(), and invokes
   // initCPU() during processor_boot(). All vectors must exist beforehand.
   psci_smp_init();
-  pong_cpu_first_boot(machProcessor);
+  diting_cpu_first_boot(machProcessor);
   for (unsigned i=0; i<ml_get_cpu_count(); i++) {
-    if (gCpus[i] != this) pong_cpu_first_boot(gCpus[i]->machProcessor);
+    if (gCpus[i] != this) diting_cpu_first_boot(gCpus[i]->machProcessor);
   }
   for (unsigned i=0; i<ml_get_cpu_count(); i++) {
-    pong_cpu_first_boot_wait(gCpus[i]->machProcessor);
+    diting_cpu_first_boot_wait(gCpus[i]->machProcessor);
     IOLog("ArmCpu: CPU %u first boot completed\n", i);
     const uint64_t isar1=armcpu_pac_features[i][0],isar2=armcpu_pac_features[i][1];
     const bool address=((isar1>>4)&15) || ((isar1>>8)&15) || ((isar2>>12)&15);
@@ -386,7 +386,7 @@ bool ArmCpu::start(IOService *provider)
 #endif
   // IOKit may now expand its matching worker pool. A firmware-rejected
   // secondary remains offline; it must not leave the pool in bootstrap mode.
-  pong_cpu_startup_finished(controller);
+  diting_cpu_startup_finished(controller);
   registerService();
   uint64_t ctl, cval, now, frequency, daif;
   __asm__ volatile("mrs %0, cntv_ctl_el0" : "=r"(ctl));
@@ -400,7 +400,7 @@ bool ArmCpu::start(IOService *provider)
   IOLog("ArmCpu: boot CPU running with GICv3/CNTV ctl=%#llx cval=%#llx now=%#llx freq=%#llx daif=%#llx irq=%llu\n",
       ctl, cval, now, frequency, daif, armcpu_timer_interrupts);
 #if DITING_DARWIN_MAJOR >= 24
-  PongCpuPolicy::start();
+  DitingCpuPolicy::start();
   IOLog("ArmCpu: all registered CPUs available; idle preference X2, A710, A510 (no affinity binding)\n");
 #endif
   return true;
@@ -559,7 +559,7 @@ const OSSymbol *ArmCpu::getCPUName(void)
   return cpuName;
 }
 
-extern "C" bool pong_cpu_start(IOService *platform)
+extern "C" bool diting_cpu_start(IOService *platform)
 {
   OSIterator *iter = platform->getChildIterator(gIOServicePlane);
   if (!iter) return false;

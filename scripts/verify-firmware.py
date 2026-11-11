@@ -13,12 +13,12 @@ workspace = Path(__file__).resolve().parents[2]
 parser = argparse.ArgumentParser(description=__doc__)
 parser.add_argument('--output-dir', type=Path)
 args = parser.parse_args()
-root = workspace / 'Mu-Silicium/Build/pongPkg/RELEASE_CLANGPDB'
+root = workspace / 'Mu-Silicium/Build/ditingPkg/RELEASE_CLANGPDB'
 modules = {
     'UniXNU': '9b665204-a133-47a2-9396-9e2b370a4e25',
     'UniXNUDxe': '29b950cf-586d-49ea-9d71-f88645ccdaf6',
     'DarwinBoot': '1b64af87-8415-4b57-9b16-680d70913b9f',
-    'PongBootMemoryDxe': '7b27b767-94a4-4a47-99dd-281f7c604faa',
+    'DitingBootMemoryDxe': '7b27b767-94a4-4a47-99dd-281f7c604faa',
 }
 fv = (root / 'FV/FVMAIN.Fv').read_bytes()
 assert fv[40:44] == b'_FVH'
@@ -46,6 +46,6 @@ for name, guid in modules.items():
     }
 report = {'fv_header_checksum_valid': True, 'fv_files': len(files),
           'modules': result, 'hardware_tested': False}
-out = (args.output_dir or workspace / 'UniXNU/out/pong/boot') / 'firmware-verification.json'
+out = (args.output_dir or workspace / 'UniXNU/out/diting/boot') / 'firmware-verification.json'
 out.write_text(json.dumps(report, indent=2) + '\n')
 print(json.dumps(report, indent=2))

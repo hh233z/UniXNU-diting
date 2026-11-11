@@ -10,11 +10,11 @@ def main():
     p = argparse.ArgumentParser(description=__doc__)
     p.add_argument('--tree', type=Path, required=True)
     a = p.parse_args()
-    out = a.tree.resolve() / 'build/pong-smmu4k'
+    out = a.tree.resolve() / 'build/diting-smmu4k'
     out.mkdir(parents=True, exist_ok=True)
     env = build_env()
     sdk = subprocess.check_output(['xcrun', '--sdk', 'iphoneos', '--show-sdk-path'], env=env, text=True).strip()
-    source = ROOT / 'drivers/PongAdreno/ArmSmmu4K'
+    source = ROOT / 'drivers/DitingAdreno/ArmSmmu4K'
     objects = []
     for name in ('ArmSmmu4K', 'ArmSmmu4KContext', 'ArmSmmu4KProgram', 'ArmSmmu4KStreams',
                  'ArmSmmu4KAudit', 'ArmSmmu4KLive', 'ArmSmmu4KTableMemory','ArmSmmu4KMmio'):
@@ -25,7 +25,7 @@ def main():
                         '-I' + str(source), '-c', str(source / (name + '.c')), '-o', str(obj)],
                        env=env, check=True)
         objects.append(obj)
-    archive = out / 'libPongSmmu4K.a'
+    archive = out / 'libDitingSmmu4K.a'
     archive.unlink(missing_ok=True)
     subprocess.run(['xcrun', 'libtool', '-static', '-o', str(archive), *map(str, objects)], env=env, check=True)
     print(archive)

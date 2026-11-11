@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Build a minimal Apple device tree for Nothing Phone (2) Pong.
+"""Build a minimal Apple device tree for Nothing Phone (2) Diting.
 
 The physical DRAM size is required input. Do not substitute the sum of Linux
 memory ranges or the DarwinBoot allocation window: XNU treats /chosen/dram-size
@@ -21,7 +21,7 @@ from diting_adt_contract import audit_adt
 
 ROOT = Path(__file__).resolve().parents[1]
 
-# Values cross-checked against the Pong platform DTS and UEFI memory map.
+# Values cross-checked against the Diting platform DTS and UEFI memory map.
 DRAM_BASE = 0x80000000
 APSS_BASE = 0x17000000
 APSS_SIZE = 0x02000000
@@ -30,7 +30,7 @@ GIC_DIST_SIZE = 0x10000
 GIC_REDIST = 0x17180000
 GIC_REDIST_SIZE = 0x200000
 GIC_REDIST_STRIDE = 0x40000
-TIMEBASE = 0x0124F800  # 19.2 MHz from the Pong timer node.
+TIMEBASE = 0x0124F800  # 19.2 MHz from the Diting timer node.
 UFS_HC = 0x01D84000
 UFS_HC_SIZE = 0x3000
 GCC_UFS_PAGE = 0x00187000
@@ -40,15 +40,15 @@ CPU_AFFINITIES = [i << 8 for i in range(8)]
 
 
 def load_format2_hardware(path):
-    """Use the selected DTSI/DTS for resources consumed by the Pong loader.
+    """Use the selected DTSI/DTS for resources consumed by the Diting loader.
 
     Keep the existing Darwin24 handoff/manifest encoding. The generic ADT
-    encoder does not yet express Pong's PMIC and Goodix metadata properties.
+    encoder does not yet express Diting's PMIC and Goodix metadata properties.
     """
     global DRAM_BASE, GIC_DIST, GIC_DIST_SIZE, GIC_REDIST, GIC_REDIST_SIZE
     global GIC_REDIST_STRIDE, TIMEBASE, UFS_HC, UFS_HC_SIZE, GCC_UFS_PAGE
     global UFS_STREAM_ID, UFS_SPI, CPU_AFFINITIES
-    spec=importlib.util.spec_from_file_location('pong_fdt',ROOT/'scripts/prepare-diting-wifi.py')
+    spec=importlib.util.spec_from_file_location('diting_fdt',ROOT/'scripts/prepare-diting-wifi.py')
     module=importlib.util.module_from_spec(spec);spec.loader.exec_module(module)
     nodes=module.fdt_nodes(Path(path).read_bytes())
     u32=module.cells
@@ -64,13 +64,13 @@ def load_format2_hardware(path):
           p.get('status',b'okay\0') in (b'okay\0',b'ok\0')]
     CPU_AFFINITIES=sorted(value(p,'reg') for p in cpus)
     if len(CPU_AFFINITIES)!=8 or CPU_AFFINITIES[0]!=0:
-        raise ValueError('This Pong profile requires its eight physical CPU affinities')
+        raise ValueError('This Diting profile requires its eight physical CPU affinities')
     memory=next(p for p in nodes.values() if p.get('device_type')==b'memory\0')
     DRAM_BASE=int.from_bytes(memory['reg'][:8],'big')
     ufs=next(p for p in nodes.values() if b'qcom,sm8475-ufshc\0' in p.get('compatible',b''))
     UFS_HC=int.from_bytes(ufs['reg'][:8],'big');UFS_HC_SIZE=int.from_bytes(ufs['reg'][8:16],'big')
-    GCC_UFS_PAGE=value(ufs,'pong,gcc-ufs-page');UFS_STREAM_ID=value(ufs,'pong,smmu-stream-id')
-    UFS_SPI=value(ufs,'pong,ufs-spi')
+    GCC_UFS_PAGE=value(ufs,'diting,gcc-ufs-page');UFS_STREAM_ID=value(ufs,'diting,smmu-stream-id')
+    UFS_SPI=value(ufs,'diting,ufs-spi')
 
 
 def node(name, properties=(), children=()):
@@ -110,7 +110,7 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--cpus', type=int, choices=range(1, 9), default=1,
                         help='SM8475 CPU nodes, MPIDR 0x000 through 0x700')
-    parser.add_argument('--output', type=Path, default=ROOT / 'build/pong/boot/kernel.macho.adt')
+    parser.add_argument('--output', type=Path, default=ROOT / 'build/diting/boot/kernel.macho.adt')
     parser.add_argument(
         '--dram-size', type=lambda value: int(value, 0), required=True,
         help='physical DRAM size from the target boot chain; not usable-range sum or window size')
@@ -122,7 +122,7 @@ def main():
     parser.add_argument('--chip-id', type=lambda value: int(value, 16), default=None,
                         help='software IOPlatformUUID seed, not an Apple silicon identifier')
     parser.add_argument('--ufs', '--ufs-probe', dest='ufs_probe', action='store_true',
-                        help='publish the Pong SM8475 UFS nub; optional probes require a separate boot argument')
+                        help='publish the Diting SM8475 UFS nub; optional probes require a separate boot argument')
     parser.add_argument('--userdata-first-lba', type=lambda value: int(value, 0))
     parser.add_argument('--userdata-last-lba', type=lambda value: int(value, 0))
     parser.add_argument('--root-match-volume-uuid', default=None,
@@ -182,13 +182,13 @@ def main():
         # SpringBoard deliberately traps before creating its main display.
         # Keep the real framebuffer pixels; do not substitute an Apple panel.
         ('display-scale', struct.pack('<I', 3)),
-        ('pong-dsi-backlight', struct.pack('<Q6I',
+        ('diting-dsi-backlight', struct.pack('<Q6I',
             int(backlight['controller'], 0), backlight['register_bytes'],
             backlight['maximum'], backlight['minimum_nonzero'],
             int(backlight['bl_inverted_dbv']), backlight['channel'], backlight['version'])),
-        ('pong-audio-dma', bytes(16)),
+        ('diting-audio-dma', bytes(16)),
         ('darwinboot-memory-ranges', bytes(32 + 64 * 16)),
-        ('pong-allocatable-ram', b''.join(
+        ('diting-allocatable-ram', b''.join(
             struct.pack('<QQ', int(bank['base'], 0), int(bank['size'], 0))
             for bank in json.loads((ROOT / 'configs/diting-memory-sm8475.json').read_text())['allocatable'])),
         ('display-rotation', struct.pack('<I', 0)),
@@ -242,28 +242,28 @@ def main():
     ])
     ufs = node('ufshc', [
         ('compatible', b'qcom,sm8475-ufshc\0qcom,sm8450-ufshc\0'),
-        ('pong,ufs-hc-base', struct.pack('<Q', UFS_HC)),
-        ('pong,ufs-hc-size', struct.pack('<Q', UFS_HC_SIZE)),
-        ('pong,gcc-ufs-page', struct.pack('<Q', GCC_UFS_PAGE)),
-        ('pong,smmu-stream-id', struct.pack('<I', UFS_STREAM_ID)),
-        ('pong,smmu-base', struct.pack('<Q', 0x15000000)),
-        ('pong,smmu-size', struct.pack('<Q', 0x100000)),
-        ('pong,smmu-context-banks', struct.pack('<I', 78)),
-        ('pong,smmu-match-groups', struct.pack('<I', 120)),
+        ('diting,ufs-hc-base', struct.pack('<Q', UFS_HC)),
+        ('diting,ufs-hc-size', struct.pack('<Q', UFS_HC_SIZE)),
+        ('diting,gcc-ufs-page', struct.pack('<Q', GCC_UFS_PAGE)),
+        ('diting,smmu-stream-id', struct.pack('<I', UFS_STREAM_ID)),
+        ('diting,smmu-base', struct.pack('<Q', 0x15000000)),
+        ('diting,smmu-size', struct.pack('<Q', 0x100000)),
+        ('diting,smmu-context-banks', struct.pack('<I', 78)),
+        ('diting,smmu-match-groups', struct.pack('<I', 120)),
         # This probe does not register an interrupt. A standard interrupts
         # property invokes IODTMapOneInterrupt during IODeviceTreeAlloc, before
         # ArmCpu starts. Without an interrupt-parent/controller/map it loops
         # on the arm-io parent in Darwin 22. Keep the Linux SPI as board metadata
-        # until a complete Pong GIC SPI provider and interrupt specifier exist.
-        ('pong,ufs-spi', struct.pack('<I', UFS_SPI)),
+        # until a complete Diting GIC SPI provider and interrupt specifier exist.
+        ('diting,ufs-spi', struct.pack('<I', UFS_SPI)),
         *([('unixnu,userdata-first-lba', struct.pack('<Q', args.userdata_first_lba)),
            ('unixnu,userdata-last-lba', struct.pack('<Q', args.userdata_last_lba))]
           if args.userdata_first_lba is not None else []),
     ])
-    # Actual Pong live DT: QUP0 SE4 / Goodix Berlin-D, GPIO20 reset/21 IRQ.
+    # Actual Diting live DT: QUP0 SE4 / Goodix Berlin-D, GPIO20 reset/21 IRQ.
     # Absolute metadata avoids an incomplete arm-io interrupt/reg mapping.
-    touch = node('pong-touch', [
-        ('compatible', b'pong,goodix-berlin-d\0'),
+    touch = node('diting-touch', [
+        ('compatible', b'diting,goodix-berlin-d\0'),
         ('spi-base', struct.pack('<Q', 0x990000)),
         ('tlmm-base', struct.pack('<Q', 0xF000000)),
         ('gcc-base', struct.pack('<Q', 0x100000)),
@@ -278,12 +278,12 @@ def main():
         # MobileGestalt derives ProductType/DeviceClass from hw.product, which
         # comes from this model. Keep the restore's J171 board policy (jetsam,
         # arm64 ABI) separate from the requested iPhone presentation identity.
-        # Physical resources remain Pong/SM8475; /product is an ADT node.
+        # Physical resources remain Diting/SM8475; /product is an ADT node.
         ('model', b'iPhone17,1\0'),
         ('compatible', b'J171AP\0iPhone17,1\0qcom,sm8475\0'),
         ('target-type', b'J171\0'),
         ('target-sub-type', b'J171AP\0'),
-        ('pong,physical-model', b'Nothing Phone (2)\0'),
+        ('diting,physical-model', b'Nothing Phone (2)\0'),
         ('#address-cells', struct.pack('<I', 2)),
         ('#size-cells', struct.pack('<I', 2)),
     ], [
@@ -296,8 +296,8 @@ def main():
             ('#address-cells', struct.pack('<I', 2)),
             ('#size-cells', struct.pack('<I', 2)),
             ('ranges', struct.pack('<QQQ', 0, APSS_BASE, APSS_SIZE)),
-        ], [gic, touch, node('pong-buttons', [
-            ('compatible', b'pong,pm8350-keys\0'),
+        ], [gic, touch, node('diting-buttons', [
+            ('compatible', b'diting,pm8350-keys\0'),
             ('core-base', struct.pack('<Q', 0x0c400000)),
             ('cnfg-base', struct.pack('<Q', 0x0c42d000)),
             ('observer-base', struct.pack('<Q', 0x0c440000)),
@@ -308,7 +308,7 @@ def main():
         node('defaults', [('sleep-disabled', struct.pack('<I', 1))]),
         node('options'),
         # Missing HomeButtonType defaults to a Home-button iPad in Gestalt.
-        # Pong has only the three physical volume/power buttons.
+        # Diting has only the three physical volume/power buttons.
         node('buttons', [
             ('button-names', b'volup\0voldown\0hold\0'),
             ('home-button-type', struct.pack('<I', 2)),
@@ -325,7 +325,7 @@ def main():
             ('artwork-display-gamut', b'sRGB\0'),
             ('compatible-device-fallback', b'iPhone17,1\0'),
             ('compatible-app-variant', b'0\0'),
-            # Keep Pong's v82 memory performance tier. Phone artwork does
+            # Keep Diting's v82 memory performance tier. Phone artwork does
             # not authorize a higher memory budget in the 1 GiB XNU window.
             ('device-perf-memory-class', struct.pack('<I', 3)),
             ('thin-bezel', struct.pack('<I', 1)),
@@ -342,7 +342,7 @@ def main():
                   boot_manifest=args.boot_manifest.read_bytes() if args.boot_manifest else None)
     args.output.parent.mkdir(parents=True, exist_ok=True)
     args.output.write_bytes(tree)
-    print(f'Pong ADT: {len(tree)} bytes; cpu_count={args.cpus}; dram={args.dram_size:#x}; '
+    print(f'Diting ADT: {len(tree)} bytes; cpu_count={args.cpus}; dram={args.dram_size:#x}; '
           f'window={args.window_size if args.window_size is not None else "DarwinBoot default"}; '
           f'packed-data-ramdisk={int(args.packed_data_ramdisk)}')
 

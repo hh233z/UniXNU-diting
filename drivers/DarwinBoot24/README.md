@@ -4,7 +4,7 @@
 
 ## 适配硬件
 
-- Nothing Phone (2)（Pong / SM8475）的 uefi-pong 固件环境，UEFI 侧为 Mu-Silicium
+- Nothing Phone (2)（Diting / SM8475）的 uefi-diting 固件环境，UEFI 侧为 Mu-Silicium
 - 额外 4 GiB 以上 DRAM 的租借：按 ADT 报告的物理区间逐个申请回写常规内存页，每块不超过 1 GiB 并合并相邻区间
 
 ## 仓库关系
@@ -13,10 +13,10 @@
 
 ## 说明
 
-- 不写任何固件或设备分区；`pong_ram_banks=0` 只申请 4 GiB 引导窗口。
+- 不写任何固件或设备分区；`diting_ram_banks=0` 只申请 4 GiB 引导窗口。
 - 编译：`scripts/build-darwinboot24-macos.py`，在独立工作区构建并把 EFI 产物、日志与构建记录写到 `mac-build/darwinboot24/`。有 `Test/` 目录。
 
-构建、接口与组件目录见 [UniXNU 组件目录](https://unixnu.com/reference/components)，板级输入与编译入口在 [UniXNU-pong](https://github.com/Chengdong-Yu/UniXNU-pong)。
+构建、接口与组件目录见 [UniXNU 组件目录](https://unixnu.com/reference/components)，板级输入与编译入口在 [UniXNU-diting](https://github.com/Chengdong-Yu/UniXNU-pong)。
 
 ## 实现细节
 
@@ -30,10 +30,10 @@ on unload. The MMU-off transition is position-independent code copied into an
 extra page within the allocated kernel window. That page is included in
 topOfKernelData. No firmware or device partition is written.
 
-## Additional Pong DRAM
+## Additional Diting DRAM
 
 The contiguous bootstrap window remains 4 GiB in the iPadOS18 package. Its
-256 MiB..8 GiB parser bound is not a limit on total banked memory; Pong's
+256 MiB..8 GiB parser bound is not a limit on total banked memory; Diting's
 physical address holes make a synthetic contiguous 12 GiB window invalid.
 The ADT reports physical capacity separately and supplies the allowed ranges.
 The loader leases actual write-back conventional-memory pages above 4 GiB,
@@ -45,7 +45,7 @@ Contract validation precedes all extra allocations. Invalid optional range
 metadata retains the primary boot window. Reserved, BootServices, RuntimeServices,
 framebuffer and uncached/device descriptors never become additional OS RAM.
 The actual managed capacity is reported by XNU and will be below physical
-capacity. `pong_ram_banks=0` requests only the bootstrap window.
+capacity. `diting_ram_banks=0` requests only the bootstrap window.
 
 Visible loader stages and the actual EFI status on a failed load distinguish
 a return to the boot menu from a kernel entry failure. They do not qualify
@@ -58,7 +58,7 @@ that span. The framebuffer is cleaned separately. The boot_args window and
 additional owned-bank declarations retain their full sizes; this changes
 cache maintenance, not RAM accounting.
 
-The Darwin 24 build has handed off to the native Pong kernel on hardware:
+The Darwin 24 build has handed off to the native Diting kernel on hardware:
 saved cpu2/apfs3 logs reached GICv3/CNTV, UFS, APFS and the matching 22H374
 userland helper. This does not qualify the iPadOS 18 UI or Metal interfaces.
 Boot evidence is kept under the project's ignored `out/ipados18/logs/` directory.

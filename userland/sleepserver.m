@@ -11,7 +11,7 @@
 #import <notify.h>
 #import <sys/stat.h>
 
-@interface NSObject (PongSleepABI)
+@interface NSObject (DitingSleepABI)
 - (id)initWithIdentifier:(NSString *)identifier;
 - (id)objectWithSyncAnchor:(id)anchor;
 - (id)initWithSleepMode:(NSInteger)mode syncAnchor:(id)anchor;
@@ -25,10 +25,10 @@ typedef void (^BoolReply)(BOOL,NSError *);
 typedef void (^ErrorReply)(NSError *);
 static void *sleepImage;
 static NSXPCInterface *(*serverInterface)(void),*(*clientInterface)(void);
-static NSString *const stateDirectory=@"/private/var/mobile/Library/Application Support/PongSleep";
-static NSString *const statePath=@"/private/var/mobile/Library/Application Support/PongSleep/state.plist";
+static NSString *const stateDirectory=@"/private/var/mobile/Library/Application Support/DitingSleep";
+static NSString *const statePath=@"/private/var/mobile/Library/Application Support/DitingSleep/state.plist";
 static NSError *failure(NSInteger code,NSString *why) {
-    return [NSError errorWithDomain:@"dev.unixnu.pong.Sleep" code:code
+    return [NSError errorWithDomain:@"dev.unixnu.diting.Sleep" code:code
         userInfo:@{NSLocalizedDescriptionKey:why}];
 }
 static NSError *unavailable(void) {
@@ -36,22 +36,22 @@ static NSError *unavailable(void) {
 }
 static id model(NSString *name) {return [[NSClassFromString(name) alloc] init];}
 
-@class PongSleepSession;
-@interface PongSleepState : NSObject
+@class DitingSleepSession;
+@interface DitingSleepState : NSObject
 @property(nonatomic,strong) NSMutableDictionary *disk;
-@property(nonatomic,strong) NSHashTable<PongSleepSession *> *sessions;
+@property(nonatomic,strong) NSHashTable<DitingSleepSession *> *sessions;
 @property(nonatomic,strong) NSSet<Class> *modelClasses;
 - (id)anchors;
 - (id)loadModel:(NSString *)key className:(NSString *)name;
 - (NSError *)save:(id)value key:(NSString *)key className:(NSString *)name;
 @end
-@interface PongSleepSession : NSObject
-@property(nonatomic,strong) PongSleepState *state;
+@interface DitingSleepSession : NSObject
+@property(nonatomic,strong) DitingSleepState *state;
 @property(nonatomic,weak) NSXPCConnection *connection;
 - (void)changed;
 @end
 
-@implementation PongSleepState
+@implementation DitingSleepState
 - (instancetype)init {
     if(!(self=[super init]))return nil;
     _sessions=[NSHashTable weakObjectsHashTable];
@@ -110,13 +110,13 @@ static id model(NSString *name) {return [[NSClassFromString(name) alloc] init];}
         NSData *plist=[NSPropertyListSerialization dataWithPropertyList:next format:NSPropertyListBinaryFormat_v1_0 options:0 error:&error];
         if(!plist || ![plist writeToFile:statePath options:NSDataWritingAtomic error:&error])return error?:failure(EIO,@"Sleep configuration was not committed");
         chmod(statePath.fileSystemRepresentation,0600);self.disk=next;
-        for(PongSleepSession *session in self.sessions.allObjects)[session changed];
+        for(DitingSleepSession *session in self.sessions.allObjects)[session changed];
         return nil;
     }
 }
 @end
 
-@implementation PongSleepSession
+@implementation DitingSleepSession
 - (void)connectWithCompletion:(ObjectReply)reply {reply([self.state anchors],nil);}
 - (void)checkInWithSyncAnchorContainer:(id)remote completion:(BoolReply)reply {
     if(![remote isKindOfClass:NSClassFromString(@"HKSPSyncAnchorContainer")]) {
@@ -161,15 +161,15 @@ static id model(NSString *name) {return [[NSClassFromString(name) alloc] init];}
 - (void)setWidgetOverrideState:(NSInteger)value completion:(BoolReply)reply {(void)value;reply(NO,unavailable());}
 @end
 
-@interface PongSleepListener : NSObject <NSXPCListenerDelegate>
-@property(nonatomic,strong) PongSleepState *state;
+@interface DitingSleepListener : NSObject <NSXPCListenerDelegate>
+@property(nonatomic,strong) DitingSleepState *state;
 @end
-@implementation PongSleepListener
+@implementation DitingSleepListener
 - (BOOL)listener:(NSXPCListener *)listener shouldAcceptNewConnection:(NSXPCConnection *)connection {
     (void)listener;
     NSString *__unsafe_unretained *entitlement=(NSString *__unsafe_unretained *)dlsym(sleepImage,"HKSPSleepEntitlementName");
     if(!entitlement || ![[connection valueForEntitlement:*entitlement] boolValue])return NO;
-    PongSleepSession *session=[PongSleepSession new];session.state=self.state;session.connection=connection;
+    DitingSleepSession *session=[DitingSleepSession new];session.state=self.state;session.connection=connection;
     connection.exportedInterface=serverInterface();connection.remoteObjectInterface=clientInterface();
     connection.exportedObject=session;
     @synchronized(self.state){[self.state.sessions addObject:session];}
@@ -184,16 +184,16 @@ int main(void) {
         Protocol *wire=objc_getProtocol("HKSPSleepServer");
         if(!sleepImage || !serverInterface || !clientInterface || !wire ||
            !dlsym(sleepImage,"HKSPSleepScheduleStateNone") || !NSClassFromString(@"HKSPSyncAnchorContainer")) {
-            NSLog(@"Pong Sleep: shipped20G81 interface/models unavailable");return 78;
+            NSLog(@"Diting Sleep: shipped20G81 interface/models unavailable");return 78;
         }
-        class_addProtocol(PongSleepSession.class,wire);
-        PongSleepListener *delegate=[PongSleepListener new];delegate.state=[PongSleepState new];
+        class_addProtocol(DitingSleepSession.class,wire);
+        DitingSleepListener *delegate=[DitingSleepListener new];delegate.state=[DitingSleepState new];
         NSXPCListener *listener=((id(*)(id,SEL,id))objc_msgSend)([NSXPCListener alloc],
             NSSelectorFromString(@"initWithMachServiceName:"),@"com.apple.sleepd.sleepserver");
         listener.delegate=delegate;[listener resume];
         NSString *__unsafe_unretained *lifecycle=(NSString *__unsafe_unretained *)dlsym(sleepImage,"HKSPSleepLifecycleName");
         if(lifecycle)notify_post([*lifecycle UTF8String]);
-        NSLog(@"Pong Sleep: 20G81 configuration listener started; no alarm/Focus/Health/Watch backend");
+        NSLog(@"Diting Sleep: 20G81 configuration listener started; no alarm/Focus/Health/Watch backend");
         [NSRunLoop.currentRunLoop run];
     }
     return 0;

@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
-"""Stage Sileo/Procursus on writable Data for Pong 22H374; no device access.
+"""Stage Sileo/Procursus on writable Data for Diting 22H374; no device access.
 
 stage downloads official packages into an ignored directory, extracts only
-var/jb, signs Mach-O files with 4 KiB pages and builds the Pong root helper.
+var/jb, signs Mach-O files with 4 KiB pages and builds the Diting root helper.
 install copies the staged tree to an explicitly mounted local Data volume.
 It never executes guest package scripts on macOS or mounts a phone partition.
 """
@@ -128,9 +128,9 @@ def stage(a):
     # Path.resolve or follow them while writing the host staging directory.
     for p in ('usr/bin/dash','usr/bin/apt','usr/bin/dpkg','usr/bin/uicache','Applications/Sileo.app/Sileo'):
         if not (prefix/p).is_file() or (prefix/p).is_symlink():raise RuntimeError('missing payload: '+p)
-    shutil.copyfile(ROOT/'userland/sileo-firstboot.sh',prefix/'pong-firstboot.sh')
-    os.chmod(prefix/'pong-firstboot.sh',0o755)
-    for name in ('.procursus_strapped','.pong-sileo-staged'):(prefix/name).write_text('Pong 22H374 rootless\n')
+    shutil.copyfile(ROOT/'userland/sileo-firstboot.sh',prefix/'diting-firstboot.sh')
+    os.chmod(prefix/'diting-firstboot.sh',0o755)
+    for name in ('.procursus_strapped','.diting-sileo-staged'):(prefix/name).write_text('Diting 22H374 rootless\n')
     env=dict(os.environ,DEVELOPER_DIR=str(a.developer))
     sdk=subprocess.check_output(['xcrun','--sdk','iphoneos','--show-sdk-path'],env=env,text=True).strip()
     helper=prefix/'Applications/Sileo.app/giveMeRoot'
@@ -166,16 +166,16 @@ def install(a):
 def embed(a):
     """Install in the prepared local image copies, retaining original images."""
     import importlib.util
-    spec=importlib.util.spec_from_file_location('pong_userland18',ROOT/'userland/build-ipados18.py')
+    spec=importlib.util.spec_from_file_location('diting_userland18',ROOT/'userland/build-ipados18.py')
     builder=importlib.util.module_from_spec(spec);spec.loader.exec_module(builder)
     prepared=a.prepared.resolve();runtime=a.runtime.resolve()
     plan=json.loads((prepared/'build-plan.json').read_text())
     if plan['version'].get('ProductBuildVersion')!='22H374':raise RuntimeError('22H374 required')
     info=json.loads((runtime/'helper.json').read_text())
-    if info.get('runtime_path')!='/pong/init':raise RuntimeError('matching static init required')
-    data=prepared/'pong-ipados18-data.cdr'
+    if info.get('runtime_path')!='/diting/init':raise RuntimeError('matching static init required')
+    data=prepared/'diting-ipados18-data.cdr'
     if a.fresh_data:
-        data=a.out/'PongSileoData18.sparseimage'
+        data=a.out/'DitingSileoData18.sparseimage'
         if data.exists():raise RuntimeError('existing Sileo Data candidate retained')
         shutil.copyfile(plan['data_source'],data)
     if data.is_symlink() or data.samefile(plan['data_source']):raise RuntimeError('Data copy required')
@@ -200,14 +200,14 @@ def embed(a):
     finally:builder.run(['hdiutil','detach',device])
     mount=a.out/'os-mount';device=builder.attach(os_image,mount)
     try:
-        for rel in ('pong/init','sbin/launchd'):
+        for rel in ('diting/init','sbin/launchd'):
             target=mount/rel
             if target.is_symlink() or not target.is_file():raise RuntimeError('unexpected init target')
             backup=a.out/(rel.replace('/','-')+'.previous')
             if not backup.exists():shutil.copyfile(target,backup)
             shutil.copyfile(runtime/'init',target);os.chown(target,0,0);os.chmod(target,0o755)
         for name in ('sileo-register','sileo-firstboot.sh'):
-            target=mount/'pong'/name
+            target=mount/'diting'/name
             if target.is_symlink():raise RuntimeError('unexpected Sileo runtime symlink')
             shutil.copyfile(runtime/name,target);os.chown(target,0,0);os.chmod(target,0o755)
         builder.stage_sileo_job(mount)

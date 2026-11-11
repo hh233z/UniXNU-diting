@@ -19,7 +19,7 @@ def dump(path, value):
 
 def begin(a):
     prepared = a.prepared.resolve()
-    raw = prepared / 'pong-ipados18-system.cdr'
+    raw = prepared / 'diting-ipados18-system.cdr'
     storage = storage_for(raw)
     baseline = a.baseline_install.resolve()
     installed = json.loads(baseline.read_text())
@@ -30,7 +30,7 @@ def begin(a):
     if storage is None:
         if str(raw) != os_window['image'] or raw.stat().st_size != os_window['size']:
             raise RuntimeError('baseline does not describe this prepared raw OS')
-        bundle = prepared / 'pong-ipados18-system.sparsebundle'
+        bundle = prepared / 'diting-ipados18-system.sparsebundle'
         if bundle.exists():
             raise RuntimeError('preserving existing unregistered sparsebundle')
         # UDTO source has no checksums; UDSB has raw writable bands, no
@@ -40,7 +40,7 @@ def begin(a):
         band, size = describe(bundle)
         if size != os_window['size']:
             raise RuntimeError('conversion changed logical OS geometry; raw base retained')
-        storage = dict(format='pong-os-sparsebundle-v1', ready=True, image=str(bundle),
+        storage = dict(format='diting-os-sparsebundle-v1', ready=True, image=str(bundle),
                        raw_base=str(raw), logical_bytes=size, band_bytes=band,
                        last_install=str(baseline), revision=baseline.parent.name,
                        pending=None)
@@ -62,7 +62,7 @@ def begin(a):
 
 def finish(a):
     before = json.loads((a.out / 'before.json').read_text())
-    storage = storage_for(a.prepared.resolve() / 'pong-ipados18-system.cdr')
+    storage = storage_for(a.prepared.resolve() / 'diting-ipados18-system.cdr')
     if storage['pending'] != str(a.out.resolve()):
         raise RuntimeError('update generation differs')
     current = snapshot(before['image'])
@@ -83,7 +83,7 @@ def finish(a):
     # without relying on that assumption, with no hashes or readback.
     if a.full_transfer:
         ranges = [[0, before['logical_bytes']]]
-    plan = dict(format='pong-os-delta-v1', build='22H374',
+    plan = dict(format='diting-os-delta-v1', build='22H374',
                 revision=before['revision'], base_install=before['base_install'],
                 serial=before['serial'], geometry=before['geometry'],
                 window=before['window'], image=before['image'],

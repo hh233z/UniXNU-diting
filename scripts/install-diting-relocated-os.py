@@ -36,12 +36,12 @@ def main():
     if selected['volume_uuid']!=prior['OS']['volume_uuid']:raise RuntimeError('OS UUID changed')
     if not a.boot_image.is_file() or not (a.boot_image.parent/'DITING_BUILD_RESULT.json').is_file():raise RuntimeError('completed boot image required')
     manifest=json.loads((a.boot_image.parent/'stage/EFI/UniXNU/pong-boot-manifest.json').read_text())
-    if manifest['root_volume_uuid']!=selected['volume_uuid'] or 'pong_rootful=1' not in manifest['boot_args'].split():raise RuntimeError('matching rootful boot required')
+    if manifest['root_volume_uuid']!=selected['volume_uuid'] or 'diting_rootful=1' not in manifest['boot_args'].split():raise RuntimeError('matching rootful boot required')
     target='/dev/block/by-name/userdata';real=shell('readlink -f '+target)
     geometry=dict(device=real,bytes=int(shell('blockdev --getsize64 '+target)),
         first_512=int(shell('cat /sys/class/block/sda13/start')),
         logical_block_bytes=int(shell('cat /sys/class/block/sda/queue/logical_block_size')))
-    if real!='/dev/block/sda13' or geometry['logical_block_bytes']!=4096 or geometry['first_512']!=old['partition_first_4k']*8 or geometry['bytes']!=(old['partition_last_4k']-old['partition_first_4k']+1)*4096:raise RuntimeError('Pong userdata geometry differs')
+    if real!='/dev/block/sda13' or geometry['logical_block_bytes']!=4096 or geometry['first_512']!=old['partition_first_4k']*8 or geometry['bytes']!=(old['partition_last_4k']-old['partition_first_4k']+1)*4096:raise RuntimeError('Diting userdata geometry differs')
     if shell('ls /sys/class/block/sda13/holders') or any(line.split()[0] in (target,real) for line in shell('cat /proc/mounts').splitlines()):raise RuntimeError('userdata has active mounts/holders')
     start,size=selected['offset'],selected['size'];end=start+size
     if start%(1<<20) or size%4096 or end>geometry['bytes']:raise RuntimeError('OS bounds')
@@ -101,8 +101,8 @@ def main():
             struct.pack_into('<QQ',header,at+32,start,size);header[at+56:at+88]=bytes(32)
     header[4064:]=hashlib.sha256(header[:4064]).digest()
     local=a.output_dir/'shngroot-ipados18.bin';local.write_bytes(header)
-    subprocess.run(cmd+['push',str(local),'/tmp/pong-rootful-directory.bin'],check=True)
-    shell(f'dd if=/tmp/pong-rootful-directory.bin of={target} bs=4096 count=1 conv=notrunc,fsync status=none && sync')
+    subprocess.run(cmd+['push',str(local),'/tmp/diting-rootful-directory.bin'],check=True)
+    shell(f'dd if=/tmp/diting-rootful-directory.bin of={target} bs=4096 count=1 conv=notrunc,fsync status=none && sync')
     state.update(state='complete',os_generation_complete=True,boot_performed=False);save()
     storage.update(last_install=str(receipt.resolve()),pending=None,revision='services113-rootful-expanded-os')
     a.storage_record.write_text(json.dumps(storage,indent=2)+'\n')

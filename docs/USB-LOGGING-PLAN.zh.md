@@ -1,4 +1,4 @@
-# Pong USB 日志读取方案
+# Diting USB 日志读取方案
 
 状态：设计稿，尚未实现 XNU USB 日志驱动。基于当前 v110 启动路径审阅；本方案不改变正在运行的手机。
 
@@ -27,18 +27,18 @@ CDC ACM 将设备侧 USB 传输呈现为主机串口，适合连续文本日志�
 | 项目 | 当前事实 | 对方案的影响 |
 | --- | --- | --- |
 | XNU USB | 当前 `drivers/` 没有已接入的 DWC3 设备端/CDC 日志模块 | 不能仅增加启动参数就获得 XNU ADB 或 USB 串口 |
-| UEFI USB | `uefi-pong/Platforms/Nothing/pongPkg/Include/DXE.inc` 包含 `UsbfnDwc3Dxe`、`UsbDeviceDxe`、`UsbConfigDxe` 等二进制模块 | 可以作为固件阶段的初始化线索；不代表 XNU 已有 USB 支持 |
+| UEFI USB | `uefi-diting/Platforms/Nothing/ditingPkg/Include/DXE.inc` 包含 `UsbfnDwc3Dxe`、`UsbDeviceDxe`、`UsbConfigDxe` 等二进制模块 | 可以作为固件阶段的初始化线索；不代表 XNU 已有 USB 支持 |
 | 内核日志入口 | `osfmk/console/serial_console.c` 的 `console_write()` 和 `console_write_unbuffered()` 已镜像到 ramoops | 可在同一层增加非阻塞日志入队，不依赖屏幕是否已交给 iOS |
-| 持久日志 | `pong_ramoops_console.h` 使用 `0x85200000` 起始的 4 MiB 保留区，console 与 diagnostic/pmsg 各 2 MiB | 保持 Linux 兼容的 12 字节头及区域划分，不能把 USB 元数据塞进其头部 |
-| 用户态日志 | 已有 `kern.pong_diagnostic`；`applog_name` 对服务日志定向选择 | 首版覆盖 backboardd、SpringBoard、Preferences、launchd 退出原因与 GPU 诊断；不能宣称已捕获所有 unified log |
-| Sheng USB 读日志 | `package/linux-log/init` 在独立 Linux 中以 CDC ACM 提供 shell，读取 userdata 尾部日志；`scripts/read-sheng-log.py` 在主机取回 | 是重启后的读取方案，不是 XNU 运行时 USB 实时日志；其 SM8550 启动镜像及 userdata 尾部布局不能直接用于 Pong |
+| 持久日志 | `diting_ramoops_console.h` 使用 `0x85200000` 起始的 4 MiB 保留区，console 与 diagnostic/pmsg 各 2 MiB | 保持 Linux 兼容的 12 字节头及区域划分，不能把 USB 元数据塞进其头部 |
+| 用户态日志 | 已有 `kern.diting_diagnostic`；`applog_name` 对服务日志定向选择 | 首版覆盖 backboardd、SpringBoard、Preferences、launchd 退出原因与 GPU 诊断；不能宣称已捕获所有 unified log |
+| Sheng USB 读日志 | `package/linux-log/init` 在独立 Linux 中以 CDC ACM 提供 shell，读取 userdata 尾部日志；`scripts/read-sheng-log.py` 在主机取回 | 是重启后的读取方案，不是 XNU 运行时 USB 实时日志；其 SM8550 启动镜像及 userdata 尾部布局不能直接用于 Diting |
 | 启动参数 | v110 的构造参数长 594 字节，DarwinBoot22 当前命令行区域为 608 字节 | 只新增 `usblog=1`，连同空格为 603 字节；其余设置放入 ADT/编译配置，打包时保留字符串结束字节 |
 
 UEFI USB 协议属于固件环境，XNU 接管后不能继续调用已结束的 Boot Services 驱动。控制器所有权、DMA、事件缓冲区必须交给内核自己的实现。[UEFI Boot Services 说明](https://uefi.org/specs/UEFI/2.10/07_Services_Boot_Services.html)
 
-## 3. Pong 板级资源与驱动边界
+## 3. Diting 板级资源与驱动边界
 
-以下是本机 `uefi-pong/Resources/DTBs/pong.dts` 中的资源线索，编码实现前需与匹配 Pong 的实际 DT/原厂驱动核对，不能用 Sheng 或其他平台的默认值代替：
+以下是本机 `uefi-diting/Resources/DTBs/diting.dts` 中的资源线索，编码实现前需与匹配 Diting 的实际 DT/原厂驱动核对，不能用 Sheng 或其他平台的默认值代替：
 
 | 资源 | 本机 DT 内容 |
 | --- | --- |
@@ -52,7 +52,7 @@ UEFI USB 协议属于固件环境，XNU 接管后不能继续调用已结束的 
 
 首版使用独立小型设备端驱动，不以 Apple USB family 或 iOS usbmux/lockdown 服务作为先决条件。主要工作：
 
-1. 识别 Type-C/VBUS 和 device 角色；采用匹配 Pong 的电源、时钟、USB2 PHY/repeater 初始化顺序。
+1. 识别 Type-C/VBUS 和 device 角色；采用匹配 Diting 的电源、时钟、USB2 PHY/repeater 初始化顺序。
 2. 明确结束旧固件 USB DMA，独占 DWC3；切换到 High Speed 设备模式并重新枚举，允许主机出现一次断连。
 3. 完成 EP0 标准请求、CDC descriptors 与 class requests：`GET/SET_LINE_CODING`、`SET_CONTROL_LINE_STATE`。波特率是兼容串口 API 的设置，实际数据经 USB bulk 传输。
 4. 提供 CDC 通信/数据接口、通知 IN 和数据 bulk IN/OUT。OUT 首版仅承载日志读取/续传控制，不提供交互 shell。
@@ -94,7 +94,7 @@ ramoops 依赖 RAM 跨重启保留，断电或固件清内存可能丢失内容�
 
 通道：metadata、console、diagnostic、heartbeat、panic。`boot_id` 仅作为启动分段标识，不作为安全凭证。序号及丢失计数支持识别重传与缺口；早期补发需标记 replay，不把补发时间伪装成原始事件时间。
 
-拟新增 `scripts/read-pong-usb-log.py`，功能：
+拟新增 `scripts/read-diting-usb-log.py`，功能：
 
 - 按调试设备的 VID/PID、USB 序列号匹配串口；不照搬 Sheng 中直接选择第一个 `/dev/cu.usbmodem*` 的做法。
 - 自动等待、打开、识别 UEFI→XNU 或重启导致的重新枚举；同一启动按序号续读，换 `boot_id` 创建新目录。
@@ -106,7 +106,7 @@ ramoops 依赖 RAM 跨重启保留，断电或固件清内存可能丢失内容�
 预期使用方式，**以下脚本尚未实现**：
 
 ```text
-python3 scripts/read-pong-usb-log.py --serial dd72e429 --out build/usb-logs
+python3 scripts/read-diting-usb-log.py --serial dd72e429 --out build/usb-logs
 ```
 
 ## 6. 用日志判断卡住的范围
@@ -129,14 +129,14 @@ python3 scripts/read-pong-usb-log.py --serial dd72e429 --out build/usb-logs
 当前可手动使用：
 
 ```sh
-/Volumes/PongDev/tools/platform-tools/adb -P 5038 -s dd72e429 pull /sys/fs/pstore ./pong-pstore
+/Volumes/DitingDev/tools/platform-tools/adb -P 5038 -s dd72e429 pull /sys/fs/pstore ./diting-pstore
 ```
 
 保存 console 与 pmsg 原始文件，按会话目录归档；不删除 pstore 文件，不读取/校验设备镜像。
 
 ### 第二阶段：XNU 原生 USB2 CDC 日志
 
-新增 `drivers/PongUsbLog/`，实现板级准备、DWC3 设备端、CDC、固定队列及发送线程；在 IOKit/内存可用后启动。新增 `scripts/build-pong-usblog-platform.py`、编译开关、ADT 节点及 `usblog=1` 接线。失败有界返回，继续 iOS 正常启动。
+新增 `drivers/DitingUsbLog/`，实现板级准备、DWC3 设备端、CDC、固定队列及发送线程；在 IOKit/内存可用后启动。新增 `scripts/build-diting-usblog-platform.py`、编译开关、ADT 节点及 `usblog=1` 接线。失败有界返回，继续 iOS 正常启动。
 
 首个交付结果是主机可枚举调试串口，收到启动标识、早期日志补发和持续内核日志。不同时加入网络、usbmux 或完整 ADB 服务。
 

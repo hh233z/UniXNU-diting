@@ -256,12 +256,12 @@ AdtNode (CONST UINT8 *Data, UINTN Size, UINTN *Offset, UINTN Depth, UINTN Parent
       if ((mRamWireOffset != MAX_UINTN) || (RamCandidate != MAX_UINTN) || (Length != DITING_RAM_WIRE_SIZE)) { return FALSE; }
       RamCandidate = *Offset;
     }
-    if (AsciiStrCmp ((CONST CHAR8 *)(Data + *Offset - 36), "pong-allocatable-ram") == 0) {
+    if (AsciiStrCmp ((CONST CHAR8 *)(Data + *Offset - 36), "diting-allocatable-ram") == 0) {
       if ((mRamAllowedOffset != MAX_UINTN) || (AllowedCandidate != MAX_UINTN) || !Length || Length % 16 || Length / 16 > DITING_RAM_MAX) { return FALSE; }
       AllowedCandidate = *Offset;
       AllowedCount = Length / 16;
     }
-    if (AsciiStrCmp ((CONST CHAR8 *)(Data + *Offset - 36), "pong-audio-dma") == 0) {
+    if (AsciiStrCmp ((CONST CHAR8 *)(Data + *Offset - 36), "diting-audio-dma") == 0) {
       if ((AudioCandidate != MAX_UINTN) || (Length != 16)) { return FALSE; }
       AudioCandidate = *Offset;
     }
@@ -508,7 +508,7 @@ AllocateWindow (KERNEL *Kernel, UINT64 WindowSize, EFI_PHYSICAL_ADDRESS *Address
 // contiguous window remains unchanged: additional DRAM is passed as separate banks.
 STATIC
 EFI_STATUS
-ClaimPongRam (CONST UINT8 *Tree, EFI_MEMORY_DESCRIPTOR *Map, UINTN MapSize, UINTN Stride,
+ClaimDitingRam (CONST UINT8 *Tree, EFI_MEMORY_DESCRIPTOR *Map, UINTN MapSize, UINTN Stride,
               DITING_RAM_BANK *Owned, UINTN *Count, CONST UINT64 Video[6])
 {
   UINTN Offset, I, J;
@@ -585,7 +585,7 @@ ClaimPongRam (CONST UINT8 *Tree, EFI_MEMORY_DESCRIPTOR *Map, UINTN MapSize, UINT
 }
 STATIC
 UINT64
-WritePongRam (UINT64 TreeAddress, DITING_RAM_BANK *Owned, UINTN Count)
+WriteDitingRam (UINT64 TreeAddress, DITING_RAM_BANK *Owned, UINTN Count)
 {
   UINT64 Total = 0;
   UINT8 *Wire = (UINT8 *)(UINTN)(TreeAddress + mRamWireOffset);
@@ -825,18 +825,18 @@ Boot (
   Stage = L"MEMORY MAP";
   Status = GetMap (&Map, &Capacity, &MapSize, &Key, &Stride);
   if (EFI_ERROR (Status)) { goto Fail; }
-  if (mRamWireOffset != MAX_UINTN && AsciiStrStr (CommandLine, "pong_ram_banks=0") == NULL) {
+  if (mRamWireOffset != MAX_UINTN && AsciiStrStr (CommandLine, "diting_ram_banks=0") == NULL) {
     Stage = L"EXTRA RAM";
     DiagDrawVideo (Stage, 0, Video);
     Owned[0] = (DITING_RAM_BANK){Address, WindowSize}; OwnedCount = 1;
-    Status = ClaimPongRam ((CONST UINT8 *)(UINTN)TreeAddress, Map, MapSize, Stride, Owned, &OwnedCount, Video);
+    Status = ClaimDitingRam ((CONST UINT8 *)(UINTN)TreeAddress, Map, MapSize, Stride, Owned, &OwnedCount, Video);
     if (EFI_ERROR (Status)) {
       // Contract validation precedes all extra allocations. A malformed
       // optional bank description must not reject the known primary boot.
       Print (L"DARWINBOOT24: extra RAM SKIP %r; primary window retained\n", Status);
       OwnedCount = 1;
     }
-    Args->MemorySizeActual = WritePongRam (TreeAddress, Owned, OwnedCount);
+    Args->MemorySizeActual = WriteDitingRam (TreeAddress, Owned, OwnedCount);
     Print (L"DARWINBOOT24: %u owned RAM banks, %lu MiB usable before kernel reservations\n",
            (UINT32)OwnedCount, Args->MemorySizeActual >> 20);
     // Claiming free descriptors can split the map. Leave room before ExitBootServices.
