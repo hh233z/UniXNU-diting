@@ -43,11 +43,11 @@ def main():
     target = '/dev/block/by-name/userdata'
     geometry = installed['geometry']
     real = shell('readlink -f ' + target)
-    if (real != geometry['device'] or real != '/dev/block/sda13' or
+    if (real != geometry['device'] or real != '/dev/block/sda37' or
             int(shell('blockdev --getsize64 ' + target)) != geometry['bytes']):
         raise RuntimeError('wrong Diting userdata device')
     def unmounted():
-        if shell('ls /sys/class/block/sda13/holders') or any(
+        if shell('ls /sys/class/block/sda37/holders') or any(
                 line.split()[0] in (real, target) for line in shell('cat /proc/mounts').splitlines()):
             raise RuntimeError('OS update source must remain unmounted')
     unmounted()

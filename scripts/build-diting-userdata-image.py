@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Write the userdata image from the SHNGROOT layout prepare-ipados18-ufs-layout.py made.
 
-The device installer streams each window to its offset in /dev/block/sda13 and
+The device installer streams each window to its offset in /dev/block/sda37 and
 commits the 4 KiB directory last. This script produces the same bytes as one
 image, so the layout can be inspected, flashed as a whole, or downloaded from a
 CI run instead of window by window.

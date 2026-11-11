@@ -13,8 +13,8 @@ import shlex
 import struct
 import subprocess
 
-FIRST_4K=0x413248
-LAST_4K=0x75a40ea
+FIRST_4K=0x2F8A00
+LAST_4K=0x3ADF3FA
 PARTITION_BYTES=(LAST_4K-FIRST_4K+1)*4096
 TARGET='/dev/block/by-name/userdata'
 
@@ -27,7 +27,7 @@ def main():
     p.add_argument('--data-image',type=Path,required=True)
     p.add_argument('--volume-uuid',required=True)
     p.add_argument('--output-dir',type=Path,required=True)
-    p.add_argument('--offset',type=lambda v:int(v,0),default=8*1024**3)
+    p.add_argument('--offset',type=lambda v:int(v,0),default=0x285000000)
     mode=p.add_mutually_exclusive_group()
     mode.add_argument('--replace-existing-data',action='store_true',
         help='Explicitly install an expanded disk over the existing Data window')
@@ -57,14 +57,14 @@ def main():
         raise SystemExit('Recovery mode is required')
     target=shell('readlink -f '+TARGET)
     geometry=dict(device=target,bytes=int(shell('blockdev --getsize64 '+TARGET)),
-        start_512=int(shell('cat /sys/class/block/sda13/start')),
-        sectors_512=int(shell('cat /sys/class/block/sda13/size')),
+        start_512=int(shell('cat /sys/class/block/sda37/start')),
+        sectors_512=int(shell('cat /sys/class/block/sda37/size')),
         logical_block_bytes=int(shell('cat /sys/class/block/sda/queue/logical_block_size')))
-    if (target!='/dev/block/sda13' or geometry['bytes']!=PARTITION_BYTES or
+    if (target!='/dev/block/sda37' or geometry['bytes']!=PARTITION_BYTES or
         geometry['start_512']!=FIRST_4K*8 or geometry['sectors_512']*512!=PARTITION_BYTES or
         geometry['logical_block_bytes']!=4096):
         raise SystemExit('Diting userdata geometry differs; refusing writes')
-    if shell('ls /sys/class/block/sda13/holders'):
+    if shell('ls /sys/class/block/sda37/holders'):
         raise SystemExit('userdata has active device-mapper holders')
     mounts=shell('cat /proc/mounts').splitlines()
     if any(line.split()[0] in (target,TARGET) for line in mounts):

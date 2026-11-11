@@ -9,7 +9,7 @@ from pathlib import Path
 ROOT=Path(__file__).resolve().parents[1];MIB=1<<20
 sys.path.insert(0,str(ROOT/'scripts'))
 import diting_paths
-FIRST=0x413248;LAST=0x75a40ea
+FIRST=0x2F8A00;LAST=0x3ADF3FA
 
 def digest_file(path):
     digest=hashlib.sha256()

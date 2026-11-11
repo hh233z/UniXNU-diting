@@ -39,10 +39,10 @@ def main():
     if manifest['root_volume_uuid']!=selected['volume_uuid'] or 'diting_rootful=1' not in manifest['boot_args'].split():raise RuntimeError('matching rootful boot required')
     target='/dev/block/by-name/userdata';real=shell('readlink -f '+target)
     geometry=dict(device=real,bytes=int(shell('blockdev --getsize64 '+target)),
-        first_512=int(shell('cat /sys/class/block/sda13/start')),
+        first_512=int(shell('cat /sys/class/block/sda37/start')),
         logical_block_bytes=int(shell('cat /sys/class/block/sda/queue/logical_block_size')))
-    if real!='/dev/block/sda13' or geometry['logical_block_bytes']!=4096 or geometry['first_512']!=old['partition_first_4k']*8 or geometry['bytes']!=(old['partition_last_4k']-old['partition_first_4k']+1)*4096:raise RuntimeError('Diting userdata geometry differs')
-    if shell('ls /sys/class/block/sda13/holders') or any(line.split()[0] in (target,real) for line in shell('cat /proc/mounts').splitlines()):raise RuntimeError('userdata has active mounts/holders')
+    if real!='/dev/block/sda37' or geometry['logical_block_bytes']!=4096 or geometry['first_512']!=old['partition_first_4k']*8 or geometry['bytes']!=(old['partition_last_4k']-old['partition_first_4k']+1)*4096:raise RuntimeError('Diting userdata geometry differs')
+    if shell('ls /sys/class/block/sda37/holders') or any(line.split()[0] in (target,real) for line in shell('cat /proc/mounts').splitlines()):raise RuntimeError('userdata has active mounts/holders')
     start,size=selected['offset'],selected['size'];end=start+size
     if start%(1<<20) or size%4096 or end>geometry['bytes']:raise RuntimeError('OS bounds')
     for window in old['windows']:
