@@ -14,7 +14,7 @@ on:
       defconfig:
         description: "Kernel defconfig; bringup pairs with the prepared OS"
         type: choice
-        options: ["diting_ipados18_ci_defconfig", "diting_ipados18_bringup_defconfig"]
+        options: ["diting_ipados18_ci_defconfig", "diting_ipados18_bringup_defconfig", "diting_ipados18_bringup_power_defconfig"]
         default: "diting_ipados18_ci_defconfig"
 
 permissions:
