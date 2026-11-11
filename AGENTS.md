@@ -776,3 +776,12 @@ work is the boot itself, not the inputs.
   installed prepared userland.
 - Next device step: `fastboot boot` this image after the product/slot checks, then read the previous
   XNU console through the ramoops/Advanced Logger QR export on the next boot. No screen photo.
+
+# Diting 全量改名（2026-11-11）
+
+- 机器配置改为 DITING：`config/MASTER.arm64.diting`、`pexpert/arm64/DITING.h`、`-DARM64_BOARD_CONFIG_DITING`、对象目录 `DEVELOPMENT_ARM64_DITING`、产物 `mach.development.diting`；补丁系列与文件同步改名。
+- 驱动已收编进仓库（12 个 submodule 转普通目录，保留来源与许可证）；`Pong*` 目录、文件、类名、启动参数、DT 属性、日志前缀统一改为 Diting；打包产物与配置改为 `diting-*`。
+- 固件入口改为 `Platforms/Xiaomi/ditingPkg`；CI 的 package job 从固定的 `Emilelu/uefi-mondrian` 加 `platform-firmware/ditingPkg` 准备固件树，release 用 `--fd` 接收 Linux 固件 job 构建的 FD（核心分支 `diting-release-fd`，commit `0ce9779`）。
+- 保留的外部接口（不可单独改名）：`PONGFAT1` 信封、`Binaries/pong/RawFiles` 固件二进制、`pong-boot-manifest` 文件名/格式、上游 Pong 仓库 URL 与版权声明、以及**已安装 prepared OS 的 `/pong` 运行时约定**。
+- 重要：新内核要求 Diting 用户态（`/diting/init`、`/dev/diting-*`、`dev.unixnu.diting.*`）。当前已安装 prepared OS 仍是 `/pong`，只与改名前内核配对；验证界面用 `D:i\ditinguild-work\diting-boot-launchd-unsecure.img`，重装 Diting userdata 前不要用新内核启动。
+- 构建状态：本次改名后尚未完成 CI 构建。

@@ -191,7 +191,7 @@ jobs:
           # c96b299 is used rather than main because main HEAD points drivers/ArmCpu at
           # 2e11cda, which the submodule remote does not serve.
           repository: nagatoquin33/UniXNU
-          ref: bf91ca78d07c088adb52975bdcc09d926c916489
+          ref: 0ce9779c2aa7c4f85fdc7f7610bcd0cfc2fde8e2
           path: UniXNU
           submodules: recursive
       - uses: actions/checkout@v4
@@ -383,7 +383,7 @@ jobs:
           DITING_SHENG_ROOT: ${{ github.workspace }}/sheng
           # the recipes resolve the shared ABI through diting_native_inputs, not sheng_root
           DITING_WIFI_SHARED: ${{ github.workspace }}/sheng/drivers/Ath12kWifi
-        run: scripts/package.sh --os "${{ inputs.os }}" --uefi ../uefi-diting
+        run: scripts/package.sh --os "${{ inputs.os }}" --uefi ../uefi-diting --fd "$GITHUB_WORKSPACE/firmware-fd/SILICIUM_UEFI.fd"
       - name: v4 container
         # docs/porting/packaging.md stops at boot/boot.img (header v0). The flashable image the
         # firmware accepts is the PONGFAT1 envelope finalize-diting-adt.py writes.
