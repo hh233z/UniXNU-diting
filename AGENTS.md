@@ -792,3 +792,14 @@ work is the boot itself, not the inputs.
 - 产物：`diting-unixnu-uefi.img` 101,191,680 B sha256 `a96a33339489ef3c8b6579db8bc3f33d8509f623579559f832f381f8008e0cd1`；`diting-xnu-initial.img` sha256 `1d7c151accad4b40d813ffd8a34a0da7da02e61bd6e44902cc93460a41df6bbc`；`kernel.macho` 51,793,920 B sha256 `c096ca2aee97ff29ab8991805ae8b4507e82a78894561b7347737739ae23c2d6`。
 - 该内核的运行时命名空间已是 Diting（`/diting/init`、`/dev/diting-*`、`dev.unixnu.diting.*`、`diting_*` 启动参数）；当前已安装 prepared OS 仍是 `/pong`，**不能直接引导新内核**。设备界面验证继续用旧内核镜像 `D:\ai\diting\build-work\diting-boot-launchd-unsecure.img`（sha256 `cb56ac9d…`）；要上机新内核必须先重编并重装 Diting userdata。
 - 保留的外部接口：`PONGFAT1` 信封、`Binaries/pong/RawFiles` 固件二进制、`pong-boot-manifest` 格式/文件名、上游 Pong 仓库 URL 与版权声明。
+
+# 2026-11-11 上游对齐与驱动审计
+
+- Sheng 上游对齐结论：保持 22H374；只借其打包/运行时/固件层（`[payload.runtime]`、`make-data-seed.py`、`runtime.py`、固件预检链、CI seed 缓存）；不搬 WiFi/BT/Metal/基带驱动。详见 `D:\ai\diting\Sheng上游对齐-结论与待办-20261111.md`。
+- 驱动真实状态：WiFi/GPU/Metal 代码在，但刚绿的 CI（42963886855）用 `diting_ipados18_ci_defconfig`（`WIFI=n`、`ADRENO=n`、`BACKLIGHT=n`、无 `POWER`），三个驱动树都没编进内核；该产物只做编译验证，不能配 prepared OS 进界面。
+- 基带：无驱动、无 `QcomBaseband`、目标 IPSW 是 Wi-Fi iPad（`iPad7,11`，无基带固件/消费者）；移出目标，只在文档记录原因。
+- userdata 写入器几何已修（`73f73c8`）：`scripts/` 里的 `sda13`、`0x413248/0x75a40ea`、8 GiB 偏移改为 `sda37`、`0x2F8A00/0x3ADF3FA`、`0x285000000`；写入前仍须 recovery 现场核对 start/size/logical。
+- Wi-Fi：老谱系有用户确认连接记录（`porting.toml` services107/108/112），当前构建未启用；阻塞是 CI 无 WiFi 固件 secret、`WIFI=n`、缺 `diting_wifi=1`。不要搬 Sheng 的 WLAN ADT 节点，Diting 已用剥离 `_LimitLoadToDeviceTree` 的方式解决 wifid。
+- Metal：老谱系有设备证据（services124/135/155/167）；当前缺 `diting_adreno_start=1`/`diting_metal=1`，CI 不构建 Metal bundle；`drivers/AdrenoMetal` 是未使用的重复副本。
+- 许可证：`THIRD_PARTY_NOTICES.md` 未列 GPL-2.0（ath11k/MHI/QMI）、metal2vulkan、Mesa/Turnip；公开产物前补。
+- 当前真正卡点仍是 `launchd_cache_loader` 的 code directory 校验；WiFi/Metal/基带都不在进入界面的关键路径。
