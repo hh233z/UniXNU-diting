@@ -1,17 +1,21 @@
 {
-  "board": "Pong / SM8475",
-  "panel": "NT37705 Visionox AMOLED command mode",
-  "source": "REC selected panel phandle 0x5e6; NothingOSS c402fcdb3a1523d10b15ef1123bced45456f7592",
-  "width": 1080,
-  "height": 2412,
-  "refresh_hz": [120, 90, 60],
+  "board": "Diting / SM8475",
+  "panel": "FocalTech touch + Visionox AMOLED command mode (Diting l12 36/42)",
+  "source": "dts/diting.dts panel node (1220x2712, bl 0x01..0xfff, inverted dbv)",
+  "width": 1220,
+  "height": 2712,
+  "refresh_hz": [
+    120,
+    90,
+    60
+  ],
   "brightness": {
     "transport": "DSI DCS",
     "version": 1,
     "controller": "0x0ae94000",
     "register_bytes": 1024,
     "channel": 0,
-    "minimum_nonzero": 10,
+    "minimum_nonzero": 1,
     "maximum": 4095,
     "bl_inverted_dbv": true,
     "wire_byte_order": "most significant first; Nothing MIPI helper low/high with bl-inverted-dbv swap",
