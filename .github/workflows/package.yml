@@ -403,6 +403,19 @@ jobs:
             --archive "$RUNNER_TEMP/diting-firmware.tar.gz" \
             --dest "$RUNNER_TEMP/diting-firmware" \
             --json-out "$RUNNER_TEMP/diting-firmware.json"
+          # build-diting-wifi-native.py refuses firmware without the capture provenance
+          # prepare-diting-wifi.py writes. The archive comes from this device's read-only
+          # modem_a capture, so record exactly that.
+          python3 - "$RUNNER_TEMP/diting-firmware" <<'PY'
+          import json, sys
+          from pathlib import Path
+          root = Path(sys.argv[1])
+          (root / 'local-inputs.json').write_text(json.dumps({
+              'source': {'product': 'diting', 'capture': 'REC read-only active modem',
+                         'slot': '_a', 'partition': '/dev/block/by-name/modem_a'},
+              'firmware_directory': str((root / 'wifi').resolve()),
+          }, indent=2))
+          PY
       - name: package
         working-directory: device
         env:
