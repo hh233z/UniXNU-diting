@@ -21,7 +21,7 @@ permissions:
   contents: read
 
 concurrency:
-  group: package-${{ github.ref }}
+  group: package-${{ github.ref }}-${{ inputs.defconfig }}
   cancel-in-progress: true
 
 jobs:
@@ -277,7 +277,7 @@ jobs:
           }
           Path(sys.argv[1]).write_text(json.dumps(layout, indent=2))
           # The UUIDs are compiled into the kernel (kern_exec selects the volumes by them), so
-          # write the same values into the CI defconfig before the build reads it.
+          # write the same values into the selected defconfig before the build reads it.
           conf = Path('device/configs') / os.environ['DEFCONFIG']
           text = conf.read_text()
           for key, value in (('CONFIG_XNU_OWNER_ROOT_VOLUME_UUID', root['os_volume_uuid']),
@@ -289,16 +289,18 @@ jobs:
           print([l for l in text.splitlines() if 'VOLUME_UUID' in l])
           print(json.dumps(layout))
           PY
-      - name: select the CI defconfig
+      - name: select the defconfig
         # [package.defconfig] only selects the release configuration; the kernel component
         # reads [kernel] defconfig, which is the shipping one (Wi-Fi, backlight, Adreno on).
         # The selected defconfig comes from the workflow input: the bringup one pairs with
-        # the prepared 22H374 userland (SystemOS at /private/preboot).
+        # the prepared 22H374 userland (SystemOS at /private/preboot). The release command
+        # derives its output directory from this mapping, so the check below must pass.
         env:
           DEFCONFIG: ${{ inputs.defconfig }}
+          OS: ${{ inputs.os }}
         run: |
           python3 - <<'PY'
-          import os
+          import os, tomllib
           from pathlib import Path
           ci = os.environ['DEFCONFIG']
           p = Path('device/board.toml')
@@ -315,6 +317,10 @@ jobs:
               else:
                   print('already selected:', after)
           p.write_text(text)
+          mapped = tomllib.loads(text).get('package', {}).get('defconfig', {}).get(os.environ['OS'])
+          if mapped != ci:
+              raise SystemExit('[package.defconfig] selects %r, not %r; the output paths would diverge' % (mapped, ci))
+          print('release selects', ci)
           PY
       - name: install device profile and components
         # The board carries its own OS profile and kit; unixnu resolves both from its own
@@ -405,6 +411,7 @@ jobs:
           set -euo pipefail
           CONFIG="${DEFCONFIG%_defconfig}"
           WORK="$GITHUB_WORKSPACE/UniXNU/out/diting/${{ inputs.os }}/$CONFIG"
+          [ -f "$WORK/kernel/kernel.macho" ] || { echo "no kernel at $WORK/kernel/kernel.macho; out/diting/${{ inputs.os }} holds:" >&2; ls -1 "$GITHUB_WORKSPACE/UniXNU/out/diting/${{ inputs.os }}" >&2 || true; exit 1; }
           python3 scripts/check-storage-bindings.py "$WORK/kernel/kernel.macho"
           DTB="$WORK/device-tree/build/diting/hardware.dtb"
           [ -f "$DTB" ] || { echo "missing hardware DTB: $DTB" >&2; exit 1; }
