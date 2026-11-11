@@ -21,7 +21,7 @@ def main():
  if not a.ath11k.is_file():raise RuntimeError('Build the matching Diting ath11k archive first: '+str(a.ath11k))
  profile=json.loads((ROOT/'configs/diting-wifi-sm8475.json').read_text())
  if profile['soc']!='SM8475' or profile['pci']['device']!=0x1103:raise RuntimeError('Diting QCA6490 profile required')
- hardware=os.environ.get('DITING_HARDWARE_DTB')
+ hardware=os.environ.get('DITING_LIVE_DTB') or os.environ.get('DITING_HARDWARE_DTB')
  if hardware:
   spec=importlib.util.spec_from_file_location('diting_fdt',ROOT/'scripts/prepare-diting-wifi.py')
   fdt=importlib.util.module_from_spec(spec);spec.loader.exec_module(fdt)
