@@ -168,7 +168,11 @@ static bool findRootLayout (RootLayout *layout, const char **why)
       if (memcmp (digest, gScratch + 4064, 32) == 0) {
         uint64_t partitionBytes = (layout->userdataLast - layout->userdataFirst + 1) * 4096ULL;
         layout->manifestStatus = 4;
-        bool bounds = imageBytes >= 4096 && !(imageBytes & 4095) && imageBytes <= partitionBytes;
+        // A split unit keeps the UniXNU windows in the unallocated tail of LUN 0,
+        // so the manifest may describe bytes past userdata. Alignment, per-window
+        // bounds, overlap, names and attributes are still enforced below.
+        (void)partitionBytes;
+        bool bounds = imageBytes >= 4096 && !(imageBytes & 4095);
         for (uint32_t index = 0; index < n && bounds; index++) {
           const uint8_t *entry = gScratch + 24 + 128 * index;
           uint64_t offset = le64 (entry + 32), size = le64 (entry + 40);
