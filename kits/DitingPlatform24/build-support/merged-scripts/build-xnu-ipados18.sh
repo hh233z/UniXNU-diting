@@ -3,6 +3,44 @@ set -euo pipefail
 trap 'echo "build-xnu-ipados18.sh: line $LINENO: $BASH_COMMAND failed" >&2' ERR
 ROOT=$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)
 cd "$ROOT"
+
+# Resolve the Adreno firmware once, before any compile. Explicit environment wins, then
+# the device repository's local.toml [diting_build] entry, then its staged default. The
+# selected platform fails the build when its five inputs are absent instead of linking a
+# kernel without the driver.
+if [ "${XNU_DITING_ADRENO_PLATFORM:-0}" = 1 ]; then
+  if [ -z "${DITING_NATIVE_DRIVER_SOURCE:-}" ]; then
+    echo 'refusing XNU_DITING_ADRENO_PLATFORM=1 before compile: DITING_NATIVE_DRIVER_SOURCE is unset, so the firmware input cannot be resolved' >&2
+    exit 1
+  fi
+  ADRENO_FW=$(python3 - <<'PY'
+import os, sys
+from pathlib import Path
+src = os.environ.get('DITING_NATIVE_DRIVER_SOURCE')
+sys.path.insert(0, str(Path(src) / 'scripts') if src else 'scripts')
+import diting_native_inputs as inputs
+import diting_paths
+explicit = os.environ.get('DITING_ADRENO_FIRMWARE')
+if explicit:
+    print(Path(explicit).expanduser())
+    raise SystemExit
+option = inputs.options().get('adreno_firmware')
+if option:
+    path = Path(option).expanduser()
+    print(path if path.is_absolute() else inputs.ROOT / path)
+    raise SystemExit
+found = diting_paths.adreno_firmware()
+print(found if found is not None else inputs.ROOT / 'out/ipados18/firmware/adreno730')
+PY
+)
+  export ADRENO_FW
+  for name in a730_sqe.fw gmu_gen70000.bin a730_zap.mdt a730_zap.b01 a730_zap.b02; do
+    if [ ! -f "$ADRENO_FW/$name" ]; then
+      echo "refusing XNU_DITING_ADRENO_PLATFORM=1 before compile: missing $ADRENO_FW/$name; set DITING_ADRENO_FIRMWARE, add [diting_build] adreno_firmware to local.toml, or stage out/ipados18/firmware/adreno730" >&2
+      exit 1
+    fi
+  done
+fi
 # Refuse Wi-Fi and backlight before any XNU compile when their trees are absent.
 # The later builders still refuse on their own; this only moves that refusal forward.
 if [ "${XNU_DITING_WIFI:-0}" = 1 ] || [ "${XNU_DITING_BACKLIGHT:-0}" = 1 ]; then
@@ -978,15 +1016,13 @@ if [ "$DITING_ADRENO_PLATFORM" != 0 ] && [ "$DITING_ADRENO_PLATFORM" != 1 ]; the
   exit 1
 fi
 if [ "$DITING_ADRENO_PLATFORM" = 1 ]; then
-  ADRENO_FW=$(python3 -c "import sys;sys.path.insert(0,'scripts');import diting_paths;p=diting_paths.adreno_firmware();print(p or '')" 2>/dev/null || true)
-  if [ -z "$ADRENO_FW" ] || [ ! -f "$ADRENO_FW/a730_sqe.fw" ]; then
-    echo "adreno: vendor firmware (a730_sqe.fw, gmu_gen70000.bin, a730_zap.*) is not available; skipping libDitingAdrenoPlatform.a" >&2
-    DITING_ADRENO_PLATFORM=0
-  else
-    python3 "$DITING_NATIVE_DRIVER_SOURCE/scripts/build-diting-adreno-platform.py" \
-      --guest-build 22H374 --tree "$ROOT" --firmware-dir "$ADRENO_FW" --output-dir "$ROOT/build/diting-adreno"
-    test -f "$ROOT/build/diting-adreno/libDitingAdrenoPlatform.a"
+  if [ -z "${ADRENO_FW:-}" ] || [ ! -f "$ADRENO_FW/a730_sqe.fw" ]; then
+    echo "adreno: the platform is enabled but its firmware is missing at ${ADRENO_FW:-<unset>}" >&2
+    exit 1
   fi
+  python3 "$DITING_NATIVE_DRIVER_SOURCE/scripts/build-diting-adreno-platform.py" \
+    --guest-build 22H374 --tree "$ROOT" --firmware-dir "$ADRENO_FW" --output-dir "$ROOT/build/diting-adreno"
+  test -f "$ROOT/build/diting-adreno/libDitingAdrenoPlatform.a"
 fi
 if [ "$ARM_DT_PLATFORM" = 1 ] && [ "${XNU_SOURCE_CORECRYPTO14:-0}" != 1 ]; then
   ARM_DT_ARCHIVE=$ROOT/build/armdt-platform/libArmDTPlatform.a

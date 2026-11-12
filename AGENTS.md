@@ -838,3 +838,15 @@ work is the boot itself, not the inputs.
 - 私有固件：QCA6490 的 222 个文件（`amss/amss20/m3/regdb/bdwlan*`，解包 25.7 MB，压缩 7.2 MB）放在私有仓库 `nagatoquin33/diting-firmware` 的 release `fw-20261111`；公共仓库用 `FIRMWARE_TOKEN` secret 拉取，固件不进公共仓库。`stage-diting-firmware.py` 允许只带部分分组（wifi）。
 - 全开配置：`diting_ipados18_defconfig` 进入 CI 选项；`board.toml` 的 `cpus=1` 改为 `cpus=8`，并加 `diting_wifi=1`、`diting_adreno_start=1`、`diting_metal=1`。
 - 新 run `43068678253`（`2e406ef`）验证以上修复。
+
+# 工作方法（长期有效，不可省略）
+
+以下方法不因阶段或目标改写而失效；每次改 objective/交接时必须保留。
+
+1. 先读 unixnu.com 官方文档与 Sheng/UniXNU 上游实现，按文档契约修改；不靠猜测，不用“关掉功能/哨兵”绕过阻塞。
+2. 本地能验证的先本地验证（静态检查、离线校验、DTB/固件/配置比对），再走 CI。
+3. 每次失败先读日志定位根因；同一批问题一次改完，只派发一次；禁止重跑碰运气，网络性失败在步骤内重试。
+4. 证据、哈希、阻塞与具体条件写入本文件；未在真机观察确认，不声称成功。
+5. 用 Advanced Logger/ramoops 等日志取证，不拍屏；分区写入/刷机前必须得到明确授权。
+6. 保留 Pong 来源说明与许可证合规；不把厂商 blob 提交或发布到公共仓库。
+7. 以 Sheng 上游为参照消除重复劳动，对比架构与工具链；不为“看起来完成”而删减范围。
