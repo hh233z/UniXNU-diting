@@ -179,10 +179,10 @@ chip_id = "0x8010"
 #   /sys/class/block/sda37/size  = 468930520 (512-byte sectors) = 58616315 4K
 #   240,092,426,240 bytes = 223.6 GiB; sda queue logical_block_size = 4096
 # This build is the 512 GB unit: start=24924160, size=968773592 (512-byte sectors),
-# 121096699 4K blocks, 496,012,079,104 bytes = 461.9 GiB, last_lba = 0x76753FA.
+# 121096699 4K blocks, 496,012,079,104 bytes = 461.9 GiB, last_lba = 0x58B89FF.
 # The values this table carried before were inherited from the Diting baseline.
 first_lba = 0x2F8A00
-last_lba = 0x76753FA
+last_lba = 0x58B89FF
 lba_bytes = 4096
 # The windows of the userdata image are the OS and SystemOS disk images of the IPSW, in
 # that order; the OS profile lists them ([userdata] windows of
