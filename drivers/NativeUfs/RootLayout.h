@@ -145,7 +145,7 @@ static bool findRootLayout (RootLayout *layout, const char **why)
   gRootDiagnostic.last = layout->userdataLast;
   gRootDiagnostic.stage = "root manifest";
   // First block of the partition: manifest if the root image was flashed, ext4 otherwise.
-  if (hostRead4k (0, layout->userdataFirst, 1, gScratch) != kIOReturnSuccess) {
+  if (hostRead4k (0, layout->userdataFirst + 115712000ULL, 1, gScratch) != kIOReturnSuccess) {
     *why = "userdata first block read";
     return false;
   }
