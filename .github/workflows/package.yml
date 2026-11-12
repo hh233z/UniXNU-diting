@@ -274,19 +274,19 @@ jobs:
               'ci_placeholder': True,
               'build': '22H374',
               'lba_bytes': 4096,
-              'os': {'uuid': root['os_volume_uuid']},
-              'systemos': {'uuid': root['systemos_volume_uuid']},
+              'os': {'uuid': 'B07DF049-7AD9-47B5-9F8F-9EE728056398'},
+              'systemos': {'uuid': '92835D00-7F92-4BB7-8EC3-AA18C6BE1184'},
               # The Data UUID recorded from the generated userdata layout; the placeholder
               # bf5d77f3-... is gone, so the kernel, the payload and this file agree.
-              'data': {'uuid': '337CF716-F62B-446B-B959-4A5F12A7701C'},
+              'data': {'uuid': '85E5DB7B-290F-42DA-8045-B91FBE3E7917'},
           }
           Path(sys.argv[1]).write_text(json.dumps(layout, indent=2))
           # The UUIDs are compiled into the kernel (kern_exec selects the volumes by them), so
           # write the same values into the selected defconfig before the build reads it.
           conf = Path('device/configs') / os.environ['DEFCONFIG']
           text = conf.read_text()
-          for key, value in (('CONFIG_XNU_OWNER_ROOT_VOLUME_UUID', root['os_volume_uuid']),
-                             ('CONFIG_XNU_OWNER_CACHE_VOLUME_UUID', root['systemos_volume_uuid']),
+          for key, value in (('CONFIG_XNU_OWNER_ROOT_VOLUME_UUID', layout['os']['uuid']),
+                             ('CONFIG_XNU_OWNER_CACHE_VOLUME_UUID', layout['systemos']['uuid']),
                              ('CONFIG_XNU_OWNER_DATA_VOLUME_UUID', layout['data']['uuid'])):
               import re as _re
               text = _re.sub(key + r'=".*"', key + '="' + value + '"', text)
