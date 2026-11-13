@@ -94,3 +94,15 @@ jobs:
             ${{ runner.temp }}/diting-userland/report.json
             ${{ runner.temp }}/diting-userland/volume-layout.json
             ${{ runner.temp }}/diting-userland/apply-complete.json
+      - uses: actions/upload-artifact@v4
+        with:
+          name: diting-systemos-window
+          retention-days: 14
+          if-no-files-found: error
+          path: ${{ runner.temp }}/diting-userland/diting-ipados18-systemos.cdr
+      - uses: actions/upload-artifact@v4
+        with:
+          name: diting-data-window
+          retention-days: 14
+          if-no-files-found: error
+          path: ${{ runner.temp }}/diting-userland/diting-ipados18-data.cdr
