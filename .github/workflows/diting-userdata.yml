@@ -84,6 +84,18 @@ jobs:
             --data-mib 8192 \
             --jobs 4
           df -h
+      - name: rebuild the Data window as a real 8 GiB APFS volume
+        # create_apfs_image leaves the Data image at the 8 MiB minimum the
+        # sparse container starts with, so the flattened copy is unusable.
+        # /var is seeded from var.skel at boot, so an empty volume is enough;
+        # make one that really is 8 GiB.
+        run: |
+          set -euo pipefail
+          cd "$RUNNER_TEMP/diting-userland"
+          rm -f raw-data.img
+          mkfile 8g raw-data.img
+          newfs_apfs -v Diting-iPadOS18-Data raw-data.img
+          ls -l raw-data.img
       - name: flatten sparse windows
         # SystemOS and Data come out of hdiutil as UDSP sparse images: small
         # files whose logical size is the volume size. Materialise the raw
