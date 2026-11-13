@@ -278,7 +278,7 @@ jobs:
               'systemos': {'uuid': 'ED8EB585-5009-433F-9F3D-783FE3316A98'},
               # The Data UUID recorded from the generated userdata layout; the placeholder
               # bf5d77f3-... is gone, so the kernel, the payload and this file agree.
-              'data': {'uuid': '85E5DB7B-290F-42DA-8045-B91FBE3E7917'},
+              'data': {'uuid': 'BBD6873C-A3F7-4B19-9086-2F89A3D8C1B7'},
           }
           Path(sys.argv[1]).write_text(json.dumps(layout, indent=2))
           # The UUIDs are compiled into the kernel (kern_exec selects the volumes by them), so
