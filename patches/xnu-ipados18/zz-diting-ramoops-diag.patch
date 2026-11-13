@@ -1,0 +1,24 @@
+From: diting-port <diting@local>
+Subject: [PATCH] diting: report the ramoops mapping result
+
+The persistent console mirror is the only way to read the previous boot's
+log from Android, so print whether the 4 MiB window could be mapped and
+fall back to a plain cached mapping when the write-combining one fails.
+
+---
+--- a/osfmk/arm64/diting_ramoops_console.h
++++ b/osfmk/arm64/diting_ramoops_console.h
+@@ -125,6 +125,13 @@
+ 	vm_offset_t mapped = ml_io_map_wcomb(DITING_RAMOOPS_PHYS_BASE,
+ 	    DITING_RAMOOPS_RESERVED_BYTES);
+ 	if (!mapped) {
++		/* The write-combining window can be refused on this firmware; a plain
++		 * cached mapping still keeps the ring valid for the next boot. */
++		mapped = ml_io_map(DITING_RAMOOPS_PHYS_BASE, DITING_RAMOOPS_RESERVED_BYTES);
++	}
++	printf("DITING RAMOOPS: base=%#x size=%#x mapped=%p\n",
++	    DITING_RAMOOPS_PHYS_BASE, DITING_RAMOOPS_RESERVED_BYTES, (void *)mapped);
++	if (!mapped) {
+ 		return 0;
+ 	}
+ 
