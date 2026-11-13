@@ -457,9 +457,12 @@ bool DitingUfsBlock::start(IOService *provider) {
   const bool expected = !memcmp(bounce + window.signatureOffset, window.signature, strlen(window.signature));
   // New restores publish a raw APFS OS container, while older OS inputs use
   // a GPT disk. Both are actual media formats handled by IOStorage/APFS.
-  const bool rawApfsRoot = !strcmp(window.name, "OS") && !memcmp(bounce + 32, "NXSB", 4) &&
-    OSReadLittleInt32(bounce, 36) == 4096;
-  if (!expected && !rawApfsRoot) {
+  // A raw APFS container is a valid media for both the OS root and the
+  // persistent Data window: the prepared userdata images carry the APFS
+  // container directly instead of a GPT disk.
+  const bool rawApfsWindow = (!strcmp(window.name, "OS") || !strcmp(window.name, "Data")) &&
+    !memcmp(bounce + 32, "NXSB", 4) && OSReadLittleInt32(bounce, 36) == 4096;
+  if (!expected && !rawApfsWindow) {
     // Invalid filesystem contents belong to this window, not to the shared
     // UFS controller. Do not invalidate already published OS/SystemOS disks.
     IOLog("DITING_UFS: %s window has no supported filesystem header base=%llx bytes=%llx; media not published\n",
