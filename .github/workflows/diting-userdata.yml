@@ -61,18 +61,7 @@ jobs:
           done
           sudo -n true || { echo 'this runner cannot sudo -n, and the userland chain needs it'; ok=0; }
           [ "$ok" = 1 ]
-      - name: flatten sparse windows
-        # The SystemOS and Data windows come out of hdiutil as UDSP sparse
-        # images: small files whose logical size is the volume size. A hosted
-        # runner cannot hand a sparse file to Windows, so materialise the raw
-        # bytes here. The padding is zeros and compresses away in the artifact.
-        run: |
-          set -euo pipefail
-          cd "$RUNNER_TEMP/diting-userland"
-          for name in systemos data; do
-            src="diting-ipados18-${name}.cdr"
-            [ -f "$src" ] || { echo "missing $src" >&2; exit 1; }
-            dev="$(hdiutil attach -nomount -readonly "$src" | awk 'NR==1 {print       - name: prepared userland}')"
+      - name: prepared userland}')"
             echo "$src -> $dev"
             sudo dd if="$dev" of="raw-${name}.img" bs=1m status=progress
             hdiutil detach "$dev" || true
@@ -101,7 +90,18 @@ jobs:
             --data-mib 8192 \
             --jobs 4
           df -h
-      - uses: actions/upload-artifact@v4
+      - name: flatten sparse windows
+        # The SystemOS and Data windows come out of hdiutil as UDSP sparse
+        # images: small files whose logical size is the volume size. A hosted
+        # runner cannot hand a sparse file to Windows, so materialise the raw
+        # bytes here. The padding is zeros and compresses away in the artifact.
+        run: |
+          set -euo pipefail
+          cd "$RUNNER_TEMP/diting-userland"
+          for name in systemos data; do
+            src="diting-ipados18-${name}.cdr"
+            [ -f "$src" ] || { echo "missing $src" >&2; exit 1; }
+            dev="$(hdiutil attach -nomount -readonly "$src" | awk 'NR==1 {print       - uses: actions/upload-artifact@v4
         with:
           name: diting-os-window
           retention-days: 14
