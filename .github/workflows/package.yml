@@ -275,7 +275,7 @@ jobs:
               'build': '22H374',
               'lba_bytes': 4096,
               'os': {'uuid': 'B07DF049-7AD9-47B5-9F8F-9EE728056398'},
-              'systemos': {'uuid': '92835D00-7F92-4BB7-8EC3-AA18C6BE1184'},
+              'systemos': {'uuid': 'ED8EB585-5009-433F-9F3D-783FE3316A98'},
               # The Data UUID recorded from the generated userdata layout; the placeholder
               # bf5d77f3-... is gone, so the kernel, the payload and this file agree.
               'data': {'uuid': '85E5DB7B-290F-42DA-8045-B91FBE3E7917'},
