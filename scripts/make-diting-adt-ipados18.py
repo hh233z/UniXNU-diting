@@ -260,10 +260,10 @@ def main():
            ('unixnu,userdata-last-lba', struct.pack('<Q', args.userdata_last_lba))]
           if args.userdata_first_lba is not None else []),
     ])
-    # Actual Diting live DT: QUP0 SE4 / Goodix Berlin-D, GPIO20 reset/21 IRQ.
+    # Redmi K50 Ultra live Android DT: QUP0 SE4 / ST FTS L12, reset20/IRQ21.
     # Absolute metadata avoids an incomplete arm-io interrupt/reg mapping.
     touch = node('diting-touch', [
-        ('compatible', b'diting,goodix-berlin-d\0'),
+        ('compatible', b'diting,st-fts-l12\0'),
         ('spi-base', struct.pack('<Q', 0x990000)),
         ('tlmm-base', struct.pack('<Q', 0xF000000)),
         ('gcc-base', struct.pack('<Q', 0x100000)),
@@ -271,7 +271,7 @@ def main():
         ('cmd-db-base', struct.pack('<Q', 0x80860000)),
         ('gpio-offset', struct.pack('<I', 0x100000)),
         ('pins', struct.pack('<6I', 16, 17, 18, 19, 21, 20)),
-        ('max-x', struct.pack('<I', 1080)), ('max-y', struct.pack('<I', 2412)),
+        ('max-x', struct.pack('<I', 12200)), ('max-y', struct.pack('<I', 27120)),
     ])
     tree = node('device-tree', [
         # Keys use the actual SM8475 PMIC-arbiter resources below.

@@ -371,7 +371,7 @@ new file mode 100644
 index 0000000..00feebd
 --- /dev/null
 +++ b/bsd/dev/diting_goodix.c
-@@ -0,0 +1,914 @@
+@@ -0,0 +1,1086 @@
 +/* Goodix Berlin-D / Diting SM8475. Adapted from the earlier redwood_goodix.c
 + * (APSL 2.0). Hardware resources are the Diting live DT, checked against the
 + * NothingOSS cape pinctrl and waipio GCC source. No Redwood peripherals. */
@@ -396,6 +396,7 @@ index 0000000..00feebd
 +static vm_offset_t tlmm, gcc, se, rsc, cmd_db;
 +static uint64_t tlmm_phys, gcc_phys, se_phys, rsc_phys, cmd_db_phys;
 +static uint32_t pins[6], gpio_offset, max_x, max_y;
++static bool st_fts;
 +
 +static bool
 +property(DTEntry entry, const char *name, void *out, unsigned size)
@@ -410,6 +411,12 @@ index 0000000..00feebd
 +{
 +    DTEntry entry;
 +    if (SecureDTLookupEntry(NULL, "/arm-io/diting-touch", &entry) != kSuccess) return false;
++    void *compatible=NULL; unsigned length=0;
++    if (SecureDTGetProperty(entry,"compatible",&compatible,&length)!=kSuccess) return false;
++    st_fts=length==sizeof("diting,st-fts-l12") &&
++        memcmp(compatible,"diting,st-fts-l12",sizeof("diting,st-fts-l12"))==0;
++    if (!st_fts && !(length==sizeof("diting,goodix-berlin-d") &&
++        memcmp(compatible,"diting,goodix-berlin-d",sizeof("diting,goodix-berlin-d"))==0)) return false;
 +    return property(entry,"spi-base",&se_phys,8) && property(entry,"tlmm-base",&tlmm_phys,8) &&
 +        property(entry,"gcc-base",&gcc_phys,8) && property(entry,"rsc-base",&rsc_phys,8) &&
 +        property(entry,"cmd-db-base",&cmd_db_phys,8) && property(entry,"gpio-offset",&gpio_offset,4) &&
@@ -417,7 +424,8 @@ index 0000000..00feebd
 +        property(entry,"max-y",&max_y,4) && se_phys==0x990000 && tlmm_phys==0xf000000 &&
 +        gcc_phys==0x100000 && rsc_phys==0x17a20000 && cmd_db_phys==0x80860000 &&
 +        gpio_offset==0x100000 && pins[0]==16 && pins[1]==17 && pins[2]==18 &&
-+        pins[3]==19 && pins[4]==21 && pins[5]==20 && max_x==1080 && max_y==2412;
++        pins[3]==19 && pins[4]==21 && pins[5]==20 &&
++        (st_fts ? (max_x==12200 && max_y==27120) : (max_x==1080 && max_y==2412));
 +}
 +
 +static inline uint32_t
@@ -1214,6 +1222,165 @@ index 0000000..00feebd
 +}
 +
 +
++
++/* L12 ST SALIXP protocol. Sources: MiCode/Xiaomi_Kernel_OpenSource,
++ * bsp-diting-s-oss/drivers/input/touchscreen/fts_spi/{fts.c,fts_lib}.
++ * The phone's live xiaomi,l12-spi node and st_fts_l12.ftb identify 36:40,
++ * super-resolution coordinates 12200x27120, SPI SE4, reset20/IRQ21.
++ * Keep the existing input ABI. No firmware/flash write, guessed regulator
++ * vote or fabricated contact is used. This path preserves inherited power. */
++static bool
++st_read_chip(bool verbose)
++{
++    uint8_t tx[8]={0xfb,0x20,0,0,0,0,0,0}, rx[8]={0};
++    if (!spi_transfer(tx,rx,sizeof(tx))) return false;
++    /* Five command bytes, one dummy, then the two chip ID bytes. */
++    bool valid=rx[6]==0x36 && rx[7]==0x40;
++    if (verbose) printf("Diting ST FTS: chip=%02x:%02x %s\n",rx[6],rx[7],valid?"PASS":"FAIL");
++    return valid;
++}
++
++static bool
++st_event(uint8_t event[8])
++{
++    uint8_t tx[10]={0x87,0,0,0,0,0,0,0,0,0}, rx[10]={0};
++    if (!spi_transfer(tx,rx,sizeof(tx))) return false;
++    memcpy(event,rx+2,8); /* SPI FIFO opcode + dummy byte */
++    return true;
++}
++
++static bool
++st_command(const uint8_t command[3])
++{
++    if (!spi_transfer(command,NULL,3)) return false;
++    /* A successful host transfer alone does not establish FW acceptance. */
++    for (unsigned n=0;n<100;n++) {
++        uint8_t event[8];
++        if (!st_event(event)) return false;
++        if (event[0]==0x43 && event[1]==0x01 && !memcmp(event+2,command,3)) return true;
++        if (event[0]==0xf3) {
++            printf("Diting ST FTS: command error=%02x:%02x; SKIP\n",event[0],event[1]);
++            return false;
++        }
++        sleep_ms(10);
++    }
++    printf("Diting ST FTS: command %02x:%02x:%02x echo timed out; SKIP\n",
++        command[0],command[1],command[2]);
++    return false;
++}
++
++static bool
++st_transport(void)
++{
++    gpio_output(PIN_RESET,true,PULL_UP,6);
++    gpio_configure(PIN_INT,0,PULL_UP,6,false);
++    if (clocks_on() && !geni_spi_init(4000000)) {
++        gpio_configure(PIN_MISO,1,PULL_NONE,6,false);
++        gpio_configure(PIN_MOSI,1,PULL_NONE,6,false);
++        gpio_configure(PIN_CLK,1,PULL_NONE,6,false);
++        gpio_configure(PIN_CS,1,PULL_NONE,6,false);
++        spi_transfer=geni_transfer;
++        if (st_read_chip(true)) return true;
++    }
++    /* Fixed live-DT SPI pins only. Never run Goodix's alternate pin or
++     * ldoc3/ldoc12 supply probes against this ldoc2-powered ST controller. */
++    spi_transfer=bitbang_transfer;
++    bitbang_in=pins[0]; bitbang_out=pins[1]; bitbang_init();
++    return st_read_chip(true);
++}
++
++static bool
++st_resume(void)
++{
++    gpio_set(PIN_RESET,false); sleep_ms(10); gpio_set(PIN_RESET,true);
++    bool ready=false;
++    for (unsigned n=0;n<200;n++) {
++        uint8_t event[8];
++        if (!st_event(event)) return false;
++        if (event[0]==0x03) {ready=true;break;}
++        if (event[0]==0xf3) {
++            printf("Diting ST FTS: reset error=%02x; SKIP\n",event[1]);return false;
++        }
++        sleep_ms(10);
++    }
++    if (!ready || !st_read_chip(true)) {
++        printf("Diting ST FTS: reset/identity not ready; SKIP\n");return false;
++    }
++    /* Vendor SCAN_MODE_ACTIVE: mutual/self sensing. The existing controller
++     * firmware and calibration remain in flash and are not replaced here. */
++    const uint8_t scan[3]={0xa0,0x00,0x01};
++    return st_command(scan);
++}
++
++static void
++st_release_contacts(void)
++{
++    for (uint32_t id=0;id<GOODIX_MAX_TOUCHES;id++) if (contact[id].down) {
++        diting_touch_post(DITING_TOUCH_UP,id,contact[id].x,contact[id].y);
++        contact[id].down=false;
++    }
++}
++
++static bool
++st_poll(void)
++{
++    static unsigned shown;
++    seen.polls++;
++    /* Each FIFO record is a delta, not a full contact set. An absent finger
++     * in this record must not release another finger still on the panel. */
++    for (unsigned n=0;n<32;n++) {
++        uint8_t event[8];
++        if (!st_event(event)) return false;
++        if (!event[0]) return true;
++        seen.reports++;
++        unsigned kind=event[0]&0xf3, id=event[1]>>4, tool=event[1]&15;
++        if (kind==0xf3 || kind==0x03) {
++            printf("Diting ST FTS: controller event=%02x:%02x; input stopped\n",event[0],event[1]);
++            return false;
++        }
++        if (id>=GOODIX_MAX_TOUCHES) continue;
++        if (kind==0x33) {
++            if (contact[id].down) {
++                diting_touch_post(DITING_TOUCH_UP,id,contact[id].x,contact[id].y);
++                contact[id].down=false;
++            }
++            continue;
++        }
++        if ((kind!=0x13 && kind!=0x23) || (tool!=1 && tool!=2)) continue;
++        /* L12 support-super-resolution=1: full 16-bit little-endian axes,
++         * not the 12-bit layout used by other ST panels. */
++        uint32_t x=le16(event+2), y=le16(event+4);
++        if (x>=max_x || y>=max_y) {seen.bad++;continue;}
++        seen.touches++;seen.last_x=x;seen.last_y=y;
++        x=x*65535/(max_x-1); y=y*65535/(max_y-1);
++        if (flip&1) x=65535-x;
++        if (flip&2) y=65535-y;
++        if (shown++<4) printf("Diting ST FTS: event=%02x finger=%u xy=%u,%u\n",kind,id,x,y);
++        if (!contact[id].down) diting_touch_post(DITING_TOUCH_DOWN,id,x,y);
++        else if (contact[id].x!=x || contact[id].y!=y) diting_touch_post(DITING_TOUCH_MOVE,id,x,y);
++        contact[id].down=true;contact[id].x=x;contact[id].y=y;
++    }
++    return true; /* yield after one FIFO depth even under continuous input */
++}
++
++static void
++st_run(void)
++{
++    if (!st_transport() || !st_resume() || !diting_touch_device_ready()) {
++        printf("Diting ST FTS: prerequisites failed; normal UI boot continues\n");return;
++    }
++    printf("Diting ST FTS: 36:40 ready SPI=0x%llx reset=%u IRQ=%u axes=%ux%u\n",
++        se_phys,PIN_RESET,PIN_INT,max_x,max_y);
++    unsigned idle=0;
++    for (;;) {
++        if (!gpio_get(PIN_INT) || ++idle>=10) {
++            idle=0;
++            if (!st_poll()) {st_release_contacts();return;}
++        }
++        sleep_ms(8);
++    }
++}
++
 +/* No firmware upload, FocalTech strap scan, GPU or other Redwood subsystem. */
 +static bool
 +bring_up(void)
@@ -1248,6 +1415,11 @@ index 0000000..00feebd
 +    tlmm=ml_io_map(TLMM_PHYS,TLMM_SIZE);gcc=ml_io_map(GCC_PHYS,GCC_SIZE);
 +    se=ml_io_map(SE_PHYS,SE_SIZE);rsc=ml_io_map(RSC_PHYS,RSC_SIZE);
 +    cmd_db=ml_io_map_wcomb(CMD_DB_PHYS,CMD_DB_SIZE);
++    if (st_fts) {
++        if (tlmm && gcc && se) st_run();
++        else printf("Diting ST FTS: MMIO mapping failed; SKIP\n");
++        thread_terminate(current_thread());return;
++    }
 +    if (!tlmm || !gcc || !se || !rsc || !cmd_db || !bring_up()) {
 +        printf("Diting touch: Goodix initialization failed; normal UI boot continues\n");
 +        thread_terminate(current_thread());return;
@@ -1286,6 +1458,7 @@ index 0000000..00feebd
 +    if (kernel_thread_start(touch_thread,NULL,&thread)==KERN_SUCCESS) thread_deallocate(thread);
 +}
 +#endif /* DITING */
+
 diff --git a/bsd/dev/diting_input.c b/bsd/dev/diting_input.c
 new file mode 100644
 index 0000000..f601a0b
