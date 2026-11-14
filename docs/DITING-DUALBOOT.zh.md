@@ -29,3 +29,7 @@ python scripts/test-diting-dualboot.py
 **只能 fastboot boot 临时运行，不能 flash 到 boot。** 此阶段 Android 入口依赖原厂活动 boot 保留；永久装入该菜单后，冷重启会再次进入菜单，不能当成完成的 Android 交接。永久开机选择还需要实现并验证 Diting 的 Android 载荷交接、镜像容量/槽位兼容以及独立回退路径。不能以切换未验证的 B 槽替代这项工作。
 
 2026-11-15 首轮设备记录：以既有第56版为基础生成10秒菜单候选，fastboot boot 的发送与启动均成功；随后 ADB 重新连接到 Android，活动槽仍为 A。菜单画面及倒计时触发原因待用户确认，不将 ADB 重连单独视作两个入口均已通过。未执行 flash、切槽或系统分区写入。
+
+2026-11-15 第二轮设备记录：60秒菜单候选临时启动成功，用户明确确认“菜单按键正常，已进入 iPadOS”。据此仅将菜单可见、按键选择及 iPadOS 入口标为实机通过；首轮用户未留意屏幕，Android 自动倒计时仍只有重连证据，菜单触控及永久安装均未验证。
+
+永久交接调查：2026-11-10 Android备份的 boot_a 是 v4，内核含 ARM64 Image 与 MZ 标志，具备进一步核对 EFI stub 的价值；boot/vendor_boot 均为v4。仅凭标志不能证明可由本 UEFI 正确链式启动，仍需当前设备 boot/vendor_boot、FDT、bootconfig、AVB及内存保留关系核对。旧备份不直接用于当前Android交接。
