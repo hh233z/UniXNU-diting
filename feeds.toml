@@ -41,13 +41,14 @@ git = "https://github.com/apple-oss-distributions/IOStorageFamily.git"
 ref = "IOStorageFamily-323"
 commit = "1b96f8f04b9dff4dc0277ac43625bf694e62c5aa"
 
-# SM8475 public source is pinned independently within this repository.
+# SM8475 seed is pinned to this public repository; the former Pong remote
+# is no longer anonymously readable. The seed tree is unchanged.
 [[source]]
 name = "sm8475"
 kind = "soc"
-git = "https://github.com/Chengdong-Yu/UniXNU-pong.git"
+git = "https://github.com/hh233z/UniXNU-diting.git"
 path = "migration/format2/soc-seed"
-commit = "f62243e56a30472deed9112631b2480ab461df3e"
+commit = "a16c5054bdf9877facf6596158dded26197dd839"
 
 # DitingPlatform24 is not a feed source: the kit ships in this repository at
 # kits/DitingPlatform24, so the resolver takes it from the device directories.
