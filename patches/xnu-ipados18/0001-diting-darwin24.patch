@@ -371,7 +371,7 @@ new file mode 100644
 index 0000000..00feebd
 --- /dev/null
 +++ b/bsd/dev/diting_goodix.c
-@@ -0,0 +1,1169 @@
+@@ -0,0 +1,1200 @@
 +/* Goodix Berlin-D / Diting SM8475. Adapted from the earlier redwood_goodix.c
 + * (APSL 2.0). Hardware resources are the Diting live DT, checked against the
 + * NothingOSS cape pinctrl and waipio GCC source. No Redwood peripherals. */
@@ -1243,16 +1243,47 @@ index 0000000..00feebd
 +static const char *st_stage="not-started";
 +static uint32_t st_chip, st_power_address, st_avdd_before, st_last_event;
 +
++/* Recount reports actual scheduler-online processors, not requested ADT nodes.
++ * This is passive accounting during normal UI use, never a workload benchmark. */
++extern uint64_t diting_cpu_idle_mach(unsigned int cpu);
++
 +static void
 +st_save_snapshot(void)
 +{
-+    char text[768];
++    char text[1536];
++    uint64_t idle_before[8],idle_after[8];
++    for (unsigned c=0;c<8;c++) idle_before[c]=diting_cpu_idle_mach(c);
++    uint64_t began=mach_absolute_time();
++    sleep_ms(1000);
++    uint64_t elapsed=mach_absolute_time()-began;
++    for (unsigned c=0;c<8;c++) idle_after[c]=diting_cpu_idle_mach(c);
 +    int length=snprintf(text,sizeof(text),
 +        "Diting ST FTS L12\nstage=%s chip=%04x ldoc2=%08x avdd_before=%08x last_event=%08x\n"
 +        "polls=%u reports=%u touches=%u bad=%u last_xy=%u,%u\n",
 +        st_stage,st_chip,st_power_address,st_avdd_before,st_last_event,
 +        seen.polls,seen.reports,seen.touches,seen.bad,seen.last_x,seen.last_y);
 +    if (length<=0 || (unsigned)length>=sizeof(text)) return;
++    unsigned online=0;
++    for (unsigned c=0;c<8;c++) {
++        bool valid=elapsed && idle_before[c]!=UINT64_MAX && idle_after[c]!=UINT64_MAX &&
++            idle_after[c]>=idle_before[c];
++        unsigned busy=0;
++        if (valid) {
++            uint64_t delta=idle_after[c]-idle_before[c];
++            busy=delta>=elapsed?0u:(unsigned)(100-(delta*100/elapsed));
++            online|=1u<<c;
++        }
++        int added=snprintf(text+length,sizeof(text)-(unsigned)length,
++            "cpu%u sample_valid=%u busy_pct=%u idle_before=%llu idle_after=%llu\n",
++            c,(unsigned)valid,busy,(unsigned long long)idle_before[c],(unsigned long long)idle_after[c]);
++        if (added<=0 || (unsigned)added>=sizeof(text)-(unsigned)length) return;
++        length+=added;
++    }
++    int added=snprintf(text+length,sizeof(text)-(unsigned)length,
++        "cpu_sample_online_mask=%02x elapsed_mach=%llu frequency_measured=0\n",
++        online,(unsigned long long)elapsed);
++    if (added<=0 || (unsigned)added>=sizeof(text)-(unsigned)length) return;
++    length+=added;
 +    vfs_context_t context=vfs_context_kernel();
 +    vnode_t vp=NULL;
 +    int flags=FWRITE|O_CREAT|O_TRUNC|O_NOFOLLOW;
