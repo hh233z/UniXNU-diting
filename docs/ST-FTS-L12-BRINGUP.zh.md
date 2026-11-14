@@ -33,7 +33,8 @@ L12 触点使用两个完整的 16 位小端坐标，不使用其它面板的 12
 ST 启动先读取真实芯片 ID，再复位并等待 controller-ready；
 只有 Active Scan 命令收到匹配的 firmware echo 后才发布输入设备。
 不上传或刷新控制器固件，不调用 Goodix 的 ldoc3/ldoc12 电源写入。
-已上电的 ST 电源状态保留；前置条件不满足时记录失败并继续正常 UI 启动。
+镜像50仅继承ST供电，后续修复按实测资源启用ldoc2及GPIO71；
+前置条件不满足时记录失败并继续正常UI启动。
 
 FIFO 是触点增量流，单条记录中没有出现的其它手指不应被释放。
 只接受实际 finger/glove 的 down/move，leave 使用已记录的坐标释放。
@@ -49,3 +50,21 @@ Android 的硬件和协议来源已确认；修改后的 Darwin 内核仍需 mac
 
 下一轮设备结果应记录：芯片 ID、controller-ready、scan echo、
 前几个真实触点，以及桌面点按/拖动/抬手表现。构建通过不等于触屏已可用。
+
+## 镜像 50 实测及后续修复
+
+镜像50由CI43553231126成功构建并临时启动，用户确认锁屏可显示但触摸
+完全没有反应。Data卷快照中，BackBoard在35秒时的输入线程停在
+`input_thread` 的 `/dev/diting-touch` 打开重试，90秒时该线程已退出；
+这支持输入设备未发布，尚不能判断是哪个初始化步骤失败。
+
+该版本缺少ST供电初始化，只尝试继承电源状态。Android实机debugfs确认
+GPIO71为2mA下拉输出高电平，`spi0.0-vdd`消费者连接`pm8350c_l2`，
+电压1800mV；厂商`fts_enable_reg()`先启用总线电源，再拉高AVDD GPIO。
+后续修复明确在ADT记录并校验这两项资源，通过命令数据库查找`ldoc2`，
+完成真实RPMh投票后拉高GPIO71，再复位和探测ST。
+
+仅当`diting_boot_snapshot=1`时，在30/90/180秒各尝试保存一个小型
+`/private/var/logs/DitingTouch-kernel.txt`，记录实际初始化阶段、芯片ID、
+电源资源地址及事件计数。文件失败仅记录错误，不阻断输入或UI。
+供电遗漏已在源码确认，修复效果尚待实机验证。

@@ -371,7 +371,7 @@ new file mode 100644
 index 0000000..00feebd
 --- /dev/null
 +++ b/bsd/dev/diting_goodix.c
-@@ -0,0 +1,1086 @@
+@@ -0,0 +1,1169 @@
 +/* Goodix Berlin-D / Diting SM8475. Adapted from the earlier redwood_goodix.c
 + * (APSL 2.0). Hardware resources are the Diting live DT, checked against the
 + * NothingOSS cape pinctrl and waipio GCC source. No Redwood peripherals. */
@@ -386,6 +386,10 @@ index 0000000..00feebd
 +#include <kern/sched_prim.h>
 +#include <pexpert/device_tree.h>
 +#include <sys/systm.h>
++#include <sys/fcntl.h>
++#include <sys/vnode.h>
++#include <sys/uio.h>
++#include <sys/proc.h>
 +
 +
 +
@@ -397,6 +401,7 @@ index 0000000..00feebd
 +static uint64_t tlmm_phys, gcc_phys, se_phys, rsc_phys, cmd_db_phys;
 +static uint32_t pins[6], gpio_offset, max_x, max_y;
 +static bool st_fts;
++static uint32_t st_avdd_gpio, st_iovdd_mv;
 +
 +static bool
 +property(DTEntry entry, const char *name, void *out, unsigned size)
@@ -417,6 +422,9 @@ index 0000000..00feebd
 +        memcmp(compatible,"diting,st-fts-l12",sizeof("diting,st-fts-l12"))==0;
 +    if (!st_fts && !(length==sizeof("diting,goodix-berlin-d") &&
 +        memcmp(compatible,"diting,goodix-berlin-d",sizeof("diting,goodix-berlin-d"))==0)) return false;
++    if (st_fts && (!property(entry,"avdd-enable-gpio",&st_avdd_gpio,4) ||
++        !property(entry,"iovdd-millivolts",&st_iovdd_mv,4) ||
++        st_avdd_gpio!=71 || st_iovdd_mv!=1800)) return false;
 +    return property(entry,"spi-base",&se_phys,8) && property(entry,"tlmm-base",&tlmm_phys,8) &&
 +        property(entry,"gcc-base",&gcc_phys,8) && property(entry,"rsc-base",&rsc_phys,8) &&
 +        property(entry,"cmd-db-base",&cmd_db_phys,8) && property(entry,"gpio-offset",&gpio_offset,4) &&
@@ -1228,13 +1236,73 @@ index 0000000..00feebd
 + * The phone's live xiaomi,l12-spi node and st_fts_l12.ftb identify 36:40,
 + * super-resolution coordinates 12200x27120, SPI SE4, reset20/IRQ21.
 + * Keep the existing input ABI. No firmware/flash write, guessed regulator
-+ * vote or fabricated contact is used. This path preserves inherited power. */
++ * vote or fabricated contact is used. Power follows this device's live DT. */
++/* Bounded diagnostics, only when the existing boot-snapshot option is on.
++ * Persist a few small observations after Data mounts; do not block input or
++ * create a successful device for a controller that failed initialization. */
++static const char *st_stage="not-started";
++static uint32_t st_chip, st_power_address, st_avdd_before, st_last_event;
++
++static void
++st_save_snapshot(void)
++{
++    char text[768];
++    int length=snprintf(text,sizeof(text),
++        "Diting ST FTS L12\nstage=%s chip=%04x ldoc2=%08x avdd_before=%08x last_event=%08x\n"
++        "polls=%u reports=%u touches=%u bad=%u last_xy=%u,%u\n",
++        st_stage,st_chip,st_power_address,st_avdd_before,st_last_event,
++        seen.polls,seen.reports,seen.touches,seen.bad,seen.last_x,seen.last_y);
++    if (length<=0 || (unsigned)length>=sizeof(text)) return;
++    vfs_context_t context=vfs_context_kernel();
++    vnode_t vp=NULL;
++    int flags=FWRITE|O_CREAT|O_TRUNC|O_NOFOLLOW;
++    int error=vnode_open("/private/var/logs/DitingTouch-kernel.txt",flags,0600,0,&vp,context);
++    if (error) {printf("Diting ST FTS: snapshot open=%d\n",error);return;}
++    int residual=0;
++    error=vn_rdwr(UIO_WRITE,vp,text,length,0,UIO_SYSSPACE,IO_SYNC,
++        vfs_context_ucred(context),&residual,current_proc());
++    (void)vnode_close(vp,flags,context);
++    if (error || residual) printf("Diting ST FTS: snapshot write=%d residual=%d\n",error,residual);
++}
++
++static void
++st_snapshot_thread(__unused void *parameter,__unused wait_result_t result)
++{
++    sleep_ms(30000);st_save_snapshot();
++    sleep_ms(60000);st_save_snapshot();
++    sleep_ms(90000);st_save_snapshot();
++    thread_terminate(current_thread());
++}
++
++static bool
++st_power_on(void)
++{
++    /* Android: spi0.0-vdd -> pm8350c_l2 at 1800000 uV; analog enable GPIO71.
++     * Fastboot/Android shutdown may turn both off. Never use Berlin's rails. */
++    st_stage="power-resource";
++    st_power_address=rpmh_address("ldoc2");
++    if (!st_power_address || ((st_power_address>>16)&15)!=4) return false;
++    st_avdd_before=rd(GPIO_IO(st_avdd_gpio));
++    gpio_output(PIN_RESET,false,PULL_UP,8);
++    uint32_t address[3]={st_power_address,st_power_address+4,st_power_address+8};
++    uint32_t data[3]={st_iovdd_mv,1,VRM_MODE_LDO_HPM};
++    st_stage="power-vote";
++    if (!rpmh_write(address,data,3)) return false;
++    sleep_ms(3);
++    gpio_output(st_avdd_gpio,true,1,2); /* live Android state: 2 mA, pull down, output high */
++    sleep_ms(15);
++    gpio_set(PIN_RESET,true);
++    sleep_ms(20);
++    return true;
++}
++
 +static bool
 +st_read_chip(bool verbose)
 +{
 +    uint8_t tx[8]={0xfb,0x20,0,0,0,0,0,0}, rx[8]={0};
 +    if (!spi_transfer(tx,rx,sizeof(tx))) return false;
 +    /* Five command bytes, one dummy, then the two chip ID bytes. */
++    st_chip=(uint32_t)rx[6]<<8|rx[7];
 +    bool valid=rx[6]==0x36 && rx[7]==0x40;
 +    if (verbose) printf("Diting ST FTS: chip=%02x:%02x %s\n",rx[6],rx[7],valid?"PASS":"FAIL");
 +    return valid;
@@ -1246,6 +1314,7 @@ index 0000000..00feebd
 +    uint8_t tx[10]={0x87,0,0,0,0,0,0,0,0,0}, rx[10]={0};
 +    if (!spi_transfer(tx,rx,sizeof(tx))) return false;
 +    memcpy(event,rx+2,8); /* SPI FIFO opcode + dummy byte */
++    st_last_event=(uint32_t)event[0]<<24|(uint32_t)event[1]<<16|(uint32_t)event[2]<<8|event[3];
 +    return true;
 +}
 +
@@ -1272,6 +1341,8 @@ index 0000000..00feebd
 +static bool
 +st_transport(void)
 +{
++    if (!st_power_on()) return false;
++    st_stage="transport-geni";
 +    gpio_output(PIN_RESET,true,PULL_UP,6);
 +    gpio_configure(PIN_INT,0,PULL_UP,6,false);
 +    if (clocks_on() && !geni_spi_init(4000000)) {
@@ -1284,6 +1355,7 @@ index 0000000..00feebd
 +    }
 +    /* Fixed live-DT SPI pins only. Never run Goodix's alternate pin or
 +     * ldoc3/ldoc12 supply probes against this ldoc2-powered ST controller. */
++    st_stage="transport-bitbang";
 +    spi_transfer=bitbang_transfer;
 +    bitbang_in=pins[0]; bitbang_out=pins[1]; bitbang_init();
 +    return st_read_chip(true);
@@ -1292,6 +1364,7 @@ index 0000000..00feebd
 +static bool
 +st_resume(void)
 +{
++    st_stage="reset-ready";
 +    gpio_set(PIN_RESET,false); sleep_ms(10); gpio_set(PIN_RESET,true);
 +    bool ready=false;
 +    for (unsigned n=0;n<200;n++) {
@@ -1309,6 +1382,7 @@ index 0000000..00feebd
 +    /* Vendor SCAN_MODE_ACTIVE: mutual/self sensing. The existing controller
 +     * firmware and calibration remain in flash and are not replaced here. */
 +    const uint8_t scan[3]={0xa0,0x00,0x01};
++    st_stage="scan-echo";
 +    return st_command(scan);
 +}
 +
@@ -1366,16 +1440,21 @@ index 0000000..00feebd
 +static void
 +st_run(void)
 +{
-+    if (!st_transport() || !st_resume() || !diting_touch_device_ready()) {
++    if (!st_transport() || !st_resume()) {
++        printf("Diting ST FTS: prerequisites failed at %s; normal UI boot continues\n",st_stage);return;
++    }
++    st_stage="device-publish";
++    if (!diting_touch_device_ready()) {
 +        printf("Diting ST FTS: prerequisites failed; normal UI boot continues\n");return;
 +    }
++    st_stage="ready";
 +    printf("Diting ST FTS: 36:40 ready SPI=0x%llx reset=%u IRQ=%u axes=%ux%u\n",
 +        se_phys,PIN_RESET,PIN_INT,max_x,max_y);
 +    unsigned idle=0;
 +    for (;;) {
 +        if (!gpio_get(PIN_INT) || ++idle>=10) {
 +            idle=0;
-+            if (!st_poll()) {st_release_contacts();return;}
++            if (!st_poll()) {st_stage="controller-stopped";st_release_contacts();return;}
 +        }
 +        sleep_ms(8);
 +    }
@@ -1416,7 +1495,11 @@ index 0000000..00feebd
 +    se=ml_io_map(SE_PHYS,SE_SIZE);rsc=ml_io_map(RSC_PHYS,RSC_SIZE);
 +    cmd_db=ml_io_map_wcomb(CMD_DB_PHYS,CMD_DB_SIZE);
 +    if (st_fts) {
-+        if (tlmm && gcc && se) st_run();
++        st_stage="mapping";
++        uint32_t snapshots=0;thread_t observer;
++        if (PE_parse_boot_argn("diting_boot_snapshot",&snapshots,sizeof(snapshots)) && snapshots &&
++            kernel_thread_start(st_snapshot_thread,NULL,&observer)==KERN_SUCCESS) thread_deallocate(observer);
++        if (tlmm && gcc && se && rsc && cmd_db) st_run();
 +        else printf("Diting ST FTS: MMIO mapping failed; SKIP\n");
 +        thread_terminate(current_thread());return;
 +    }

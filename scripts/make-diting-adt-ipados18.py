@@ -264,6 +264,8 @@ def main():
     # Absolute metadata avoids an incomplete arm-io interrupt/reg mapping.
     touch = node('diting-touch', [
         ('compatible', b'diting,st-fts-l12\0'),
+        ('avdd-enable-gpio', struct.pack('<I', 71)),
+        ('iovdd-millivolts', struct.pack('<I', 1800)),
         ('spi-base', struct.pack('<Q', 0x990000)),
         ('tlmm-base', struct.pack('<Q', 0xF000000)),
         ('gcc-base', struct.pack('<Q', 0x100000)),
