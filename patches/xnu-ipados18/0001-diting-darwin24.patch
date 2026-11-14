@@ -371,7 +371,7 @@ new file mode 100644
 index 0000000..00feebd
 --- /dev/null
 +++ b/bsd/dev/diting_goodix.c
-@@ -0,0 +1,1200 @@
+@@ -0,0 +1,1222 @@
 +/* Goodix Berlin-D / Diting SM8475. Adapted from the earlier redwood_goodix.c
 + * (APSL 2.0). Hardware resources are the Diting live DT, checked against the
 + * NothingOSS cape pinctrl and waipio GCC source. No Redwood peripherals. */
@@ -1246,15 +1246,18 @@ index 0000000..00feebd
 +/* Recount reports actual scheduler-online processors, not requested ADT nodes.
 + * This is passive accounting during normal UI use, never a workload benchmark. */
 +extern uint64_t diting_cpu_idle_mach(unsigned int cpu);
++/* Relaxed, individually atomic counters; snapshots are observational.
++ * submitted, completed, draw ticks, surface-wait ticks, pacing ticks. */
++uint64_t diting_fb_diag[5];
 +
 +static void
 +st_save_snapshot(void)
 +{
-+    char text[1536];
++    char text[2048];
 +    uint64_t idle_before[8],idle_after[8];
 +    for (unsigned c=0;c<8;c++) idle_before[c]=diting_cpu_idle_mach(c);
 +    uint64_t began=mach_absolute_time();
-+    sleep_ms(1000);
++    sleep_ms(5000);
 +    uint64_t elapsed=mach_absolute_time()-began;
 +    for (unsigned c=0;c<8;c++) idle_after[c]=diting_cpu_idle_mach(c);
 +    int length=snprintf(text,sizeof(text),
@@ -1284,6 +1287,14 @@ index 0000000..00feebd
 +        online,(unsigned long long)elapsed);
 +    if (added<=0 || (unsigned)added>=sizeof(text)-(unsigned)length) return;
 +    length+=added;
++    uint64_t fb[5];
++    for (unsigned i=0;i<5;i++) fb[i]=__atomic_load_n(&diting_fb_diag[i],__ATOMIC_RELAXED);
++    added=snprintf(text+length,sizeof(text)-(unsigned)length,
++        "fb_submitted=%llu completed=%llu draw_mach=%llu surface_wait_mach=%llu pacing_mach=%llu uptime_mach=%llu\n",
++        (unsigned long long)fb[0],(unsigned long long)fb[1],(unsigned long long)fb[2],
++        (unsigned long long)fb[3],(unsigned long long)fb[4],(unsigned long long)mach_absolute_time());
++    if (added<=0 || (unsigned)added>=sizeof(text)-(unsigned)length) return;
++    length+=added;
 +    vfs_context_t context=vfs_context_kernel();
 +    vnode_t vp=NULL;
 +    int flags=FWRITE|O_CREAT|O_TRUNC|O_NOFOLLOW;
@@ -1294,14 +1305,25 @@ index 0000000..00feebd
 +        vfs_context_ucred(context),&residual,current_proc());
 +    (void)vnode_close(vp,flags,context);
 +    if (error || residual) printf("Diting ST FTS: snapshot write=%d residual=%d\n",error,residual);
++    /* Keep all 36 consecutive five-second windows, bounded to one boot. */
++    static bool timeline_started;
++    flags=FWRITE|O_CREAT|O_NOFOLLOW|(timeline_started?O_APPEND:O_TRUNC);
++    vp=NULL;
++    error=vnode_open("/private/var/logs/DitingCpu-timeline.txt",flags,0600,0,&vp,context);
++    if (!error) {
++        timeline_started=true;
++        error=vn_rdwr(UIO_WRITE,vp,text,length,0,UIO_SYSSPACE,IO_SYNC|IO_APPEND,
++            vfs_context_ucred(context),&residual,current_proc());
++        (void)vnode_close(vp,flags,context);
++        if (error || residual) printf("Diting CPU: timeline write=%d residual=%d\n",error,residual);
++    } else printf("Diting CPU: timeline open=%d\n",error);
 +}
 +
 +static void
 +st_snapshot_thread(__unused void *parameter,__unused wait_result_t result)
 +{
-+    sleep_ms(30000);st_save_snapshot();
-+    sleep_ms(60000);st_save_snapshot();
-+    sleep_ms(90000);st_save_snapshot();
++    sleep_ms(30000);
++    for (unsigned window=0;window<36;window++) st_save_snapshot();
 +    thread_terminate(current_thread());
 +}
 +
@@ -5576,7 +5598,7 @@ new file mode 100644
 index 0000000..65a0b78
 --- /dev/null
 +++ b/iokit/Kernel/MiniIOMobileFramebuffer.cpp
-@@ -0,0 +1,1633 @@
+@@ -0,0 +1,1639 @@
 +/*
 + * MiniIOMobileFramebuffer: a stand-in for Apple's display driver family, as seen by
 + * IOMobileFramebuffer.framework (and through it by CoreAnimation's window server).
@@ -5703,6 +5725,7 @@ index 0000000..65a0b78
 + */
 +#define kFBDefaultScale         3
 +static TUNABLE(uint32_t, gFBScale, "fbscale", 0);
++extern "C" uint64_t diting_fb_diag[5];
 +/* Boot-arg fbtrace=N: log the first N calls of every selector (default 3). */
 +static TUNABLE(uint32_t, gFBTrace, "fbtrace", 0);
 +
@@ -6449,6 +6472,7 @@ index 0000000..65a0b78
 +IOReturn
 +IOMobileFramebuffer::present(const uint8_t * swap)
 +{
++    __atomic_fetch_add(&diting_fb_diag[0],1,__ATOMIC_RELAXED);
 +	AbsoluteTime deadline;
 +
 +	uint64_t now = mach_absolute_time(), period, pause;
@@ -6566,6 +6590,7 @@ index 0000000..65a0b78
 +			    swapWord(swap, SWAP_ID), swapWord(swap, SWAP_SURFACE(layer)), SWAP_GPU_MS);
 +		} else if(surfaces[layer])readers.held[layer]=surfaces[layer];
 +	}
++    __atomic_fetch_add(&diting_fb_diag[3],mach_absolute_time()-began,__ATOMIC_RELAXED);
 +	fStatWaiting += mach_absolute_time() - began;
 +	began = ready = mach_absolute_time();
 +	if (gOnTheBeat) {
@@ -6588,6 +6613,7 @@ index 0000000..65a0b78
 +			clock_delay_until(next);
 +			fBeat = next;
 +			fStatOnBeat++;
++            __atomic_fetch_add(&diting_fb_diag[4],mach_absolute_time()-began,__ATOMIC_RELAXED);
 +			fStatBeatWait += mach_absolute_time() - began;
 +			began = mach_absolute_time();
 +		}
@@ -6697,6 +6723,8 @@ index 0000000..65a0b78
 +	}
 +
 +	/* every five seconds in which something was drawn: how many frames, and what each cost here */
++    __atomic_fetch_add(&diting_fb_diag[1],1,__ATOMIC_RELAXED);
++    __atomic_fetch_add(&diting_fb_diag[2],mach_absolute_time()-began,__ATOMIC_RELAXED);
 +	fStatFrames++;
 +	fStatDrawing += mach_absolute_time() - began;
 +	if (fStatSince == 0) {
