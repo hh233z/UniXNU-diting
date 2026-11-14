@@ -12,6 +12,7 @@
 #include <kern/clock.h>
 #include <pexpert/pexpert.h>
 extern "C" uint64_t diting_cpu_idle_mach(unsigned int);
+extern "C" uint64_t diting_cpu_policy_diag[32];
 namespace DitingCpuPolicy {
 struct Domain {
     unsigned first,count,cap_khz;
@@ -23,6 +24,44 @@ struct Domain {
 static Domain domains[]={{0,4,1804800},{4,3,2496000},{7,1,2995200}};
 static IOMemoryMap *pdmem_map;
 static unsigned mode=2,started;
+static bool diagnostics;
+static uint32_t cycle_previous[8];
+static uint64_t cycle_stamp;
+static void publish(unsigned slot,uint64_t value)
+{if(diagnostics)__atomic_store_n(&diting_cpu_policy_diag[slot],value,__ATOMIC_RELAXED);}
+static void observe()
+{
+    if(!diagnostics)return;
+    uint64_t now=mach_absolute_time(),ns=0;
+    if(cycle_stamp)absolutetime_to_nanoseconds(now-cycle_stamp,&ns);
+    if(cycle_stamp && ns<500000000ull)return;
+    unsigned mask=0;
+    for(unsigned i=0;i<3;i++) {
+        Domain &d=domains[i];
+        publish(i*6+1,d.live);
+        if(!d.live)continue;
+        const unsigned index=d.regs[0x320/4];
+        publish(i*6,d.regs[0]);publish(i*6+2,index);
+        publish(i*6+3,index<d.levels?d.khz[index]:0);
+        publish(i*6+4,(d.regs[0x20/4]&255)*19200u);
+        publish(i*6+5,d.regs[0x30c/4]);
+        // Diting DT omits no-accumulative-counter. Vendor EPSS uses
+        // 0x3c4 + (core-within-domain + 1)*4 for per-core cycle counts.
+        for(unsigned c=0;c<d.count;c++) {
+            unsigned cpu=d.first+c;
+            uint32_t value=d.regs[0x3c4/4+c+1];
+            uint32_t delta=value-cycle_previous[cpu];cycle_previous[cpu]=value;
+            // A delayed observer cannot disambiguate multiple 32-bit wraps.
+            // Reject it rather than fabricate a low/high clock estimate.
+            if(cycle_stamp && ns>=500000000ull && ns<=1000000000ull) {
+                uint64_t khz=uint64_t(delta)*1000000ull/ns;
+                if(khz<=3200000ull){publish(18+cpu,khz);mask|=1u<<cpu;}
+            }
+        }
+    }
+    publish(26,mask);publish(27,mode);publish(28,now);
+    cycle_stamp=now;
+}
 static void stop() __attribute__((noreturn));
 static void stop()
 {thread_terminate(current_thread());thread_block(THREAD_CONTINUE_NULL);__builtin_unreachable();}
@@ -35,11 +74,12 @@ static bool prepare(Domain &d,unsigned index)
     d.regs=reinterpret_cast<volatile uint32_t *>(d.map->getVirtualAddress());
     // EPSS must already be enabled by board firmware. Never start a PLL by
     // writing a performance index into a disabled frequency domain.
+    publish(index*6,d.regs[0]);
     if(!(d.regs[0]&1))return false;
     unsigned previous=0;
     for(unsigned i=0;i<40;++i) {
         const uint32_t row=d.regs[(0x100+4*i)/4];
-        const unsigned src=row>>30,cores=(row>>16)&15;
+        const unsigned src=row>>30,cores=(row>>16)&7;
         const unsigned khz=src?(row&255)*19200u:300000u;
         if(i && khz==previous)break;
         if(khz<300000 || khz>3200000 || (i && khz<previous))return false;
@@ -90,6 +130,7 @@ static void worker(void *,wait_result_t)
         if(prepare(d,i))++live;
         else if(d.map){d.map->release();d.map=nullptr;d.regs=nullptr;}
     }
+    observe();
     if(!live){IOLog("Diting CPU: EPSS skipped: no valid native LUT\n");stop();}
     if(mode==2) {
         for(auto &d:domains)if(d.live) {
@@ -107,6 +148,7 @@ static void worker(void *,wait_result_t)
                 if(!(d.regs[0]&1)){d.live=false;continue;}
                 request(d,highest(d));++live;
             }
+            observe();
             if(!live)stop();
         }
     }
@@ -114,6 +156,7 @@ static void worker(void *,wait_result_t)
     uint64_t stamp=mach_absolute_time();
     for(;;) {
         IOSleep(32);
+        observe();
         const uint64_t now=mach_absolute_time(),elapsed=now-stamp;stamp=now;
         if(!elapsed)continue;
         unsigned busy[8]{};bool valid[8]{};
@@ -158,6 +201,8 @@ static void start()
 {
     if(__atomic_exchange_n(&started,1,__ATOMIC_ACQ_REL))return;
     PE_parse_boot_argn("diting_cpu_policy",&mode,sizeof mode);
+    unsigned snapshot=0;PE_parse_boot_argn("diting_boot_snapshot",&snapshot,sizeof snapshot);
+    diagnostics=snapshot!=0;
     if(!mode)return;
     if(mode>2){IOLog("Diting CPU: invalid diting_cpu_policy=%u; EPSS votes skipped\n",mode);return;}
     thread_t thread=THREAD_NULL;

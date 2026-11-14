@@ -30,3 +30,7 @@ Nothing Phone (2)（Diting / Qualcomm SM8475）的 ARM CPU provider：GICv3 中�
 ### 启动顺序
 
 `diting_cpu_start` 先由板级平台专家调用，完成 GIC 与 timer 后由固件 PSCI 拉起从核；从核进入 WFI 前会调用 `diting_cpu_startup_finished` 通知控制器。Darwin 24 上额外走 `diting_cpu_first_boot` 等待首个 processor 上线。
+
+### 被动调频诊断
+
+启用diting_boot_snapshot时，向内核有界诊断缓冲发布各EPSS域的启用/就绪、请求档位与kHz、DOMAIN_STATE和限制IRQ，以及逐核周期/墙钟时间。使用小米bsp-diting-s-oss EPSS周期计数器布局，超过1秒采样间隔判无效，防止32位多次回绕造成伪低频。该周期率不能当作瞬时CPU运行频率；无快照参数时不读取周期寄存器。不更改调频和硬件热保护。

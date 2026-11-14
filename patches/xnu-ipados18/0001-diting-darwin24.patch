@@ -371,7 +371,7 @@ new file mode 100644
 index 0000000..00feebd
 --- /dev/null
 +++ b/bsd/dev/diting_goodix.c
-@@ -0,0 +1,1222 @@
+@@ -0,0 +1,1245 @@
 +/* Goodix Berlin-D / Diting SM8475. Adapted from the earlier redwood_goodix.c
 + * (APSL 2.0). Hardware resources are the Diting live DT, checked against the
 + * NothingOSS cape pinctrl and waipio GCC source. No Redwood peripherals. */
@@ -1249,11 +1249,12 @@ index 0000000..00feebd
 +/* Relaxed, individually atomic counters; snapshots are observational.
 + * submitted, completed, draw ticks, surface-wait ticks, pacing ticks. */
 +uint64_t diting_fb_diag[5];
++uint64_t diting_cpu_policy_diag[32];
 +
 +static void
 +st_save_snapshot(void)
 +{
-+    char text[2048];
++    char text[3072];
 +    uint64_t idle_before[8],idle_after[8];
 +    for (unsigned c=0;c<8;c++) idle_before[c]=diting_cpu_idle_mach(c);
 +    uint64_t began=mach_absolute_time();
@@ -1294,6 +1295,28 @@ index 0000000..00feebd
 +        (unsigned long long)fb[0],(unsigned long long)fb[1],(unsigned long long)fb[2],
 +        (unsigned long long)fb[3],(unsigned long long)fb[4],(unsigned long long)mach_absolute_time());
 +    if (added<=0 || (unsigned)added>=sizeof(text)-(unsigned)length) return;
++    length+=added;
++    for (unsigned d=0;d<3;d++) {
++        uint64_t v[6];
++        for(unsigned i=0;i<6;i++)v[i]=__atomic_load_n(&diting_cpu_policy_diag[d*6+i],__ATOMIC_RELAXED);
++        added=snprintf(text+length,sizeof(text)-(unsigned)length,
++            "epss%u enable=%llx live=%llu request_idx=%llu request_khz=%llu domain_lval_khz=%llu irq=%llx\n",
++            d,(unsigned long long)v[0],(unsigned long long)v[1],(unsigned long long)v[2],
++            (unsigned long long)v[3],(unsigned long long)v[4],(unsigned long long)v[5]);
++        if(added<=0 || (unsigned)added>=sizeof(text)-(unsigned)length)return;
++        length+=added;
++    }
++    for(unsigned c=0;c<8;c++) {
++        added=snprintf(text+length,sizeof(text)-(unsigned)length,"cpu%u effective_cycle_khz=%llu\n",
++            c,(unsigned long long)__atomic_load_n(&diting_cpu_policy_diag[18+c],__ATOMIC_RELAXED));
++        if(added<=0 || (unsigned)added>=sizeof(text)-(unsigned)length)return;
++        length+=added;
++    }
++    added=snprintf(text+length,sizeof(text)-(unsigned)length,"cycle_valid_mask=%llx policy_mode=%llu policy_stamp=%llu\n",
++        (unsigned long long)__atomic_load_n(&diting_cpu_policy_diag[26],__ATOMIC_RELAXED),
++        (unsigned long long)__atomic_load_n(&diting_cpu_policy_diag[27],__ATOMIC_RELAXED),
++        (unsigned long long)__atomic_load_n(&diting_cpu_policy_diag[28],__ATOMIC_RELAXED));
++    if(added<=0 || (unsigned)added>=sizeof(text)-(unsigned)length)return;
 +    length+=added;
 +    vfs_context_t context=vfs_context_kernel();
 +    vnode_t vp=NULL;
