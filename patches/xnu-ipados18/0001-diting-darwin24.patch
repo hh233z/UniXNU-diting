@@ -5696,7 +5696,7 @@ new file mode 100644
 index 0000000..65a0b78
 --- /dev/null
 +++ b/iokit/Kernel/MiniIOMobileFramebuffer.cpp
-@@ -0,0 +1,1639 @@
+@@ -0,0 +1,1633 @@
 +/*
 + * MiniIOMobileFramebuffer: a stand-in for Apple's display driver family, as seen by
 + * IOMobileFramebuffer.framework (and through it by CoreAnimation's window server).
@@ -6691,33 +6691,25 @@ index 0000000..65a0b78
 +    __atomic_fetch_add(&diting_fb_diag[3],mach_absolute_time()-began,__ATOMIC_RELAXED);
 +	fStatWaiting += mach_absolute_time() - began;
 +	began = ready = mach_absolute_time();
++	/* A late frame is immediately eligible. Only fast submissions wait for
++	 * the next shared software refresh boundary; never create a new phase
++	 * from render completion. This is pacing, not a panel TE acknowledgement. */
++	if (!surfacesReady) { fStatLost++; return kIOReturnNotReady; }
 +	if (gOnTheBeat) {
-+		uint64_t period, aim, next;
-+
++		uint64_t period;
 +		nanoseconds_to_absolutetime(NSEC_PER_SEC / refreshHz(), &period);
-+		aim = period * 3 / 8;
-+		next = fReady;
-+		fReady = began;
-+		if (fBeat == 0 || began - next > period * 3 / 2) {
-+			fBeat = began;
-+		} else {
-+			for (next = fBeat + period; next < began; next += period) {
-+			}
-+			if (next - began > aim) {
-+				next -= (next - began - aim) / 8;
-+			} else {
-+				next += (aim - (next - began)) / 8;
-+			}
-+			clock_delay_until(next);
-+			fBeat = next;
-+			fStatOnBeat++;
-+            __atomic_fetch_add(&diting_fb_diag[4],mach_absolute_time()-began,__ATOMIC_RELAXED);
-+			fStatBeatWait += mach_absolute_time() - began;
-+			began = mach_absolute_time();
++		uint64_t boundary=began-began%period;
++		if (fBeat && boundary<=fBeat) {
++			clock_delay_until(fBeat+period);
++			uint64_t waited=mach_absolute_time()-began;
++			fStatOnBeat++;fStatBeatWait+=waited;
++			__atomic_fetch_add(&diting_fb_diag[4],waited,__ATOMIC_RELAXED);
++			began=mach_absolute_time();
++			boundary=began-began%period;
 +		}
++		fBeat=boundary;
 +	}
 +	shown = began;
-+    if (!surfacesReady) { fStatLost++; return kIOReturnNotReady; }
 +    IOLockLock(fLock);
 +    if (fLastFrame != 0) {
 +		absolutetime_to_nanoseconds(began - fLastFrame, &nanos);
@@ -7020,10 +7012,8 @@ index 0000000..65a0b78
 +
 +	/* one refresh after the last, not after whenever we got round to this: the rate does not drift */
 +	nanoseconds_to_absolutetime(NSEC_PER_SEC / refreshHz(), &period);
-+	fVSyncTime += period;
-+	if (fVSyncTime <= now || fVSyncTime > now + 2 * period) {
-+		fVSyncTime = now + period;
-+	}
++	/* Same monotonic epoch as swap pacing, shared by every client. */
++	fVSyncTime = now - now % period + period;
 +	thread_call_enter_delayed(fVSyncCall, fVSyncTime);
 +}
 +
@@ -7041,7 +7031,11 @@ index 0000000..65a0b78
 +	bool send = false;
 +
 +	IOLockLock(fLock);
-+	now = fVSyncTime;
++	uint64_t period, delivered=mach_absolute_time();
++	nanoseconds_to_absolutetime(NSEC_PER_SEC / refreshHz(), &period);
++	now = delivered-delivered%period;
++	/* Account for skipped beats instead of reporting a stale scheduled time. */
++	if (now>fVSyncTime)fVSyncCount+=(now-fVSyncTime)/period;
 +	if (fClosed || fCallbacks[kFBNotifyVSync] == 0 || fPorts[kFBNotifyVSync] == NULL) {
 +		fVSyncRunning = false;
 +	} else {
