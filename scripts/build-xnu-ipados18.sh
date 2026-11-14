@@ -176,6 +176,11 @@ for relative, (digest, atime, mtime) in json.loads(Path('.cache/xnu-patch-times.
 PY_PATCH_TIMES
 export XNU_AVAILABILITY_PL=$ROOT/.cache/fakeroot/usr/local/libexec/availability.pl
 python3 scripts/prepare-xnu-source.py
+# Pair the optional userland optimization with this kernel. The generated
+# header is a normal include dependency of kern_exec.o; no binary is committed.
+python3 "$DITING_NATIVE_DRIVER_SOURCE/scripts/build-diting-sw-render.py" \
+  --out "${RUNNER_TEMP:-$ROOT/build}/diting-sw18" \
+  --header "$ROOT/.cache/xnu-work/bsd/kern/diting_sw_runtime_blob.h"
 BOOT_PROGRESS=${XNU_BOOT_PROGRESS:-0}
 if [ "$BOOT_PROGRESS" != 0 ] && [ "$BOOT_PROGRESS" != 1 ]; then
   echo 'XNU_BOOT_PROGRESS must be 0 or 1' >&2

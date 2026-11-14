@@ -371,7 +371,7 @@ new file mode 100644
 index 0000000..00feebd
 --- /dev/null
 +++ b/bsd/dev/diting_goodix.c
-@@ -0,0 +1,1245 @@
+@@ -0,0 +1,1257 @@
 +/* Goodix Berlin-D / Diting SM8475. Adapted from the earlier redwood_goodix.c
 + * (APSL 2.0). Hardware resources are the Diting live DT, checked against the
 + * NothingOSS cape pinctrl and waipio GCC source. No Redwood peripherals. */
@@ -1250,6 +1250,7 @@ index 0000000..00feebd
 + * submitted, completed, draw ticks, surface-wait ticks, pacing ticks. */
 +uint64_t diting_fb_diag[5];
 +uint64_t diting_cpu_policy_diag[32];
++extern int diting_sw_runtime_status;
 +
 +static void
 +st_save_snapshot(void)
@@ -1318,11 +1319,17 @@ index 0000000..00feebd
 +        (unsigned long long)__atomic_load_n(&diting_cpu_policy_diag[28],__ATOMIC_RELAXED));
 +    if(added<=0 || (unsigned)added>=sizeof(text)-(unsigned)length)return;
 +    length+=added;
++    added=snprintf(text+length,sizeof(text)-(unsigned)length,
++        "sw_runtime_install_status=%d\n",diting_sw_runtime_status);
++    if(added<=0 || (unsigned)added>=sizeof(text)-(unsigned)length)return;
++    length+=added;
 +    vfs_context_t context=vfs_context_kernel();
 +    vnode_t vp=NULL;
 +    int flags=FWRITE|O_CREAT|O_TRUNC|O_NOFOLLOW;
 +    int error=vnode_open("/private/var/logs/DitingTouch-kernel.txt",flags,0600,0,&vp,context);
 +    if (error) {printf("Diting ST FTS: snapshot open=%d\n",error);return;}
++    error=vnode_setsize(vp,0,IO_SYNC,context);
++    if (error) {(void)vnode_close(vp,flags,context);return;}
 +    int residual=0;
 +    error=vn_rdwr(UIO_WRITE,vp,text,length,0,UIO_SYSSPACE,IO_SYNC,
 +        vfs_context_ucred(context),&residual,current_proc());
@@ -1334,7 +1341,12 @@ index 0000000..00feebd
 +    vp=NULL;
 +    error=vnode_open("/private/var/logs/DitingCpu-timeline.txt",flags,0600,0,&vp,context);
 +    if (!error) {
++        if (!timeline_started) {
++            error=vnode_setsize(vp,0,IO_SYNC,context);
++            if (error) {(void)vnode_close(vp,flags,context);return;}
++        }
 +        timeline_started=true;
++        residual=0;
 +        error=vn_rdwr(UIO_WRITE,vp,text,length,0,UIO_SYSSPACE,IO_SYNC|IO_APPEND,
 +            vfs_context_ucred(context),&residual,current_proc());
 +        (void)vnode_close(vp,flags,context);
@@ -2167,13 +2179,16 @@ index 240bbf6..400dba5 100644
  			    imgp->ip_vfs_context);
  
  			error = open1(imgp->ip_vfs_context, ndp,
-@@ -5927,6 +5969,71 @@ bad:
+@@ -5927,6 +5969,84 @@ bad:
   * Note:	The argument and environment vectors are user space pointers
   *		to arrays of user space pointers.
   */
 +#if defined(ARM64_BOARD_CONFIG_DITING) && (DEVELOPMENT || DEBUG)
 +/* The earlier port's per-program compatibility-library insertion. Keep a bounded,
 + * locked snapshot: root may update configuration while another task execs. */
++#include "diting_sw_runtime_blob.h"
++static bool diting_sw_runtime_ready;
++int diting_sw_runtime_status=-1;
 +static char exec_inject_conf[512];
 +static LCK_MTX_DECLARE_ATTR(exec_inject_lock, &proc_lck_grp, &proc_lck_attr);
 +
@@ -2232,6 +2247,16 @@ index 240bbf6..400dba5 100644
 +			any = true;
 +		}
 +	}
++	/* The optional SW runtime is installed before PID 1, only on bound Data.
++	 * Append to the existing adapter; never replace its working touch hooks. */
++	if (any && diting_sw_runtime_ready &&
++	    imgp->ip_ndp->ni_cnd.cn_namelen == 10 && !strncmp(name,"backboardd",10)) {
++		size_t extra=sizeof(diting_sw_runtime_path)-1;
++		if (used+1+extra<size) {
++			env[used++]=':';
++			memcpy(env+used,diting_sw_runtime_path,extra+1);
++		}
++	}
 +	return any;
 +}
 +#endif
@@ -2272,7 +2297,7 @@ index 240bbf6..400dba5 100644
  	if (imgp->ip_argspace < new_ptr_size) {
  		error = E2BIG;
  		goto bad;
-@@ -7132,8 +7265,493 @@
+@@ -7132,8 +7265,543 @@
   *		word width of the kernel. Once the self-exec completes, the
   *		initproc might be different.
   */
@@ -2559,6 +2584,55 @@ index 240bbf6..400dba5 100644
 +uint8_t native_owner_data_seed_sha256[32];
 +char native_owner_data_device_path[64];
 +
++/* Install only our small, optional library through the mounted native APFS.
++ * No raw writes or OS/SystemOS metadata replacement. Old kernels do not load
++ * this path. Failure leaves the existing UI adapter and boot path intact. */
++static void
++diting_sw_runtime_install(mount_t data_mount)
++{
++    unsigned enabled=0;
++    if (!PE_parse_boot_argn("diting_sw_render",&enabled,sizeof(enabled)) || enabled!=1)return;
++    vfs_context_t ctx=vfs_context_current();
++    vnode_t parent=NULLVP, file=NULLVP;
++    struct vnode_attr va;
++    int error=vnode_lookup("/private/var/db",VNODE_LOOKUP_NOFOLLOW_ANY,&parent,ctx);
++    const int flags=FWRITE|O_CREAT|O_NOFOLLOW;
++    if (error)goto out;
++    VATTR_INIT(&va);VATTR_WANTED(&va,va_uid);VATTR_WANTED(&va,va_mode);
++    error=vnode_getattr(parent,&va,ctx);
++    if (error)goto out;
++    if (vnode_vtype(parent)!=VDIR || vnode_mount(parent)!=data_mount ||
++        !VATTR_IS_SUPPORTED(&va,va_uid) || !VATTR_IS_SUPPORTED(&va,va_mode) ||
++        va.va_uid!=0 || (va.va_mode&022)) {error=EPERM;goto out;}
++    error=vnode_open(diting_sw_runtime_path,flags,0644,VNODE_LOOKUP_NOFOLLOW_ANY,&file,ctx);
++    if (error)goto out;
++    VATTR_INIT(&va);VATTR_WANTED(&va,va_uid);VATTR_WANTED(&va,va_mode);VATTR_WANTED(&va,va_nlink);
++    error=vnode_getattr(file,&va,ctx);
++    if (error)goto out;
++    if (vnode_vtype(file)!=VREG || vnode_mount(file)!=data_mount ||
++        !VATTR_IS_SUPPORTED(&va,va_uid) || !VATTR_IS_SUPPORTED(&va,va_mode) ||
++        !VATTR_IS_SUPPORTED(&va,va_nlink) || va.va_uid!=0 ||
++        (va.va_mode&022) || va.va_nlink!=1) {error=EPERM;goto out;}
++    error=vnode_setsize(file,0,IO_SYNC,ctx);
++    if (error)goto out;
++    int residual=0;
++    error=vn_rdwr(UIO_WRITE,file,(caddr_t)diting_sw_runtime_blob,
++        (int)sizeof(diting_sw_runtime_blob),0,UIO_SYSSPACE,IO_SYNC,
++        vfs_context_ucred(ctx),&residual,current_proc());
++    if (!error && residual)error=EIO;
++    if (!error)error=VNOP_FSYNC(file,MNT_WAIT,ctx);
++out:
++    if (file) {
++        int close_error=vnode_close(file,flags,ctx);
++        if (!error)error=close_error;
++    }
++    if (parent)vnode_put(parent);
++    diting_sw_runtime_ready=error==0;
++    diting_sw_runtime_status=error;
++    printf("Diting SW18: native Data install %s error=%d bytes=%lu\n",
++        error?"SKIP":"PASS",error,(unsigned long)sizeof(diting_sw_runtime_blob));
++}
++
  static int
 -load_init_program_at_path(proc_t p, user_addr_t scratch_addr, const char* path)
 +native_owner_data_prepare(proc_t p, user_addr_t scratch)
@@ -2754,6 +2828,7 @@ index 240bbf6..400dba5 100644
 +			created++;
 +		}
 +		printf("DITING APFS: var skeleton created=%d failed=%d\n", created, failed);
++		diting_sw_runtime_install(data_mount);
 +	}
 +done:
 +	if (data_root) vnode_put(data_root);

@@ -532,3 +532,12 @@ jobs:
             UniXNU/out/diting/*/*/kernel/kernel.macho
             UniXNU/out/diting/*/*/package.manifest.json
             products/logs/*
+      - name: software rendering runtime
+        uses: actions/upload-artifact@v4
+        with:
+          name: diting-sw18-runtime
+          retention-days: 1
+          if-no-files-found: error
+          path: |
+            ${{ runner.temp }}/diting-sw18/libditing-sw18.dylib
+            ${{ runner.temp }}/diting-sw18/runtime.json

@@ -850,3 +850,12 @@ work is the boot itself, not the inputs.
 5. 用 Advanced Logger/ramoops 等日志取证，不拍屏；分区写入/刷机前必须得到明确授权。
 6. 保留 Pong 来源说明与许可证合规；不把厂商 blob 提交或发布到公共仓库。
 7. 以 Sheng 上游为参照消除重复劳动，对比架构与工具链；不为“看起来完成”而删减范围。
+
+## 2026-11-14 — software scan conversion scheduling candidate
+
+- Image56 evidence (Data xid6696) shows active 8-core load, all three EPSS domains live, 2801 completed frames, and mean final framebuffer drawing 1.578ms. The software QuartzCore generation/submission path remains the priority; no claim that CPU frequency or DDR efficiency is fully proven.
+- `userland/sw_render18.c` is an optional, exact-22H374-UUID adapter for BackBoard only. It bounds stock scan-conversion callbacks to8 for >7 rows and changes atomic row claims4→16; samplers, blending, resolution, effects and completion remain stock. Only the matching40-byte instruction span is changed in a private process mapping.
+- `scripts/build-diting-sw-render.py` pairs the signed project-owned library with the kernel via a generated header. At `diting_sw_render=1`, the already-authorized native Data mount installs `/private/var/db/diting-sw18-v1.dylib` before PID1; verifies mount/type/owner/mode/linkcount, explicitly truncates and syncs, and only then permits append injection after the existing UI adapter. No raw filesystem overlay, original runtime replacement or host Mac is required. Failed prerequisites skip the optional optimization. Old kernels or boot argument off do not load the file.
+- Local ARM64 emulation of the actual stock row callback covered117 rectangle/triangle and tail cases, comparing4/16-row claims and explicitly asserting nonempty full-height rectangle coverage. This is correctness coverage, not a performance benchmark or multicore interleaving simulation. Details: `docs/SOFTWARE-RENDER-SCHEDULING.zh.md`.
+- Per-boot diagnostic files now use explicit vnode_setsize because56 retained55's entire timeline prefix despite O_TRUNC. Host analysis still splits reset counters by boot. Runtime install status is saved in kernel snapshots; userland logs APPLIED/SKIP separately.
+- CI and device validation pending at this entry. Do not claim speedup or60/120FPS until matching runtime logs and user observations exist.
