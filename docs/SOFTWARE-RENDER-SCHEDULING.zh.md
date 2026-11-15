@@ -33,3 +33,5 @@ macOS CI编译并以4KiB签名页签名项目自有`userland/sw_render18.c`。`b
 构建完成后需验证新库实际安装、APPLIED日志、触摸/画面无回归，并用连续操作窗口对照提交频率与负载；未经过这些步骤不能声称更流畅或达到60/120FPS。
 
 同时对诊断日志使用显式vnode_setsize，修复第56版观察到的旧启动记录残留。分析器仍保留按累计计数回退分段的兼容逻辑。
+
+2026-11-15 第57版：用户报告改善有限；实机Data xid7925的22个窗口均为sw_runtime_install_status=22，/db/diting-sw18-v1.dylib及用户态APPLIED日志缺失，故扫描行优化未生效。不能据此断定调度算法无效。下一版安装器使用与已工作的诊断文件写入相同的vfs_context_kernel，截断属性补IO_SYNC，并记录lookup/getattr/open/truncate/write/fsync/ready八阶段。EINVAL准确发生点仍待下一轮日志，禁止先声称已修复。
