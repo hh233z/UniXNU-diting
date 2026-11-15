@@ -2,12 +2,18 @@ name: Diting runtime helper
 
 on:
   workflow_dispatch:
+    inputs:
+      gpu:
+        description: "Build A730 Turnip and Metal userspace for 22H374"
+        type: boolean
+        default: false
 
 permissions:
   contents: read
 
 jobs:
   helper:
+    if: ${{ !inputs.gpu }}
     runs-on: macos-15-intel
     timeout-minutes: 30
     env:
@@ -39,3 +45,62 @@ jobs:
             ${{ runner.temp }}/diting-runtime/sileo-rootful-firstboot.sh
             ${{ runner.temp }}/diting-runtime/var-seed/
             ${{ runner.temp }}/diting-runtime/helper.json
+
+  gpu:
+    if: ${{ inputs.gpu }}
+    runs-on: macos-15-intel
+    timeout-minutes: 90
+    env:
+      DEVELOPER_DIR: /Applications/Xcode_16.4.app/Contents/Developer
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install build tools
+        run: |
+          set -euo pipefail
+          brew install bison flex glslang ninja pkgconf
+          python3 -m venv "$RUNNER_TEMP/gpu-venv"
+          "$RUNNER_TEMP/gpu-venv/bin/pip" install meson mako pyyaml packaging ply
+          rustup toolchain install 1.98.0 --profile minimal
+          rustup default 1.98.0
+          rustup target add aarch64-apple-ios
+          echo "$(brew --prefix bison)/bin" >> "$GITHUB_PATH"
+          echo "$(brew --prefix flex)/bin" >> "$GITHUB_PATH"
+      - name: Prepare pinned public sources
+        run: |
+          set -euo pipefail
+          git init "$RUNNER_TEMP/mesa-source"
+          git -C "$RUNNER_TEMP/mesa-source" remote add origin https://gitlab.freedesktop.org/mesa/mesa.git
+          git -C "$RUNNER_TEMP/mesa-source" fetch --depth=1 origin 85fda3b36405bcaea8bffc64aa4f2651dc90770d
+          git init "$RUNNER_TEMP/translator-source"
+          git -C "$RUNNER_TEMP/translator-source" remote add origin https://github.com/steelbrain/metal2vulkan.git
+          git -C "$RUNNER_TEMP/translator-source" fetch --depth=1 origin 624bab3918de5b978e1101517abca2b4fa426565
+          python3 scripts/prepare-diting-mesa.py --repository "$RUNNER_TEMP/mesa-source" --out "$RUNNER_TEMP/diting-mesa"
+          python3 scripts/prepare-diting-metal-parity.py --repository "$RUNNER_TEMP/translator-source" --out "$RUNNER_TEMP/diting-translator"
+      - name: Build 22H374 Turnip
+        run: |
+          python3 scripts/build-diting-turnip.py --guest-build 22H374             --mesa "$RUNNER_TEMP/diting-mesa" --abi-directory "$GITHUB_WORKSPACE/drivers/DitingAdreno/submit"             --tools-directory "$(brew --prefix)/bin" --venv "$RUNNER_TEMP/gpu-venv"             --output-dir "$RUNNER_TEMP/diting-turnip"
+      - name: Build 22H374 Metal bridge and discovery bundle
+        run: |
+          set -euo pipefail
+          python3 scripts/build-diting-metal-bridge.py --guest-build 22H374             --translator "$RUNNER_TEMP/diting-translator" --output-dir "$RUNNER_TEMP/diting-bridge"
+          python3 scripts/build-diting-metal-plugin.py --guest-build 22H374             --bridge-directory "$RUNNER_TEMP/diting-bridge"             --turnip-library "$RUNNER_TEMP/diting-turnip/src/freedreno/vulkan/libvulkan_freedreno.dylib"             --output-dir "$RUNNER_TEMP/diting-gpu-runtime"
+      - name: Upload GPU runtime
+        uses: actions/upload-artifact@v4
+        with:
+          name: diting-gpu-runtime-22H374
+          if-no-files-found: error
+          path: ${{ runner.temp }}/diting-gpu-runtime/
+      - name: Upload GPU build diagnostics
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: diting-gpu-build-logs
+          if-no-files-found: ignore
+          path: |
+            ${{ runner.temp }}/diting-turnip/*.log
+            ${{ runner.temp }}/diting-turnip/build-report.json
+            ${{ runner.temp }}/diting-bridge/*.log
+            ${{ runner.temp }}/diting-bridge/build-report.json
