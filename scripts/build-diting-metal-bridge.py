@@ -13,38 +13,51 @@ import sys
 ROOT=Path(__file__).resolve().parents[1]
 sys.path.insert(0,str(ROOT/'scripts'))
 import diting_paths
+from diting_metal_sources import validate_parity_sources
 p=argparse.ArgumentParser(description=__doc__)
 p.add_argument('--translator',required=True,type=Path)
 p.add_argument('--guest-build',choices=('20G81','22H374'),default='20G81')
 p.add_argument('--output-dir',required=True,type=Path)
+p.add_argument('--check-sources-only',action='store_true',
+    help='validate/prepare translator interfaces without requiring Xcode')
 p.add_argument('--developer-dir',type=Path,default=diting_paths.developer_dir())
 a=p.parse_args();out=a.output_dir.resolve();out.mkdir(parents=True,exist_ok=True)
 policy=a.translator/'crates/metal2vulkan-runtime/src/metal_level.rs'
-if 'IOS16_6_1' not in policy.read_text():
-    subprocess.run(['git','apply',str(ROOT/'patches/metal2vulkan/0008-diting-ios16-20G81-policy.patch')],
-        cwd=a.translator,check=True)
-surface=a.translator/'crates/metal2vulkan-runtime/src/buffer_texture.rs'
-if 'surface_row_padding' not in surface.read_text():
-    subprocess.run(['git','apply',str(ROOT/'patches/metal2vulkan/0009-diting-owned-iosurface-row-padding.patch')],
-        cwd=a.translator,check=True)
-if a.guest_build=='22H374' and 'IOS18_7_10' not in policy.read_text():
-    subprocess.run(['git','apply',str(ROOT/'patches/metal2vulkan/0010-diting-ipados18-22H374-policy.patch')],cwd=a.translator,check=True)
-memory=a.translator/'crates/metal2vulkan-runtime/src/memory.rs'
-if 'fn trim_empty_blocks' not in memory.read_text():
-    subprocess.run(['git','apply',str(ROOT/'patches/metal2vulkan/0011-diting-scoped-memory-pressure.patch')],cwd=a.translator,check=True)
-optimizations=[
- ('0012-data-a-live-final-pass-cache.patch','render_target.rs','struct KeptFinal'),
- ('0013-data-a-live-fewer-allocations-a-draw.patch','render_state.rs','struct PerViewport'),
- ('0015-data-a-live-draw-commands-kept.patch','render.rs','draw_commands: Option<DrawCommands>'),
- ('0016-data-a-live-draw-lists-kept.patch','tracker.rs','enum KeyUses'),
- ('0017-data-a-live-refuse-rebinds.patch','device/create.rs','pub refuse_rebinds: bool'),
- ('0018-data-a-live-tracker-key-map.patch','tracker.rs','inside: KeyMap<Class<K>, Vec<Entry>>'),
- ('0019-data-a-live-two-plane-shadow-as-it-lies.patch','texture/surface_two_planes.rs','Device::runtime_owner'),
-]
-for patch,source,marker in optimizations:
-    text=(a.translator/'crates/metal2vulkan-runtime/src'/source).read_text()
-    if marker not in text:
-        subprocess.run(['git','apply','--whitespace=nowarn',str(ROOT/'patches/metal2vulkan'/patch)],cwd=a.translator,check=True)
+source_info = {'source_family': 'legacy-metal-level'}
+if policy.exists():
+    if 'IOS16_6_1' not in policy.read_text():
+        subprocess.run(['git','apply',str(ROOT/'patches/metal2vulkan/0008-diting-ios16-20G81-policy.patch')],
+            cwd=a.translator,check=True)
+    surface=a.translator/'crates/metal2vulkan-runtime/src/buffer_texture.rs'
+    if 'surface_row_padding' not in surface.read_text():
+        subprocess.run(['git','apply',str(ROOT/'patches/metal2vulkan/0009-diting-owned-iosurface-row-padding.patch')],
+            cwd=a.translator,check=True)
+    if a.guest_build=='22H374' and 'IOS18_7_10' not in policy.read_text():
+        subprocess.run(['git','apply',str(ROOT/'patches/metal2vulkan/0010-diting-ipados18-22H374-policy.patch')],cwd=a.translator,check=True)
+    memory=a.translator/'crates/metal2vulkan-runtime/src/memory.rs'
+    if 'fn trim_empty_blocks' not in memory.read_text():
+        subprocess.run(['git','apply',str(ROOT/'patches/metal2vulkan/0011-diting-scoped-memory-pressure.patch')],cwd=a.translator,check=True)
+    optimizations=[
+     ('0012-data-a-live-final-pass-cache.patch','render_target.rs','struct KeptFinal'),
+     ('0013-data-a-live-fewer-allocations-a-draw.patch','render_state.rs','struct PerViewport'),
+     ('0015-data-a-live-draw-commands-kept.patch','render.rs','draw_commands: Option<DrawCommands>'),
+     ('0016-data-a-live-draw-lists-kept.patch','tracker.rs','enum KeyUses'),
+     ('0017-data-a-live-refuse-rebinds.patch','device/create.rs','pub refuse_rebinds: bool'),
+     ('0018-data-a-live-tracker-key-map.patch','tracker.rs','inside: KeyMap<Class<K>, Vec<Entry>>'),
+     ('0019-data-a-live-two-plane-shadow-as-it-lies.patch','texture/surface_two_planes.rs','Device::runtime_owner'),
+    ]
+    for patch,source,marker in optimizations:
+        text=(a.translator/'crates/metal2vulkan-runtime/src'/source).read_text()
+        if marker not in text:
+            subprocess.run(['git','apply','--whitespace=nowarn',str(ROOT/'patches/metal2vulkan'/patch)],cwd=a.translator,check=True)
+else:
+    try:
+        source_info = validate_parity_sources(a.translator, a.guest_build)
+    except (OSError, ValueError) as error:
+        raise SystemExit(f'Incompatible translator: {error}. Run prepare-diting-metal-parity.py first.')
+if a.check_sources_only:
+    print(json.dumps(dict(guest=a.guest_build, sources=source_info), indent=2))
+    raise SystemExit(0)
 minimum='18.0' if a.guest_build=='22H374' else '16.6.1'
 target='arm64-apple-ios'+minimum
 env=dict(os.environ,DEVELOPER_DIR=str(a.developer_dir),IPHONEOS_DEPLOYMENT_TARGET=minimum)
@@ -85,7 +98,7 @@ link=['xcrun','clang++','-target',target,'-isysroot',sdk,
 with (out/'link.log').open('w') as log:
     r=subprocess.run(link,env=env,stdout=log,stderr=subprocess.STDOUT)
 if r.returncode:raise SystemExit('Metal dylib link failed: '+str(out/'link.log'))
-report=dict(frontend=str(frontend),archive=str(archive),library=str(library),
+report=dict(translator_sources=source_info,frontend=str(frontend),archive=str(archive),library=str(library),
     deployment=minimum,guest=a.guest_build,device_extent=600 if a.guest_build=='22H374' else 528,automatic_publication=False,
     hardware_acceleration=False,commands=[cmd,cargo,link],
     runtime_format_policy=a.guest_build+' guest format metadata; Vulkan capabilities; no Apple heap/compression assumptions',

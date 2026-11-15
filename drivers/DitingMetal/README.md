@@ -33,9 +33,15 @@ Data-backed union over that directory. The stock 22H374 renderer selects a
 real available Metal device, retaining its CPU fallback when no device is
 available. The display format adapter selects linear BGRA output.
 
-`patches/metal2vulkan/0010-diting-ipados18-22H374-policy.patch` adds the
-separate IOS18_7_10 runtime policy. It reads 22H374's actual format metadata
-and preserves Vulkan capability limits rather than claiming an Apple GPU.
+For the current 22H374 build, prepare translator revision `624bab3918de5b978e1101517abca2b4fa426565`
+with `scripts/prepare-diting-metal-parity.py`. The ordered `parity114` series
+already includes guest format metadata, device rebinding policy, idle-memory
+release and command-buffer diagnostic interfaces. The bridge builder checks
+this contract before Xcode runs; it does not apply the legacy `MetalLevel`
+patches to this source family. Patch `0021-diting-guest-format-info.patch`
+reads the guest's actual format metadata while Vulkan limits still determine
+the real device's texture capabilities. The older `0010` policy remains a
+reference for the legacy source family.
 
 The latest captured GPU-enabled boot (services36) completed real CP init,
 ZAP authentication and timestamp fences, then created Vulkan/Metal devices.
