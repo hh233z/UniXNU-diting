@@ -25,9 +25,14 @@ on:
         required: false
         type: string
         default: ""
+      gpu_runtime_run:
+        description: "Optional completed 22H374 GPU runtime run for native installer; does not activate it"
+        type: string
+        default: ""
 
 permissions:
   contents: read
+  actions: read
 
 concurrency:
   group: package-${{ github.ref }}-${{ inputs.defconfig }}
@@ -431,6 +436,21 @@ jobs:
               'firmware_directory': str((root / 'wifi').resolve()),
           }, indent=2))
           PY
+      - name: Download matching optional GPU runtime
+        if: ${{ inputs.gpu_runtime_run != '' }}
+        uses: actions/download-artifact@v4
+        with:
+          name: diting-gpu-runtime-22H374
+          run-id: ${{ inputs.gpu_runtime_run }}
+          github-token: ${{ github.token }}
+          path: ${{ runner.temp }}/diting-gpu-runtime
+      - name: Select optional native APFS installer input
+        if: ${{ inputs.gpu_runtime_run != '' }}
+        env:
+          GPU_RUNTIME_RUN: ${{ inputs.gpu_runtime_run }}
+        run: |
+          echo "DITING_GPU_RUNTIME_DIR=$RUNNER_TEMP/diting-gpu-runtime" >> "$GITHUB_ENV"
+          echo "DITING_GPU_SOURCE=actions-$GPU_RUNTIME_RUN" >> "$GITHUB_ENV"
       - name: package
         working-directory: device
         env:

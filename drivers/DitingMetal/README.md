@@ -71,6 +71,31 @@ These commands compile artifacts without modifying a phone. Source pins,
 reviewed deltas and upstream migration notes are recorded in
 [the 2026-10-24 sync](https://github.com/Chengdong-Yu/UniXNU-pong/blob/main/migration/ipados18/upstream-20261024.md).
 
+### Native installation without a host APFS writer
+
+`package.yml` accepts an optional `gpu_runtime_run` from a completed GPU build.
+The kernel build embeds a project-owned installer and a small launcher, signed
+with 4 KiB code pages. Without this input no installer is bundled. Without
+`diting_gpu_install=1 diting_rootful=1` the installer is neither staged nor loaded.
+The ordinary software-rendering runtime remains independent.
+
+The UUID-bound Data mount stages those two files through native VFS. The
+existing root `containermanagerd_system` injection can then spawn the installer
+after launchd starts; PID 1 does not run it. The installer additionally requires
+22H374, the Diting OS/Data UUIDs, software UI, and the real OS Extensions
+directory. It refuses an existing bundle or discovery policy. It temporarily
+updates only OS to read-write, installs the four known bundle files and two
+discovery files, and restores OS read-only. SystemOS stays read-only. Errors
+remove files created by the current attempt; an interrupted install requires
+inspection before another attempt. No host APFS metadata is overlaid.
+
+The first discovery policy names only `Preferences`. Installation does not
+activate GPU rendering in the running software UI. A subsequent temporary
+GPU-enabled boot is needed to test Settings and collect actual command-buffer
+and presentation results. Installation logs are written to
+`/private/var/logs/DitingGpuInstall.txt`; kernel snapshots record Data staging
+status. Build success alone does not establish installation or acceleration.
+
 ## 20G81 development reference
 
 This is a local fork of Sheng's NativeMetal frontend and object bridge over

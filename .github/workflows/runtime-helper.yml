@@ -7,13 +7,18 @@ on:
         description: "Build A730 Turnip and Metal userspace for 22H374"
         type: boolean
         default: false
+      gpu_install_run:
+        description: "Compile native APFS installer using this completed GPU runtime run (optional)"
+        type: string
+        default: ""
 
 permissions:
   contents: read
+  actions: read
 
 jobs:
   helper:
-    if: ${{ !inputs.gpu }}
+    if: ${{ !inputs.gpu && inputs.gpu_install_run == '' }}
     runs-on: macos-15-intel
     timeout-minutes: 30
     env:
@@ -45,6 +50,35 @@ jobs:
             ${{ runner.temp }}/diting-runtime/sileo-rootful-firstboot.sh
             ${{ runner.temp }}/diting-runtime/var-seed/
             ${{ runner.temp }}/diting-runtime/helper.json
+
+  gpu-install:
+    if: ${{ inputs.gpu_install_run != '' }}
+    runs-on: macos-15-intel
+    timeout-minutes: 15
+    env:
+      DEVELOPER_DIR: /Applications/Xcode_16.4.app/Contents/Developer
+      DITING_GPU_SOURCE: actions-${{ inputs.gpu_install_run }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with:
+          name: diting-gpu-runtime-22H374
+          run-id: ${{ inputs.gpu_install_run }}
+          github-token: ${{ github.token }}
+          path: ${{ runner.temp }}/diting-gpu-runtime
+      - name: Compile optional native APFS installer
+        run: |
+          python3 scripts/build-diting-gpu-install.py --runtime "$RUNNER_TEMP/diting-gpu-runtime" \
+            --out "$RUNNER_TEMP/diting-gpu-install" --header "$RUNNER_TEMP/diting-gpu-install/diting_gpu_runtime_blob.h"
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: diting-gpu-installer-22H374
+          if-no-files-found: ignore
+          path: |
+            ${{ runner.temp }}/diting-gpu-install/diting-gpu-install-v1
+            ${{ runner.temp }}/diting-gpu-install/diting-gpu-launcher-v1.dylib
+            ${{ runner.temp }}/diting-gpu-install/installer.json
 
   gpu:
     if: ${{ inputs.gpu }}

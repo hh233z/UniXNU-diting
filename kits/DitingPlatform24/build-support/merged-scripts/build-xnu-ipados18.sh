@@ -227,6 +227,9 @@ python3 scripts/prepare-xnu-source.py
 python3 "$DITING_NATIVE_DRIVER_SOURCE/scripts/build-diting-sw-render.py" \
   --out "${RUNNER_TEMP:-$ROOT/build}/diting-sw18" \
   --header "$ROOT/.cache/xnu-work/bsd/kern/diting_sw_runtime_blob.h"
+python3 "$DITING_NATIVE_DRIVER_SOURCE/scripts/build-diting-gpu-install.py" \
+  --out "${RUNNER_TEMP:-$ROOT/build}/diting-gpu-install" \
+  --header "$ROOT/.cache/xnu-work/bsd/kern/diting_gpu_runtime_blob.h"
 BOOT_PROGRESS=${XNU_BOOT_PROGRESS:-0}
 if [ "$BOOT_PROGRESS" != 0 ] && [ "$BOOT_PROGRESS" != 1 ]; then
   echo 'XNU_BOOT_PROGRESS must be 0 or 1' >&2
