@@ -117,4 +117,5 @@ jobs:
             ${{ runner.temp }}/diting-turnip/*.log
             ${{ runner.temp }}/diting-turnip/build-report.json
             ${{ runner.temp }}/diting-bridge/*.log
+            ${{ runner.temp }}/diting-bridge/scanout_convert.air
             ${{ runner.temp }}/diting-bridge/build-report.json
