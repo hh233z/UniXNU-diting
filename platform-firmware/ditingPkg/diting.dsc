@@ -24,6 +24,7 @@
   SKUID_IDENTIFIER               = DEFAULT
   FLASH_DEFINITION               = ditingPkg/diting.fdf
   USE_CUSTOM_DISPLAY_DRIVER      = 1
+  DEFINE DITING_ANDROID_CMA_ENABLED = 0
 
   #
   # 0 = SM8475
@@ -152,4 +153,4 @@
 # the menu says "no log" while Print() text is still on the screen. Undefine
 # it after the toolchain flag. PcdDebugPrintErrorLevel stays DEBUG_ERROR.
 [BuildOptions]
-  RELEASE_*_*_CC_FLAGS = -U MDEPKG_NDEBUG
+  RELEASE_*_*_CC_FLAGS = -U MDEPKG_NDEBUG -DDITING_ANDROID_CMA_ENABLED=$(DITING_ANDROID_CMA_ENABLED)

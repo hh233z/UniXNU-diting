@@ -76,6 +76,15 @@ gMemoryDescriptor[] = {
   // 开发候选：避开本机 Android 运行时记录的 0xD5C00000 之后保留区。
   // 启动链对这些区域的真实所有权尚未验证，不得用于设备启动。
   {"DXE Heap",           0xC7000000, 0x0EC00000, AddMem, SYS_MEM  , SYS_MEM_CAP, Conv   , WRITE_BACK_XN},
+#if DITING_ANDROID_CMA_ENABLED
+  // Android-only handoff candidate. Captured Diting FDT declares both banks
+  // as RAM; neither intersects a fixed reserved-memory node. The first is
+  // used by Android's dynamic 164 MiB display CMA, not a fixed carveout.
+  // v4's EFI map omitted these banks, exhausting <4 GiB CMA and preventing
+  // qseecom (36 MiB), display (164 MiB), audio and WLAN pools from starting.
+  {"Android Low CMA",    0xD5C00000, 0x0A400000, AddMem, SYS_MEM, SYS_MEM_CAP, Conv, WRITE_BACK_XN},
+  {"Android Top CMA",    0xF4600000, 0x0BA00000, AddMem, SYS_MEM, SYS_MEM_CAP, Conv, WRITE_BACK_XN},
+#endif
   // 运行时 FDT 报告 0x900000000 起有 6 GiB 物理内存；此处只作主机构建候选。
   // 真实 UEFI 内存图、动态保留区和分配行为必须在设备测试前核实。
   {"XNU Candidate",      0x900000000, 0x140000000, AddMem, SYS_MEM, SYS_MEM_CAP, Conv, WRITE_BACK_XN},
