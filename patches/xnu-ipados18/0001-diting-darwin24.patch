@@ -2622,7 +2622,7 @@ index 240bbf6..400dba5 100644
 +    vnode_t parent=NULLVP, file=NULLVP;
 +    struct vnode_attr va;
 +    int error=vnode_lookup("/private/var/db",VNODE_LOOKUP_NOFOLLOW_ANY,&parent,ctx);
-+    const int flags=FWRITE|O_CREAT|O_NOFOLLOW;
++    const int flags=FWRITE|O_CREAT; /* NOFOLLOW_ANY is supplied by vnode_open lookup flags. */
 +    if (error)goto out;
 +    VATTR_INIT(&va);VATTR_WANTED(&va,va_uid);VATTR_WANTED(&va,va_mode);
 +    diting_sw_runtime_stage=2;
