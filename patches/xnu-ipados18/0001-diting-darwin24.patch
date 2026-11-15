@@ -371,7 +371,7 @@ new file mode 100644
 index 0000000..00feebd
 --- /dev/null
 +++ b/bsd/dev/diting_goodix.c
-@@ -0,0 +1,1284 @@
+@@ -0,0 +1,1323 @@
 +/* Goodix Berlin-D / Diting SM8475. Adapted from the earlier redwood_goodix.c
 + * (APSL 2.0). Hardware resources are the Diting live DT, checked against the
 + * NothingOSS cape pinctrl and waipio GCC source. No Redwood peripherals. */
@@ -1254,8 +1254,14 @@ index 0000000..00feebd
 +extern int diting_sw_runtime_stage;
 +extern int diting_gpu_runtime_status;
 +extern int diting_gpu_runtime_stage;
++#if XNU_DITING_RAMOOPS_CONSOLE
++extern size_t diting_gpu_runtime_diagnostic_copy(char *,size_t);
++#endif
 +#if XNU_DITING_ADRENO_PLATFORM
 +extern size_t diting_adreno_diagnostic_copy(char *out,size_t capacity);
++#endif
++#if XNU_DITING_WIFI
++extern size_t diting_wifi_diagnostic_copy(char *,size_t);
 +#endif
 +
 +static void
@@ -1377,6 +1383,39 @@ index 0000000..00feebd
 +            (void)vnode_close(vp,flags,context);
 +            if (error || residual)printf("Diting A730: snapshot write=%d residual=%d\n",error,residual);
 +        } else printf("Diting A730: snapshot open=%d\n",error);
++    }
++#endif
++#if XNU_DITING_RAMOOPS_CONSOLE
++    /* One bounded snapshot thread owns this buffer. Never perform VFS I/O
++     * inside a user diagnostic syscall or a rendering callback. */
++    static char runtime_text[32768];
++    size_t runtime_length=diting_gpu_runtime_diagnostic_copy(runtime_text,sizeof(runtime_text));
++    if (runtime_length) {
++        vp=NULL;flags=FWRITE|O_CREAT|O_NOFOLLOW;
++        error=vnode_open("/private/var/logs/DitingGpuRuntime.txt",flags,0600,0,&vp,context);
++        if (!error) {
++            VATTR_INIT(&truncate_attr);VATTR_SET(&truncate_attr,va_data_size,0);
++            error=vnode_setattr(vp,&truncate_attr,context);residual=0;
++            if (!error)error=vn_rdwr(UIO_WRITE,vp,runtime_text,(int)runtime_length,0,
++                UIO_SYSSPACE,IO_SYNC,vfs_context_ucred(context),&residual,current_proc());
++            (void)vnode_close(vp,flags,context);
++            if (error || residual)printf("Diting GPU: runtime log write=%d residual=%d\n",error,residual);
++        }
++    }
++#endif
++#if XNU_DITING_WIFI
++    size_t wifi_length=diting_wifi_diagnostic_copy(text,sizeof(text));
++    if (wifi_length) {
++        vp=NULL;flags=FWRITE|O_CREAT|O_NOFOLLOW;
++        error=vnode_open("/private/var/logs/DitingWifi-kernel.txt",flags,0600,0,&vp,context);
++        if (!error) {
++            VATTR_INIT(&truncate_attr);VATTR_SET(&truncate_attr,va_data_size,0);
++            error=vnode_setattr(vp,&truncate_attr,context);residual=0;
++            if (!error)error=vn_rdwr(UIO_WRITE,vp,text,(int)wifi_length,0,
++                UIO_SYSSPACE,IO_SYNC,vfs_context_ucred(context),&residual,current_proc());
++            (void)vnode_close(vp,flags,context);
++            if (error || residual)printf("Diting WiFi: log write=%d residual=%d\n",error,residual);
++        }
 +    }
 +#endif
 +}
@@ -3059,12 +3098,44 @@ index d5d5b16..5372d98 100644
  #include <sys/ioctl.h>
  #include <sys/proc_internal.h>
  #include <sys/proc.h>
-@@ -139,6 +140,38 @@
+@@ -139,6 +140,78 @@
  
  #include <pexpert/pexpert.h>
  
 +#if defined(DITING) && defined(XNU_DITING_RAMOOPS_CONSOLE) && XNU_DITING_RAMOOPS_CONSOLE
 +extern void diting_ramoops_diagnostic_write(const char *, int);
++
++/* Keep recent complete lines until the existing snapshot thread writes Data.
++ * A contended writer skips this optional copy; the ramoops path still runs.
++ * No spinning, allocation or filesystem I/O on the rendering call path. */
++static char diting_gpu_runtime_text[32768]="Diting GPU runtime: current boot; no user records yet\n";
++static size_t diting_gpu_runtime_length=sizeof("Diting GPU runtime: current boot; no user records yet\n")-1;
++static uint32_t diting_gpu_runtime_busy;
++static void
++diting_gpu_runtime_record(const char *text,size_t length)
++{
++    if (!length || length>sizeof(diting_gpu_runtime_text) ||
++        __atomic_exchange_n(&diting_gpu_runtime_busy,1,__ATOMIC_ACQUIRE))return;
++    while (diting_gpu_runtime_length+length>sizeof(diting_gpu_runtime_text)) {
++        char *end=memchr(diting_gpu_runtime_text,'\n',diting_gpu_runtime_length);
++        size_t discard=end?(size_t)(end-diting_gpu_runtime_text)+1:diting_gpu_runtime_length;
++        diting_gpu_runtime_length-=discard;
++        memmove(diting_gpu_runtime_text,diting_gpu_runtime_text+discard,diting_gpu_runtime_length);
++    }
++    memcpy(diting_gpu_runtime_text+diting_gpu_runtime_length,text,length);
++    diting_gpu_runtime_length+=length;
++    __atomic_store_n(&diting_gpu_runtime_busy,0,__ATOMIC_RELEASE);
++}
++size_t
++diting_gpu_runtime_diagnostic_copy(char *out,size_t capacity)
++{
++    if (!out || capacity<sizeof(diting_gpu_runtime_text) ||
++        __atomic_exchange_n(&diting_gpu_runtime_busy,1,__ATOMIC_ACQUIRE))return 0;
++    size_t length=diting_gpu_runtime_length;
++    memcpy(out,diting_gpu_runtime_text,length);
++    __atomic_store_n(&diting_gpu_runtime_busy,0,__ATOMIC_RELEASE);
++    return length;
++}
 +
 +/* A write-only, small diagnostic endpoint for the Settings adapter. No
 + * process can read kernel memory or choose a physical address through it.
@@ -3078,16 +3149,24 @@ index d5d5b16..5372d98 100644
 +	if (!process) return EPERM;
 +	bool settings = strcmp(process->p_comm, "Preferences") == 0;
 +	bool renderer = strcmp(process->p_comm, "backboardd") == 0 ||
-+	    strcmp(process->p_comm, "SpringBoard") == 0;
-+	if (!settings && !renderer) return EPERM;
++	    strcmp(process->p_comm, "SpringBoard") == 0 ||
++	    strcmp(process->p_comm, "PosterBoard") == 0 ||
++	    strcmp(process->p_comm, "CollectionsPoster") == 0 ||
++	    strcmp(process->p_comm, "LegacyPoster") == 0 ||
++	    strcmp(process->p_comm, "SBRendererService") == 0;
++	bool installer = strcmp(process->p_comm, "containermanagerd_system") == 0;
++	if (!settings && !renderer && !installer) return EPERM;
 +	if (!req->newptr || !req->newlen || req->newlen >= sizeof(text)) return EINVAL;
 +	int error = SYSCTL_IN(req, text, req->newlen);
 +	if (error) return error;
 +	text[req->newlen] = 0;
 +	int length = snprintf(line, sizeof(line), "%s[%d]: %s\n",
-+	    settings ? "DITING SETTINGS" : "DITING GPU", proc_getpid(process), text);
-+	if (length > 0) diting_ramoops_diagnostic_write(line,
-+	    length < (int)sizeof(line) ? length : (int)sizeof(line)-1);
++	    process->p_comm, proc_getpid(process), text);
++	if (length > 0) {
++	    size_t bytes=length < (int)sizeof(line) ? (size_t)length : sizeof(line)-1;
++	    diting_ramoops_diagnostic_write(line,(int)bytes);
++	    diting_gpu_runtime_record(line,bytes);
++	}
 +	return 0;
 +}
 +SYSCTL_PROC(_kern, OID_AUTO, diting_diagnostic,

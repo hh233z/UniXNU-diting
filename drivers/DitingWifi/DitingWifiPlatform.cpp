@@ -58,7 +58,22 @@ uint8_t *arenaVa; uint64_t tablePa,msiPa; uint64_t cbOffset;
 unsigned pcieCap,msiCap; volatile uint32_t stopped,wake; bool dmaOwned,hostMmioReady;
 uint64_t initDeadline;
 uint64_t now() {uint64_t ns=0;absolutetime_to_nanoseconds(mach_absolute_time(),&ns);return ns/1000000;}
-void log(int level,const char *s) {if(level<7)IOLog("DitingWifi[%d]: %s\n",level,s);}
+char diagnostic[2048]="Diting WiFi: current boot; startup not requested\n";
+size_t diagnosticLength=sizeof("Diting WiFi: current boot; startup not requested\n")-1;
+uint32_t diagnosticBusy;
+void log(int level,const char *s) {
+ if(level>=7)return;
+ IOLog("DitingWifi[%d]: %s\n",level,s);
+ char line[320];int n=snprintf(line,sizeof line,"%llu ms WiFi[%d]: %.250s\n",now(),level,s);
+ if(n<=0 || size_t(n)>=sizeof line || __atomic_exchange_n(&diagnosticBusy,1,__ATOMIC_ACQUIRE))return;
+ while(diagnosticLength+size_t(n)>sizeof diagnostic) {
+  const char *end=static_cast<const char *>(memchr(diagnostic,'\n',diagnosticLength));
+  size_t discard=end?size_t(end-diagnostic)+1:diagnosticLength;
+  diagnosticLength-=discard;memmove(diagnostic,diagnostic+discard,diagnosticLength);
+ }
+ memcpy(diagnostic+diagnosticLength,line,size_t(n));diagnosticLength+=size_t(n);
+ __atomic_store_n(&diagnosticBusy,0,__ATOMIC_RELEASE);
+}
 bool fail(const char *s) {log(3,s);return false;}
 void clean(void *p,size_t n) {uintptr_t a=reinterpret_cast<uintptr_t>(p)&~uintptr_t(63),e=reinterpret_cast<uintptr_t>(p)+n;for(;a<e;a+=64)__asm__ volatile("dc civac,%0"::"r"(a):"memory");__asm__ volatile("dsb sy":::"memory");}
 bool wait(Window &w,size_t o,uint32_t mask,uint32_t value,unsigned ms) {uint64_t end=now()+ms;do {if((w.r(o)&mask)==value)return true;IOSleep(1);}while(now()<end);return false;}
@@ -594,11 +609,17 @@ void worker(void *,wait_result_t) {
 }
 extern "C" void DitingWifiRandom(void *p,size_t n) {while(n){unsigned part=n>4096?4096:unsigned(n);read_random(p,part);p=static_cast<uint8_t *>(p)+part;n-=part;}}
 extern "C" void diting_wifi_wake(void) {signalWorker();}
+extern "C" size_t diting_wifi_diagnostic_copy(char *out,size_t capacity) {
+ if(!out || capacity<sizeof diagnostic || __atomic_exchange_n(&diagnosticBusy,1,__ATOMIC_ACQUIRE))return 0;
+ size_t n=diagnosticLength;memcpy(out,diagnostic,n);
+ __atomic_store_n(&diagnosticBusy,0,__ATOMIC_RELEASE);return n;
+}
 extern "C" void native_wifi_logf(int level,const char *fmt,...) {char line[256];va_list a;va_start(a,fmt);vsnprintf(line,sizeof line,fmt,a);va_end(a);log(level,line);}
 extern "C" void diting_wifi_start_optional(void) {
  diting_rpmh_init();
  uint32_t enabled=0;if(!PE_parse_boot_argn("diting_wifi",&enabled,sizeof enabled)||enabled!=1)return;
  static uint32_t started;if(__atomic_exchange_n(&started,1,__ATOMIC_ACQ_REL))return;
+ log(6,"startup requested; waiting for UFS before PCIe/MHI initialization");
  // These network classes are linked into the native kernel, not loaded as a
  // separate kext. Register their metaclasses before publishing any service.
  thread_t t=nullptr;if(kernel_thread_start(worker,nullptr,&t)==KERN_SUCCESS)thread_deallocate(t);else log(3,"WiFi worker allocation failed");

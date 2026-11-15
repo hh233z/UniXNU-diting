@@ -96,6 +96,16 @@ and presentation results. Installation logs are written to
 `/private/var/logs/DitingGpuInstall.txt`; kernel snapshots record Data staging
 status. Build success alone does not establish installation or acceleration.
 
+The bounded kernel snapshot thread also saves recent accepted Metal messages to
+`/private/var/logs/DitingGpuRuntime.txt` every five seconds from about 35 to 210
+seconds after startup. The 32 KiB log keeps complete recent lines and is reset
+each boot; a busy writer skips the optional memory copy. Filesystem work runs
+in the snapshot thread, not the rendering caller. `DitingAdreno-kernel.txt`
+retains the actual GPU state and `DitingCpu-timeline.txt` the display counters.
+These files can be read from the guest Data window over Android ADB after reboot.
+An empty user log does not prove that the plugin loaded; a successful fence
+alone does not establish hardware composition or a 30/60 FPS result.
+
 ## 20G81 development reference
 
 This is a local fork of Sheng's NativeMetal frontend and object bridge over

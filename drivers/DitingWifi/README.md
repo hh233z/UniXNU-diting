@@ -85,6 +85,13 @@ services60 对照 services59 日志的 DLL 未激活，显式启用 PORT_LINK_CO
 
 ## iPadOS 18 原生设置接口
 
+2026-11-15 调试增加有界阶段日志：保存最近 2 KiB 的板级/station 日志，
+由已有内核采集线程写入 `/private/var/logs/DitingWifi-kernel.txt`。
+Android 下可通过 USB 读取该文件；记录启动请求、实际错误与 station 进度。
+`diting_ipados18_bringup_gpu_defconfig` 关闭 Wi-Fi，联合验证须选择
+`diting_ipados18_defconfig`、匹配的私有固件并指定 `diting_wifi=1`。
+本次变更尚无扫描、连接或联网成功的实机结论。
+
 22H374 的 IO80211 在接口节点打开 type 0 用户客户端。`Diting80211UserClient` 的 selector 0 将有界请求转给同一 Apple80211/station 实现，支持内联和 OOL 数据；不解引用调用方嵌入的地址。selector 1 表示已实现的标准 ioctl 转交，selector 7 不宣告未实现的快速路径。原自制设置页面及私有控制 API 已移除。热点扫描已在前版实机出现，原生设置开关、关联和 DHCP 仍待本轮设备确认。
 
 ## 许可
