@@ -33,3 +33,5 @@ python scripts/test-diting-dualboot.py
 2026-11-15 第二轮设备记录：60秒菜单候选临时启动成功，用户明确确认“菜单按键正常，已进入 iPadOS”。据此仅将菜单可见、按键选择及 iPadOS 入口标为实机通过；首轮用户未留意屏幕，Android 自动倒计时仍只有重连证据，菜单触控及永久安装均未验证。
 
 永久交接调查：2026-11-10 Android备份的 boot_a 是 v4，内核含 ARM64 Image 与 MZ 标志，具备进一步核对 EFI stub 的价值；boot/vendor_boot 均为v4。仅凭标志不能证明可由本 UEFI 正确链式启动，仍需当前设备 boot/vendor_boot、FDT、bootconfig、AVB及内存保留关系核对。旧备份不直接用于当前Android交接。
+
+2026-11-15 Android交接阶段：已只读取得当前A槽boot/vendor_boot、DTBO、运行中FDT/cmdline/bootconfig。新增prepare-diting-android-payload.py，校验v4头、AArch64 PE入口及单个正常vendor ramdisk，拼接vendor+generic ramdisk与Linux bootconfig尾部。私有载荷仅留开发机。独立RAM候选复用现有UniXNU Linux EFI加载器，当前Android FDT与LoadFile2 initrd，增加efi=novamap参数；保留冷重启返回项。fastboot临时发送/启动成功，实际Linux接管与Android桌面结果待用户确认，未写永久boot。候选暂不包含iPadOS载荷，目的是单独确认Android交接。
