@@ -371,7 +371,7 @@ new file mode 100644
 index 0000000..00feebd
 --- /dev/null
 +++ b/bsd/dev/diting_goodix.c
-@@ -0,0 +1,1257 @@
+@@ -0,0 +1,1260 @@
 +/* Goodix Berlin-D / Diting SM8475. Adapted from the earlier redwood_goodix.c
 + * (APSL 2.0). Hardware resources are the Diting live DT, checked against the
 + * NothingOSS cape pinctrl and waipio GCC source. No Redwood peripherals. */
@@ -1328,7 +1328,9 @@ index 0000000..00feebd
 +    int flags=FWRITE|O_CREAT|O_TRUNC|O_NOFOLLOW;
 +    int error=vnode_open("/private/var/logs/DitingTouch-kernel.txt",flags,0600,0,&vp,context);
 +    if (error) {printf("Diting ST FTS: snapshot open=%d\n",error);return;}
-+    error=vnode_setsize(vp,0,IO_SYNC,context);
++    struct vnode_attr truncate_attr;
++    VATTR_INIT(&truncate_attr);VATTR_SET(&truncate_attr,va_data_size,0);
++    error=vnode_setattr(vp,&truncate_attr,context);
 +    if (error) {(void)vnode_close(vp,flags,context);return;}
 +    int residual=0;
 +    error=vn_rdwr(UIO_WRITE,vp,text,length,0,UIO_SYSSPACE,IO_SYNC,
@@ -1342,7 +1344,8 @@ index 0000000..00feebd
 +    error=vnode_open("/private/var/logs/DitingCpu-timeline.txt",flags,0600,0,&vp,context);
 +    if (!error) {
 +        if (!timeline_started) {
-+            error=vnode_setsize(vp,0,IO_SYNC,context);
++            VATTR_INIT(&truncate_attr);VATTR_SET(&truncate_attr,va_data_size,0);
++            error=vnode_setattr(vp,&truncate_attr,context);
 +            if (error) {(void)vnode_close(vp,flags,context);return;}
 +        }
 +        timeline_started=true;
@@ -2297,7 +2300,7 @@ index 240bbf6..400dba5 100644
  	if (imgp->ip_argspace < new_ptr_size) {
  		error = E2BIG;
  		goto bad;
-@@ -7132,8 +7265,543 @@
+@@ -7132,8 +7265,544 @@
   *		word width of the kernel. Once the self-exec completes, the
   *		initproc might be different.
   */
@@ -2613,7 +2616,8 @@ index 240bbf6..400dba5 100644
 +        !VATTR_IS_SUPPORTED(&va,va_uid) || !VATTR_IS_SUPPORTED(&va,va_mode) ||
 +        !VATTR_IS_SUPPORTED(&va,va_nlink) || va.va_uid!=0 ||
 +        (va.va_mode&022) || va.va_nlink!=1) {error=EPERM;goto out;}
-+    error=vnode_setsize(file,0,IO_SYNC,ctx);
++    VATTR_INIT(&va);VATTR_SET(&va,va_data_size,0);
++    error=vnode_setattr(file,&va,ctx);
 +    if (error)goto out;
 +    int residual=0;
 +    error=vn_rdwr(UIO_WRITE,file,(caddr_t)diting_sw_runtime_blob,
