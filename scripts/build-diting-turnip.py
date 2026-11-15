@@ -45,7 +45,7 @@ def main():
     minimum='18.0' if a.guest_build=='22H374' else '16.6.1'
     env = dict(os.environ, DEVELOPER_DIR=str(a.developer_dir),
                IPHONEOS_DEPLOYMENT_TARGET=minimum)
-    env['PATH'] = diting_paths.path_with(a.tools_directory, a.venv / 'bin', diting_paths.extra_path(),
+    env['PATH'] = diting_paths.path_with(a.venv / 'bin', a.tools_directory, diting_paths.extra_path(),
         *(['/opt/local/bin'] if diting_paths.macports() else []))
     # Do not inherit another Vulkan/IR3 build's diagnostic or compiler knobs.
     for key in list(env):
