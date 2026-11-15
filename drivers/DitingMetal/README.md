@@ -53,6 +53,10 @@ remains unconfirmed. Whole-image shader priming is not currently enabled.
 
 Build with the matching translator source and Diting Turnip library:
 
+The bridge build requires `llvm-as` on PATH (or `DITING_LLVM_AS`). It assembles
+the project's `shaders/scanout_convert.ll` into AIR bitcode, then supplies that
+file to Cargo through `NMB_SCANOUT_AIR`; no external shader blob is required.
+
 ```sh
 python3 scripts/build-diting-metal-bridge.py --guest-build 22H374 \
   --translator /path/to/metal2vulkan-22H374 \

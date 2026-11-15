@@ -62,6 +62,17 @@ minimum='18.0' if a.guest_build=='22H374' else '16.6.1'
 target='arm64-apple-ios'+minimum
 env=dict(os.environ,DEVELOPER_DIR=str(a.developer_dir),IPHONEOS_DEPLOYMENT_TARGET=minimum)
 sdk=subprocess.check_output(['xcrun','--sdk','iphoneos','--show-sdk-path'],env=env,text=True).strip()
+# Presentation uses our own AIR source, assembled before Cargo expands
+# include_bytes!(env!("NMB_SCANOUT_AIR")). A preexisting host env is not an input.
+scanout=out/'scanout_convert.air'
+assembler=diting_paths.tool('llvm-as','DITING_LLVM_AS',('/opt/local/bin/llvm-as-mp-18',))
+assemble=[assembler,str(ROOT/'drivers/DitingMetal/shaders/scanout_convert.ll'),'-o',str(scanout)]
+with (out/'scanout-build.log').open('w') as log:
+    subprocess.run([assembler,'--version'],env=env,stdout=log,stderr=subprocess.STDOUT,check=True)
+    subprocess.run(assemble,env=env,stdout=log,stderr=subprocess.STDOUT,check=True)
+if scanout.read_bytes()[:4] != b'BC\xc0\xde':
+    raise SystemExit('scanout assembler did not produce LLVM bitcode')
+env['NMB_SCANOUT_AIR']=str(scanout)
 frontend=out/'DitingMetalFrontend.o'
 cmd=['xcrun','clang++','-target',target,'-isysroot',sdk,
     *(['-DDITING_GUEST_22H374=1'] if a.guest_build=='22H374' else []),
@@ -100,7 +111,7 @@ with (out/'link.log').open('w') as log:
 if r.returncode:raise SystemExit('Metal dylib link failed: '+str(out/'link.log'))
 report=dict(translator_sources=source_info,frontend=str(frontend),archive=str(archive),library=str(library),
     deployment=minimum,guest=a.guest_build,device_extent=600 if a.guest_build=='22H374' else 528,automatic_publication=False,
-    hardware_acceleration=False,commands=[cmd,cargo,link],
+    hardware_acceleration=False,scanout_air=str(scanout),commands=[assemble,cmd,cargo,link],
     runtime_format_policy=a.guest_build+' guest format metadata; Vulkan capabilities; no Apple heap/compression assumptions',
     image_verification='skipped by request')
 (out/'build-report.json').write_text(json.dumps(report,indent=2)+'\n')

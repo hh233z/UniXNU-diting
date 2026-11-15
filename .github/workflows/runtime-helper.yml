@@ -60,7 +60,7 @@ jobs:
       - name: Install build tools
         run: |
           set -euo pipefail
-          brew install bison flex glslang ninja pkgconf
+          brew install bison flex glslang ninja pkgconf llvm
           python3 -m venv "$RUNNER_TEMP/gpu-venv"
           "$RUNNER_TEMP/gpu-venv/bin/pip" install meson mako pyyaml packaging ply
           rustup toolchain install 1.98.0 --profile minimal
@@ -68,6 +68,7 @@ jobs:
           rustup target add aarch64-apple-ios
           echo "$(brew --prefix bison)/bin" >> "$GITHUB_PATH"
           echo "$(brew --prefix flex)/bin" >> "$GITHUB_PATH"
+          echo "$(brew --prefix llvm)/bin" >> "$GITHUB_PATH"
       - name: Prepare pinned public sources
         run: |
           set -euo pipefail
@@ -87,6 +88,14 @@ jobs:
       - name: Build 22H374 Turnip
         run: |
           python3 scripts/build-diting-turnip.py --guest-build 22H374             --mesa "$RUNNER_TEMP/diting-mesa" --abi-directory "$GITHUB_WORKSPACE/drivers/DitingAdreno/submit"             --tools-directory "$(brew --prefix)/bin" --venv "$RUNNER_TEMP/gpu-venv"             --output-dir "$RUNNER_TEMP/diting-turnip"
+      - name: Upload compiled Turnip
+        uses: actions/upload-artifact@v4
+        with:
+          name: diting-turnip-22H374
+          if-no-files-found: error
+          path: |
+            ${{ runner.temp }}/diting-turnip/src/freedreno/vulkan/libvulkan_freedreno.dylib
+            ${{ runner.temp }}/diting-turnip/build-report.json
       - name: Build 22H374 Metal bridge and discovery bundle
         run: |
           set -euo pipefail
