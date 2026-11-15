@@ -39,11 +39,42 @@ static ArmSmmu4KContextConfig config;
 static ArmSmmu4KIo smmu_io;
 static uint64_t bank_offset;
 static unsigned parents_ready,attempted;
+/* Startup observations only. Publish each immutable slot after formatting;
+ * the later Data snapshot never reads MMIO or waits for GPU progress. */
+static char startup_notes[64][240];
+static unsigned startup_note_ready[64],startup_note_count;
+extern "C" size_t diting_adreno_diagnostic_copy(char *out,size_t capacity)
+{
+    if(!out || !capacity)return 0;
+    unsigned count=__atomic_load_n(&startup_note_count,__ATOMIC_ACQUIRE);
+    unsigned end=count<64?count:64;
+    size_t used=0;
+    int n=snprintf(out,capacity,"Diting A730 startup notes=%u retained<=64\n",count);
+    if(n<0 || size_t(n)>=capacity)return 0;
+    used=size_t(n);
+    /* Retain the final failure/result even if the caller has a small buffer. */
+    unsigned first=end>10?end-10:0;
+    for(unsigned i=first;i<end;i++) {
+        if(!__atomic_load_n(&startup_note_ready[i],__ATOMIC_ACQUIRE))continue;
+        size_t length=strnlen(startup_notes[i],sizeof(startup_notes[i]));
+        if(length>=capacity-used)break;
+        memcpy(out+used,startup_notes[i],length);used+=length;
+    }
+    out[used]=0;return used;
+}
 static void record(const char *phase,unsigned result,uint64_t a=0,uint64_t b=0)
 {
     char text[240];int n=snprintf(text,sizeof(text),
         "DITING ADRENO: %s result=%u a=0x%llx b=0x%llx\n",phase,result,a,b);
-    if(n>0){IOLog("%s",text);diting_ramoops_diagnostic_write(text,n<(int)sizeof(text)?n:(int)sizeof(text)-1);}
+    if(n>0){
+        unsigned index=__atomic_fetch_add(&startup_note_count,1,__ATOMIC_RELAXED);
+        if(index<64) {
+            size_t length=n<(int)sizeof(text)?size_t(n):sizeof(text)-1;
+            memcpy(startup_notes[index],text,length);startup_notes[index][length]=0;
+            __atomic_store_n(&startup_note_ready[index],1,__ATOMIC_RELEASE);
+        }
+        IOLog("%s",text);diting_ramoops_diagnostic_write(text,n<(int)sizeof(text)?n:(int)sizeof(text)-1);
+    }
 }
 static bool map(Mapping &m,uint64_t physical,size_t bytes)
 {

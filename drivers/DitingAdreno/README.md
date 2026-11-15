@@ -254,3 +254,5 @@ accelerator. No GMU-only success is reported as hardware acceleration.
 ## 许可
 
 逐文件 SPDX：`DitingAdrenoCpProfile.h` 为 GPL-2.0-only（`LICENSE-GPL-2.0-only`）；`AdrenoFirmware.*`、`DitingAdrenoClocks.*`、`DitingAdrenoGmu.*`、`DitingAdrenoHfi.*`、`DitingAdrenoPlatform.cpp`、`DitingAdrenoPower.*`、`DitingAdrenoScanout.*`、`DitingAdrenoSmmu.*`、`DitingAdrenoZap.*`、`PongScanoutWire.h` 为 BSD-2-Clause-Patent（`LICENSE`）；其余为 MIT，派生自 AdrenoMetal / NativeMetal（Copyright (c) 2026 NativeMetal contributors）。
+
+2026-11-15: retain up to64 immutable platform startup records in RAM. The GPU-enabled touch snapshot copies the last10 records to /private/var/logs/DitingAdreno-kernel.txt after Data mounts, without additional MMIO or synthetic submissions. This closes the missing-evidence gap from image58: desktop worked but Android pstore was empty. No GMU/CP/fence success is claimed for58. Both GPU/non-GPU linkage and device persistence remain to be validated for this change.

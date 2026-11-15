@@ -371,7 +371,7 @@ new file mode 100644
 index 0000000..00feebd
 --- /dev/null
 +++ b/bsd/dev/diting_goodix.c
-@@ -0,0 +1,1261 @@
+@@ -0,0 +1,1281 @@
 +/* Goodix Berlin-D / Diting SM8475. Adapted from the earlier redwood_goodix.c
 + * (APSL 2.0). Hardware resources are the Diting live DT, checked against the
 + * NothingOSS cape pinctrl and waipio GCC source. No Redwood peripherals. */
@@ -1252,6 +1252,9 @@ index 0000000..00feebd
 +uint64_t diting_cpu_policy_diag[32];
 +extern int diting_sw_runtime_status;
 +extern int diting_sw_runtime_stage;
++#if XNU_DITING_ADRENO_PLATFORM
++extern size_t diting_adreno_diagnostic_copy(char *out,size_t capacity);
++#endif
 +
 +static void
 +st_save_snapshot(void)
@@ -1356,6 +1359,23 @@ index 0000000..00feebd
 +        (void)vnode_close(vp,flags,context);
 +        if (error || residual) printf("Diting CPU: timeline write=%d residual=%d\n",error,residual);
 +    } else printf("Diting CPU: timeline open=%d\n",error);
++#if XNU_DITING_ADRENO_PLATFORM
++    /* Reuse the completed CPU snapshot buffer; no extra kernel stack array. */
++    size_t gpu_length=diting_adreno_diagnostic_copy(text,sizeof(text));
++    if (gpu_length) {
++        vp=NULL;flags=FWRITE|O_CREAT|O_NOFOLLOW;
++        error=vnode_open("/private/var/logs/DitingAdreno-kernel.txt",flags,0600,0,&vp,context);
++        if (!error) {
++            VATTR_INIT(&truncate_attr);VATTR_SET(&truncate_attr,va_data_size,0);
++            error=vnode_setattr(vp,&truncate_attr,context);
++            residual=0;
++            if (!error)error=vn_rdwr(UIO_WRITE,vp,text,(int)gpu_length,0,UIO_SYSSPACE,IO_SYNC,
++                vfs_context_ucred(context),&residual,current_proc());
++            (void)vnode_close(vp,flags,context);
++            if (error || residual)printf("Diting A730: snapshot write=%d residual=%d\n",error,residual);
++        } else printf("Diting A730: snapshot open=%d\n",error);
++    }
++#endif
 +}
 +
 +static void
