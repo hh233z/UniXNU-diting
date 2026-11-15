@@ -18,3 +18,24 @@
 ## 验证状态
 
 本地通过补丁格式/空白检查，60/90/120 Hz 的周期算法检查覆盖快速连续提交、迟到提交、周期对齐。先前软件扫描行优化完成 117 个实际 ARM64 callback 覆盖检查。均不代表实机帧率或画面无撕裂。两种配置的 GitHub 编译及本机验证尚待结果。
+
+
+## 第 60 版实机证据
+
+2026-11-15，Diting / 22H374，镜像来自 CI 43681577116，源码 28a744a。
+用户确认桌面正常并返回 Android。原生 Data xid 9176 的
+`/private/var/logs/DitingAdreno-kernel.txt` 保存了本轮 22 条启动记录的最后 10 条：
+
+- GX OOB/START、GBIF release、CP_ME_INIT drain 均 result=0。
+- PAS13 ZAP auth、CP nonsecure switch、CP fence 均 result=0。
+- GPU IRQ332 owner、CP ready、CP/user-client startup 均 result=0。
+- fence 观测值与期望均为 1；GPU timestamp 为非零 0x373468。
+
+对应源码先提交 PM4 实际内存写入并核对 scratch 值，再注册 IRQ、读取 GPU timer，
+最后发布 native user client。因此已取得底层 CP 执行和用户客户端发布的实机证据。
+这不是 Metal 绘制、着色器编译或桌面 GPU 加速证据；本轮仍含
+`diting_ui_software=1`，也未启用软件调度库安装。
+
+后续应完成匹配 22H374 的 Turnip / Metal bridge / discovery bundle 构建与原生 Data
+安装路径，验证真实 Metal device、绘制及完成帧后，再切换桌面渲染。
+不能仅移除软件渲染参数就宣布 GPU 接入完成。
