@@ -16,6 +16,10 @@ on:
         type: choice
         options: ["diting_ipados18_ci_defconfig", "diting_ipados18_bringup_defconfig", "diting_ipados18_bringup_power_defconfig", "diting_ipados18_bringup_gpu_defconfig", "diting_ipados18_defconfig"]
         default: "diting_ipados18_ci_defconfig"
+      android_handoff:
+        description: "Build only Android EFI firmware with captured low CMA RAM"
+        type: boolean
+        default: false
       firmware_tag:
         description: "Private firmware release tag (optional; diting-firmware repo)"
         required: false
@@ -80,6 +84,16 @@ jobs:
               print("AdvancedLoggerLib inserted")
           PY
           cp -r ../device/platform-firmware/ditingPkg Platforms/Xiaomi/ditingPkg
+          if [ "${{ inputs.android_handoff }}" = "true" ]; then
+            python3 - <<'PYCFG'
+          from pathlib import Path
+          p=Path("Platforms/Xiaomi/ditingPkg/diting.dsc")
+          s=p.read_text()
+          old="DEFINE DITING_ANDROID_CMA_ENABLED = 0"
+          assert s.count(old)==1
+          p.write_text(s.replace(old,"DEFINE DITING_ANDROID_CMA_ENABLED = 1"))
+          PYCFG
+          fi
           # build_uefi.py packs Resources/DTBs/<device>.dtb into the volume.
           mkdir -p Resources/DTBs
           cp ../device/platform-firmware/ditingPkg/FdtBlob/sm8475-xiaomi-diting.dtb Resources/DTBs/diting.dtb
@@ -180,6 +194,7 @@ jobs:
           path: out/
           if-no-files-found: error
   package:
+    if: ${{ !inputs.android_handoff }}
     needs: firmware
     # The Diting component recipes build with Xcode and refuse a non-x86_64 Darwin host.
     runs-on: macos-15-intel
