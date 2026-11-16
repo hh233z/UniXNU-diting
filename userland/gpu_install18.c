@@ -47,10 +47,10 @@ static int volume(const char *path,const char *expected)
 static int remount(const char *mode)
 {
     pid_t child=fork();if(child<0)return errno;
-    if(!child){execl("/sbin/mount","mount","-u",mode,"/",NULL);_exit(127);}
+    if(!child){if(logfd>=0){(void)dup2(logfd,STDERR_FILENO);(void)dup2(logfd,STDOUT_FILENO);}execl("/sbin/mount","mount","-u",mode,"/",NULL);_exit(127);}
     for(unsigned i=0;i<150;i++) {
         int status=0;pid_t result=waitpid(child,&status,WNOHANG);
-        if(result==child)return WIFEXITED(status)&&WEXITSTATUS(status)==0?0:EIO;
+        if(result==child){if(logfd>=0)(void)dprintf(logfd,"mount %s wait_status=%d\n",mode,status);return WIFEXITED(status)&&WEXITSTATUS(status)==0?0:EIO;}
         if(result<0 && errno!=EINTR)return errno;
         usleep(100000);
     }
@@ -102,7 +102,7 @@ int main(void)
     struct stat rootst,datast;
     if(stat("/",&rootst) || stat("/private/var",&datast) || logs<0 ||
        owned_directory(logs,datast.st_dev))return 77;
-    logfd=openat(logs,"DitingGpuInstall.txt",O_WRONLY|O_CREAT|O_EXCL|O_NOFOLLOW|O_CLOEXEC,0600);
+    logfd=openat(logs,"DitingGpuInstall-v2.txt",O_WRONLY|O_CREAT|O_EXCL|O_NOFOLLOW|O_CLOEXEC,0600);
     if(logfd<0){close(logs);return 77;} /* Never overwrite an existing install receipt. */
     close(logs);record("START",0);
     struct statfs os,cache;
@@ -132,10 +132,11 @@ int main(void)
     int zr=uncompress(payload,&bytes,diting_gpu_archive,DITING_GPU_COMPRESSED_BYTES);
     if(zr!=Z_OK || bytes!=DITING_GPU_RAW_BYTES){error=EINVAL;goto done;}
     record("PAYLOAD_READY",0);
-    error=remount("-w");
+    error=remount("-w");record("REMOUNT_WRITABLE",error);
     /* Even a failed mount command can have changed flags. Restore at exit. */
     if(!statfs("/",&os))writable=!(os.f_flags&MNT_RDONLY);
     if(error || !writable){if(!error)error=EROFS;goto done;}
+    record("STAGE_BEGIN",0);
     if(mkdirat(parent,temp,0700)){error=errno;goto done;}
     stage=true;stagefd=openat(parent,temp,O_RDONLY|O_DIRECTORY|O_NOFOLLOW|O_CLOEXEC);
     if(stagefd<0){error=errno;goto done;}
@@ -143,7 +144,8 @@ int main(void)
     for(unsigned i=0;i<4;i++) {
         const struct diting_gpu_file *f=&diting_gpu_files[i];
         if(f->offset>bytes || f->bytes>bytes-f->offset){error=EINVAL;goto done;}
-        if((error=write_file(stagefd,f->name,payload+f->offset,f->bytes,f->mode)))goto done;
+        error=write_file(stagefd,f->name,payload+f->offset,f->bytes,f->mode);
+        record(f->name,error);if(error)goto done;
     }
     if(fchmod(stagefd,0755) || fsync(stagefd)){error=errno;goto done;}
     if(renameatx_np(parent,temp,parent,bundle_name,RENAME_EXCL)){error=errno;goto done;}
