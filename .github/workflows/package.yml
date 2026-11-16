@@ -45,6 +45,15 @@ jobs:
     runs-on: ubuntu-24.04
     timeout-minutes: 60
     steps:
+      - name: Check optional private firmware credentials
+        if: inputs.firmware_tag != ''
+        env:
+          FIRMWARE_TOKEN: ${{ secrets.FIRMWARE_TOKEN }}
+        run: |
+          if [ -z "$FIRMWARE_TOKEN" ]; then
+            echo "::error::firmware_tag requires the FIRMWARE_TOKEN repository secret with read access to nagatoquin33/diting-firmware. No private firmware was downloaded."
+            exit 1
+          fi
       - uses: actions/checkout@v4
         with:
           path: device
